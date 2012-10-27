@@ -7,10 +7,10 @@ Supports:
 - Appengine: *datastore.Key and datastore.Cursor.
 - Extensions for user defined types.
 
-API docs: http://go.pkgdoc.org/github.com/vmihailenco/msgpack
-
 Does not support:
 - Interface unmarshalling.
+
+API docs: http://go.pkgdoc.org/github.com/vmihailenco/msgpack
 
 Installation
 ------------
