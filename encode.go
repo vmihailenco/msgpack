@@ -77,16 +77,6 @@ func (e *Encoder) EncodeNil() error {
 	return e.write([]byte{nilCode})
 }
 
-func (e *Encoder) EncodeUint32Byte(v uint32, c byte) error {
-	return e.write([]byte{
-		c,
-		byte(v >> 24),
-		byte(v >> 16),
-		byte(v >> 8),
-		byte(v),
-	})
-}
-
 func (e *Encoder) EncodeUint64(v uint64) error {
 	switch {
 	case v < 128:
