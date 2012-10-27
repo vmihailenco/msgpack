@@ -14,16 +14,16 @@ var (
 )
 
 func init() {
-	Register(keyPtrType, EncodeAppengineKey, DecodeAppengineKey)
-	Register(cursorType, EncodeAppengineCursor, DecodeAppengineCursor)
+	Register(keyPtrType, encodeAppengineKey, decodeAppengineKey)
+	Register(cursorType, encodeAppengineCursor, decodeAppengineCursor)
 }
 
-func EncodeAppengineKey(e *Encoder, v reflect.Value) error {
+func encodeAppengineKey(e *Encoder, v reflect.Value) error {
 	key := v.Interface().(*ds.Key)
 	return e.EncodeBytes([]byte(key.Encode()))
 }
 
-func DecodeAppengineKey(d *Decoder, v reflect.Value, c byte) error {
+func decodeAppengineKey(d *Decoder, v reflect.Value, c byte) error {
 	data, err := d.DecodeBytes(c)
 	if err != nil {
 		return err
@@ -36,12 +36,12 @@ func DecodeAppengineKey(d *Decoder, v reflect.Value, c byte) error {
 	return nil
 }
 
-func EncodeAppengineCursor(e *Encoder, v reflect.Value) error {
+func encodeAppengineCursor(e *Encoder, v reflect.Value) error {
 	cursor := v.Interface().(ds.Cursor)
 	return e.EncodeBytes([]byte(cursor.String()))
 }
 
-func DecodeAppengineCursor(d *Decoder, v reflect.Value, c byte) error {
+func decodeAppengineCursor(d *Decoder, v reflect.Value, c byte) error {
 	data, err := d.DecodeBytes(c)
 	if err != nil {
 		return err

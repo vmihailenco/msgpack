@@ -10,10 +10,10 @@ var (
 )
 
 func init() {
-	Register(timeType, EncodeTime, DecodeTime)
+	Register(timeType, encodeTime, decodeTime)
 }
 
-func EncodeTime(e *Encoder, v reflect.Value) error {
+func encodeTime(e *Encoder, v reflect.Value) error {
 	tm := v.Interface().(time.Time)
 	if err := e.EncodeInt64(tm.Unix()); err != nil {
 		return err
@@ -21,7 +21,7 @@ func EncodeTime(e *Encoder, v reflect.Value) error {
 	return e.EncodeInt64(int64(tm.Nanosecond()))
 }
 
-func DecodeTime(d *Decoder, v reflect.Value, c byte) error {
+func decodeTime(d *Decoder, v reflect.Value, c byte) error {
 	sec, err := d.DecodeInt64(c)
 	if err != nil {
 		return err
