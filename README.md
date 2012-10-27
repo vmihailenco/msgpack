@@ -40,3 +40,8 @@ Example:
         }
         fmt.Println(out)
     }
+
+Extensions
+----------
+
+Look at for [appengine.go](https://github.com/vmihailenco/msgpack/blob/master/appengine.go) example.
