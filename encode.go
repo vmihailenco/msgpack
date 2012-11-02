@@ -28,11 +28,46 @@ func (e *Encoder) Encode(v interface{}) error {
 	if v == nil {
 		return e.EncodeNil()
 	}
+
+	switch value := v.(type) {
+	case string:
+		return e.EncodeBytes([]byte(value))
+	case []byte:
+		return e.EncodeBytes(value)
+	case int:
+		return e.EncodeInt64(int64(value))
+	case int8:
+		return e.EncodeInt64(int64(value))
+	case int16:
+		return e.EncodeInt64(int64(value))
+	case int32:
+		return e.EncodeInt64(int64(value))
+	case int64:
+		return e.EncodeInt64(value)
+	case uint:
+		return e.EncodeUint64(uint64(value))
+	case uint8:
+		return e.EncodeUint64(uint64(value))
+	case uint16:
+		return e.EncodeUint64(uint64(value))
+	case uint32:
+		return e.EncodeUint64(uint64(value))
+	case uint64:
+		return e.EncodeUint64(value)
+	case bool:
+		return e.EncodeBool(value)
+	case float32:
+		return e.EncodeFloat32(value)
+	case float64:
+		return e.EncodeFloat64(value)
+	}
 	return e.EncodeValue(reflect.ValueOf(v))
 }
 
 func (e *Encoder) EncodeValue(v reflect.Value) error {
 	switch v.Kind() {
+	case reflect.String:
+		return e.EncodeBytes([]byte(v.String()))
 	case reflect.Bool:
 		return e.EncodeBool(v.Bool())
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
@@ -47,13 +82,6 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		return e.EncodeArray(v)
 	case reflect.Map:
 		return e.EncodeMap(v)
-	case reflect.String:
-		return e.EncodeBytes([]byte(v.String()))
-	case reflect.Struct:
-		if enc, ok := typEncMap[v.Type()]; ok {
-			return enc(e, v)
-		}
-		return e.EncodeStruct(v)
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
 			return e.EncodeNil()
@@ -62,6 +90,11 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 			return enc(e, v)
 		}
 		return e.EncodeValue(v.Elem())
+	case reflect.Struct:
+		if enc, ok := typEncMap[v.Type()]; ok {
+			return enc(e, v)
+		}
+		return e.EncodeStruct(v)
 	default:
 		return fmt.Errorf("msgpack: unsupported type %v", v.Type().String())
 	}
@@ -205,30 +238,19 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 func (e *Encoder) EncodeArray(value reflect.Value) error {
 	elemType := value.Type().Elem()
 	if elemType.Kind() == reflect.Uint8 {
-		return e.EncodeBytes(value.Interface().([]byte))
+		return e.EncodeBytes(value.Bytes())
 	}
 
-	switch l := value.Len(); {
+	l := value.Len()
+	switch {
 	case l < 16:
 		if err := e.write([]byte{fixArrayLowCode | byte(l)}); err != nil {
 			return err
 		}
-		for i := 0; i < l; i++ {
-			if err := e.EncodeValue(value.Index(i)); err != nil {
-				return err
-			}
-		}
-		return nil
 	case l < 65536:
 		if err := e.write([]byte{array16Code, byte(l >> 8), byte(l)}); err != nil {
 			return err
 		}
-		for i := 0; i < l; i++ {
-			if err := e.EncodeValue(value.Index(i)); err != nil {
-				return err
-			}
-		}
-		return nil
 	default:
 		if err := e.write([]byte{
 			array32Code,
@@ -239,29 +261,21 @@ func (e *Encoder) EncodeArray(value reflect.Value) error {
 		}); err != nil {
 			return err
 		}
-		for i := 0; i < l; i++ {
-			if err := e.EncodeValue(value.Index(i)); err != nil {
-				return err
-			}
+	}
+	for i := 0; i < l; i++ {
+		if err := e.EncodeValue(value.Index(i)); err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
 func (e *Encoder) EncodeMap(value reflect.Value) error {
-	keys := value.MapKeys()
 	switch l := value.Len(); {
 	case l < 16:
 		if err := e.write([]byte{fixMapLowCode | byte(l)}); err != nil {
 			return err
-		}
-		for _, k := range keys {
-			if err := e.EncodeValue(k); err != nil {
-				return err
-			}
-			if err := e.EncodeValue(value.MapIndex(k)); err != nil {
-				return err
-			}
 		}
 	case l < 65536:
 		if err := e.write([]byte{
@@ -270,14 +284,6 @@ func (e *Encoder) EncodeMap(value reflect.Value) error {
 			byte(l),
 		}); err != nil {
 			return err
-		}
-		for _, k := range keys {
-			if err := e.EncodeValue(k); err != nil {
-				return err
-			}
-			if err := e.EncodeValue(value.MapIndex(k)); err != nil {
-				return err
-			}
 		}
 	default:
 		if err := e.write([]byte{
@@ -289,43 +295,52 @@ func (e *Encoder) EncodeMap(value reflect.Value) error {
 		}); err != nil {
 			return err
 		}
-		for _, k := range keys {
-			if err := e.EncodeValue(k); err != nil {
-				return err
-			}
-			if err := e.EncodeValue(value.MapIndex(k)); err != nil {
-				return err
-			}
+	}
+	keys := value.MapKeys()
+	for _, k := range keys {
+		if err := e.EncodeValue(k); err != nil {
+			return err
+		}
+		if err := e.EncodeValue(value.MapIndex(k)); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 func (e *Encoder) EncodeStruct(value reflect.Value) error {
-	fields := reflectCache.Fields(value.Type())
-	num := len(fields)
-	if num <= 0 {
-		return e.EncodeNil()
+	fields := tinfoMap.Fields(value.Type())
+	switch l := len(fields); {
+	case l < 16:
+		if err := e.write([]byte{fixMapLowCode | byte(l)}); err != nil {
+			return err
+		}
+	case l < 65536:
+		if err := e.write([]byte{
+			map16Code,
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	default:
+		if err := e.write([]byte{
+			map32Code,
+			byte(l >> 24),
+			byte(l >> 16),
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
 	}
-
-	if err := e.write([]byte{
-		map32Code,
-		byte(num >> 24),
-		byte(num >> 16),
-		byte(num >> 8),
-		byte(num),
-	}); err != nil {
-		return err
-	}
-
 	for _, field := range fields {
-		if err := e.EncodeBytes([]byte(field.Name)); err != nil {
+		if err := e.EncodeBytes([]byte(field.name)); err != nil {
 			return err
 		}
-		if err := e.EncodeValue(value.Field(field.Ind)); err != nil {
+		if err := e.EncodeValue(value.FieldByIndex(field.idx)); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

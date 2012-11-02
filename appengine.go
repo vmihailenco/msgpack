@@ -20,15 +20,15 @@ func init() {
 
 func encodeAppengineKey(e *Encoder, v reflect.Value) error {
 	key := v.Interface().(*ds.Key)
-	return e.EncodeBytes([]byte(key.Encode()))
+	return e.Encode(key.Encode())
 }
 
-func decodeAppengineKey(d *Decoder, v reflect.Value, c byte) error {
-	data, err := d.DecodeBytes(c)
-	if err != nil {
+func decodeAppengineKey(d *Decoder, v reflect.Value) error {
+	var data string
+	if err := d.Decode(&data); err != nil {
 		return err
 	}
-	key, err := ds.DecodeKey(string(data))
+	key, err := ds.DecodeKey(data)
 	if err != nil {
 		return err
 	}
@@ -38,15 +38,15 @@ func decodeAppengineKey(d *Decoder, v reflect.Value, c byte) error {
 
 func encodeAppengineCursor(e *Encoder, v reflect.Value) error {
 	cursor := v.Interface().(ds.Cursor)
-	return e.EncodeBytes([]byte(cursor.String()))
+	return e.Encode(cursor.String())
 }
 
-func decodeAppengineCursor(d *Decoder, v reflect.Value, c byte) error {
-	data, err := d.DecodeBytes(c)
-	if err != nil {
+func decodeAppengineCursor(d *Decoder, v reflect.Value) error {
+	var data string
+	if err := d.Decode(&data); err != nil {
 		return err
 	}
-	cursor, err := ds.DecodeCursor(string(data))
+	cursor, err := ds.DecodeCursor(data)
 	if err != nil {
 		return err
 	}

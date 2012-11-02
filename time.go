@@ -21,24 +21,15 @@ func encodeTime(e *Encoder, v reflect.Value) error {
 	return e.EncodeInt64(int64(tm.Nanosecond()))
 }
 
-func decodeTime(d *Decoder, v reflect.Value, c byte) error {
-	sec, err := d.DecodeInt64(c)
-	if err != nil {
+func decodeTime(d *Decoder, v reflect.Value) error {
+	var sec, nsec int64
+	if err := d.DecodeInt64(&sec); err != nil {
 		return err
 	}
-
-	c, err = d.readByte()
-	if err != nil {
+	if err := d.DecodeInt64(&nsec); err != nil {
 		return err
 	}
-
-	nsec, err := d.DecodeInt64(c)
-	if err != nil {
-		return err
-	}
-
 	tm := time.Unix(sec, nsec)
 	v.Set(reflect.ValueOf(tm))
-
 	return nil
 }

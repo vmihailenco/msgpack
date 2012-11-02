@@ -11,7 +11,7 @@ var (
 
 type encoder func(*Encoder, reflect.Value) error
 
-type decoder func(*Decoder, reflect.Value, byte) error
+type decoder func(*Decoder, reflect.Value) error
 
 func Register(typ reflect.Type, enc encoder, dec decoder) {
 	typEncMap[typ] = enc

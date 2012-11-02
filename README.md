@@ -6,9 +6,10 @@ Supports:
 - time.Time.
 - Appengine: *datastore.Key and datastore.Cursor.
 - Extensions for user defined types.
+- Tags.
 
 Does not support:
-- Interface unmarshalling.
+- Unmarhalling into interface.
 
 API docs: http://go.pkgdoc.org/github.com/vmihailenco/msgpack
 
