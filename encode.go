@@ -79,9 +79,9 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 	case reflect.Float64:
 		return e.EncodeFloat64(v.Float())
 	case reflect.Array, reflect.Slice:
-		return e.EncodeArray(v)
+		return e.encodeArray(v)
 	case reflect.Map:
-		return e.EncodeMap(v)
+		return e.encodeMap(v)
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
 			return e.EncodeNil()
@@ -94,7 +94,7 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		if enc, ok := typEncMap[v.Type()]; ok {
 			return enc(e, v)
 		}
-		return e.EncodeStruct(v)
+		return e.encodeStruct(v)
 	default:
 		return fmt.Errorf("msgpack: unsupported type %v", v.Type().String())
 	}
@@ -235,7 +235,7 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 	return e.write(v)
 }
 
-func (e *Encoder) EncodeArray(value reflect.Value) error {
+func (e *Encoder) encodeArray(value reflect.Value) error {
 	elemType := value.Type().Elem()
 	if elemType.Kind() == reflect.Uint8 {
 		return e.EncodeBytes(value.Bytes())
@@ -271,7 +271,7 @@ func (e *Encoder) EncodeArray(value reflect.Value) error {
 	return nil
 }
 
-func (e *Encoder) EncodeMap(value reflect.Value) error {
+func (e *Encoder) encodeMap(value reflect.Value) error {
 	switch l := value.Len(); {
 	case l < 16:
 		if err := e.write([]byte{fixMapLowCode | byte(l)}); err != nil {
@@ -308,7 +308,7 @@ func (e *Encoder) EncodeMap(value reflect.Value) error {
 	return nil
 }
 
-func (e *Encoder) EncodeStruct(value reflect.Value) error {
+func (e *Encoder) encodeStruct(value reflect.Value) error {
 	fields := tinfoMap.Fields(value.Type())
 	switch l := len(fields); {
 	case l < 16:
