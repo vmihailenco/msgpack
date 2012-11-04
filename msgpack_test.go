@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"bufio"
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"math"
 	"testing"
@@ -287,12 +288,35 @@ type struct1 struct {
 }
 
 func (t *MsgpackTest) TestNestedStructs(c *C) {
-	in := struct1{Name: "hello", Struct2: &struct2{Name: "world"}}
+	in := &struct1{Name: "hello", Struct2: &struct2{Name: "world"}}
 	var out struct1
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(in.Name, Equals, out.Name)
-	c.Assert(in.Struct2.Name, Equals, out.Struct2.Name)
+	c.Assert(out.Name, Equals, in.Name)
+	c.Assert(out.Struct2.Name, Equals, in.Struct2.Name)
+}
+
+type Struct4 struct {
+	Name2 string
+}
+
+type Struct3 struct {
+	Struct4
+	Name1 string
+}
+
+func (t *MsgpackTest) TestEmbedding(c *C) {
+	in := &Struct3{
+		Name1: "hello",
+		Struct4: Struct4{
+			Name2: "world",
+		},
+	}
+	var out Struct3
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Name1, Equals, in.Name1)
+	c.Assert(out.Name2, Equals, in.Name2)
 }
 
 func (t *MsgpackTest) BenchmarkBool(c *C) {
@@ -351,36 +375,54 @@ func (t *MsgpackTest) BenchmarkStruct(c *C) {
 	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
-		t.enc.Encode(in)
-		t.dec.Decode(out)
+		buf := &bytes.Buffer{}
+		enc := msgpack.NewEncoder(buf)
+		dec := msgpack.NewDecoder(buf)
+
+		enc.Encode(in)
+		dec.Decode(out)
 	}
-	c.Assert(t.buf.Len(), Equals, 0)
 }
 
 func (t *MsgpackTest) BenchmarkMsgpack2Struct(c *C) {
-	buf := &bytes.Buffer{}
-	dec := msgpack2.NewDecoder(buf, nil)
-	enc := msgpack2.NewEncoder(buf)
-
 	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
+		buf := &bytes.Buffer{}
+		dec := msgpack2.NewDecoder(buf, nil)
+		enc := msgpack2.NewEncoder(buf)
+
 		enc.Encode(in)
 		dec.Decode(out)
 	}
-	c.Assert(t.buf.Len(), Equals, 0)
 }
 
 func (t *MsgpackTest) BenchmarkJSONStruct(c *C) {
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	dec := json.NewDecoder(buf)
-
 	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
+		buf := &bytes.Buffer{}
+		enc := json.NewEncoder(buf)
+		dec := json.NewDecoder(buf)
+
 		enc.Encode(in)
 		dec.Decode(out)
 	}
-	c.Assert(buf.Len(), Equals, 0)
+}
+
+func (t *MsgpackTest) BenchmarkGOBStruct(c *C) {
+	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	out := &benchmarkStruct{}
+	for i := 0; i < c.N; i++ {
+		buf := &bytes.Buffer{}
+		enc := gob.NewEncoder(buf)
+		dec := gob.NewDecoder(buf)
+
+		if err := enc.Encode(in); err != nil {
+			panic(err)
+		}
+		if err := dec.Decode(out); err != nil {
+			panic(err)
+		}
+	}
 }

@@ -352,6 +352,9 @@ func (d *Decoder) DecodeBytes(v *[]byte) error {
 	if err != nil {
 		return err
 	}
+	if n == -1 {
+		return nil
+	}
 	*v = make([]byte, n)
 	if err := d.read(*v); err != nil {
 		return err
@@ -364,7 +367,9 @@ func (d *Decoder) bytesLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c >= fixRawLowCode && c <= fixRawHighCode {
+	if c == nilCode {
+		return -1, nil
+	} else if c >= fixRawLowCode && c <= fixRawHighCode {
 		return int(c & fixRawMask), nil
 	}
 	switch c {
