@@ -278,6 +278,19 @@ func (t *MsgpackTest) TestMap(c *C) {
 	}
 }
 
+func (t *MsgpackTest) TestLargeBytesArray(c *C) {
+	in := make([]byte, 1e6)
+	for i := 0; i < 1e6; i++ {
+		in[i] = '1'
+	}
+
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(len(t.buf.Bytes()), Equals, 1000005)
+	var out []byte
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(in, DeepEquals, out)
+}
+
 type struct2 struct {
 	Name string
 }
