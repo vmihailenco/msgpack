@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
+	"io"
 	"math"
 	"testing"
 	"time"
@@ -341,6 +342,15 @@ func (t *MsgpackTest) BenchmarkBool(c *C) {
 	c.Assert(t.buf.Len(), Equals, 0)
 }
 
+func (t *MsgpackTest) BenchmarkInt(c *C) {
+	var v int
+	for i := 0; i < c.N; i++ {
+		t.enc.Encode(1)
+		t.dec.Decode(&v)
+	}
+	c.Assert(t.buf.Len(), Equals, 0)
+}
+
 func (t *MsgpackTest) BenchmarkMsgpack2Bool(c *C) {
 	buf := &bytes.Buffer{}
 	dec := msgpack2.NewDecoder(buf, nil)
@@ -384,6 +394,34 @@ type benchmarkStruct struct {
 	Tm   time.Time
 }
 
+func (s *benchmarkStruct) EncodeMsgpack(w io.Writer) error {
+	enc := msgpack.NewEncoder(w)
+	if err := enc.EncodeString(s.Name); err != nil {
+		return err
+	}
+	if err := enc.EncodeInt(s.Age); err != nil {
+		return err
+	}
+	if err := msgpack.EncodeTime(enc, s.Tm); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *benchmarkStruct) DecodeMsgpack(r io.Reader) error {
+	dec := msgpack.NewDecoder(r)
+	if err := dec.DecodeString(&s.Name); err != nil {
+		return err
+	}
+	if err := dec.DecodeInt(&s.Age); err != nil {
+		return err
+	}
+	if err := msgpack.DecodeTime(dec, &s.Tm); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (t *MsgpackTest) BenchmarkStruct(c *C) {
 	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
 	out := &benchmarkStruct{}
@@ -394,6 +432,16 @@ func (t *MsgpackTest) BenchmarkStruct(c *C) {
 
 		enc.Encode(in)
 		dec.Decode(out)
+	}
+}
+
+func (t *MsgpackTest) BenchmarkStructManual(c *C) {
+	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	out := &benchmarkStruct{}
+	for i := 0; i < c.N; i++ {
+		buf := &bytes.Buffer{}
+		in.EncodeMsgpack(buf)
+		out.DecodeMsgpack(buf)
 	}
 }
 

@@ -110,6 +110,22 @@ func (e *Encoder) EncodeNil() error {
 	return e.write([]byte{nilCode})
 }
 
+func (e *Encoder) EncodeUint(v uint) error {
+	return e.EncodeUint64(uint64(v))
+}
+
+func (e *Encoder) EncodeUint8(v uint8) error {
+	return e.EncodeUint64(uint64(v))
+}
+
+func (e *Encoder) EncodeUint16(v uint16) error {
+	return e.EncodeUint64(uint64(v))
+}
+
+func (e *Encoder) EncodeUint32(v uint32) error {
+	return e.EncodeUint64(uint64(v))
+}
+
 func (e *Encoder) EncodeUint64(v uint64) error {
 	switch {
 	case v < 128:
@@ -140,6 +156,22 @@ func (e *Encoder) EncodeUint64(v uint64) error {
 		})
 	}
 	panic("not reached")
+}
+
+func (e *Encoder) EncodeInt(v int) error {
+	return e.EncodeInt64(int64(v))
+}
+
+func (e *Encoder) EncodeInt8(v int8) error {
+	return e.EncodeInt64(int64(v))
+}
+
+func (e *Encoder) EncodeInt16(v int16) error {
+	return e.EncodeInt64(int64(v))
+}
+
+func (e *Encoder) EncodeInt32(v int32) error {
+	return e.EncodeInt64(int64(v))
 }
 
 func (e *Encoder) EncodeInt64(v int64) error {
@@ -205,6 +237,10 @@ func (e *Encoder) EncodeFloat64(value float64) error {
 		byte(v >> 8),
 		byte(v),
 	})
+}
+
+func (e *Encoder) EncodeString(v string) error {
+	return e.EncodeBytes([]byte(v))
 }
 
 func (e *Encoder) EncodeBytes(v []byte) error {

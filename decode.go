@@ -31,15 +31,25 @@ func (e *InvalidUnmarshalError) Error() string {
 	return "msgpack: Decode(nil " + e.Type.String() + ")"
 }
 
+type BufferedReader interface {
+	Read([]byte) (int, error)
+	ReadByte() (byte, error)
+	Peek(int) ([]byte, error)
+}
+
 type Decoder struct {
-	R                  *bufio.Reader
+	R                  BufferedReader
 	b1, b2, b3, b4, b8 []byte
 }
 
 func NewDecoder(reader io.Reader) *Decoder {
 	b := make([]byte, 8)
+	r, ok := reader.(BufferedReader)
+	if !ok {
+		r = bufio.NewReader(reader)
+	}
 	return &Decoder{
-		R:  bufio.NewReader(reader),
+		R:  r,
 		b1: b[:1],
 		b2: b[:2],
 		b4: b[:4],
@@ -47,42 +57,54 @@ func NewDecoder(reader io.Reader) *Decoder {
 	}
 }
 
-func (d *Decoder) Decode(v interface{}) error {
-	switch value := v.(type) {
+func (d *Decoder) Decode(iv interface{}) error {
+	switch v := iv.(type) {
 	case *string:
-		return d.DecodeString(value)
+		return d.DecodeString(v)
 	case *[]byte:
-		return d.DecodeBytes(value)
+		return d.DecodeBytes(v)
+	case *int:
+		return d.DecodeInt(v)
+	case *int8:
+		return d.DecodeInt8(v)
+	case *int16:
+		return d.DecodeInt16(v)
+	case *int32:
+		return d.DecodeInt32(v)
 	case *int64:
-		return d.DecodeInt64(value)
+		return d.DecodeInt64(v)
+	case *uint:
+		return d.DecodeUint(v)
+	case *uint8:
+		return d.DecodeUint8(v)
+	case *uint16:
+		return d.DecodeUint16(v)
+	case *uint32:
+		return d.DecodeUint32(v)
 	case *uint64:
-		return d.DecodeUint64(value)
+		return d.DecodeUint64(v)
 	case *bool:
-		return d.DecodeBool(value)
+		return d.DecodeBool(v)
 	case *float32:
-		return d.DecodeFloat32(value)
+		return d.DecodeFloat32(v)
 	case *float64:
-		return d.DecodeFloat64(value)
+		return d.DecodeFloat64(v)
 	}
 
-	value := reflect.ValueOf(v)
-	if value.Kind() != reflect.Ptr || value.IsNil() {
+	v := reflect.ValueOf(iv)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return &InvalidUnmarshalError{reflect.TypeOf(v)}
 	}
-	value = value.Elem()
-	return d.DecodeValue(value)
+	return d.DecodeValue(v.Elem())
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
-	c, err := d.R.ReadByte()
+	b, err := d.R.Peek(1)
 	if err != nil {
 		return err
 	}
-	if c == nilCode {
+	if b[0] == nilCode {
 		return nil
-	}
-	if err := d.R.UnreadByte(); err != nil {
-		return err
 	}
 
 	switch v.Kind() {
@@ -227,7 +249,7 @@ func (d *Decoder) DecodeUint64(v *uint64) error {
 			uint64(d.b8[7])
 		return nil
 	}
-	return fmt.Errorf("msgpack: invalid code %x decoding uint", c)
+	return fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
 }
 
 func (d *Decoder) uint64Value(value reflect.Value) error {
@@ -285,7 +307,7 @@ func (d *Decoder) DecodeInt64(v *int64) error {
 			int64(d.b8[7])
 		return nil
 	}
-	return fmt.Errorf("msgpack: invalid code %x decoding int", c)
+	return fmt.Errorf("msgpack: invalid code %x decoding int64", c)
 }
 
 func (d *Decoder) int64Value(value reflect.Value) error {
@@ -549,4 +571,274 @@ func (d *Decoder) structValue(v reflect.Value) error {
 func (d *Decoder) read(b []byte) error {
 	_, err := io.ReadFull(d.R, b)
 	return err
+}
+
+//------------------------------------------------------------------------------
+
+func (d *Decoder) DecodeUint(v *uint) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode {
+		*v = uint(c)
+		return nil
+	}
+	switch c {
+	case uint8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = uint(c)
+		return nil
+	case uint16Code:
+		if err := d.read(d.b2); err != nil {
+			return err
+		}
+		*v = (uint(d.b2[0]) << 8) | uint(d.b2[1])
+		return nil
+	case uint32Code:
+		if err := d.read(d.b4); err != nil {
+			return err
+		}
+		*v = (uint(d.b4[0]) << 24) |
+			(uint(d.b4[1]) << 16) |
+			(uint(d.b4[2]) << 8) |
+			uint(d.b4[3])
+		return nil
+	case uint64Code:
+		if err := d.read(d.b8); err != nil {
+			return err
+		}
+		*v = (uint(d.b8[0]) << 56) |
+			(uint(d.b8[1]) << 48) |
+			(uint(d.b8[2]) << 40) |
+			(uint(d.b8[3]) << 32) |
+			(uint(d.b8[4]) << 24) |
+			(uint(d.b8[5]) << 16) |
+			(uint(d.b8[6]) << 8) |
+			uint(d.b8[7])
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding uint", c)
+}
+
+func (d *Decoder) DecodeUint8(v *uint8) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode {
+		*v = uint8(c)
+		return nil
+	}
+	switch c {
+	case uint8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = uint8(c)
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding uint8", c)
+}
+
+func (d *Decoder) DecodeUint16(v *uint16) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode {
+		*v = uint16(c)
+		return nil
+	}
+	switch c {
+	case uint8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = uint16(c)
+		return nil
+	case uint16Code:
+		if err := d.read(d.b2); err != nil {
+			return err
+		}
+		*v = (uint16(d.b2[0]) << 8) | uint16(d.b2[1])
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding uint16", c)
+}
+
+func (d *Decoder) DecodeUint32(v *uint32) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode {
+		*v = uint32(c)
+		return nil
+	}
+	switch c {
+	case uint8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = uint32(c)
+		return nil
+	case uint16Code:
+		if err := d.read(d.b2); err != nil {
+			return err
+		}
+		*v = (uint32(d.b2[0]) << 8) | uint32(d.b2[1])
+		return nil
+	case uint32Code:
+		if err := d.read(d.b4); err != nil {
+			return err
+		}
+		*v = (uint32(d.b4[0]) << 24) |
+			(uint32(d.b4[1]) << 16) |
+			(uint32(d.b4[2]) << 8) |
+			uint32(d.b4[3])
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding uint32", c)
+}
+
+//------------------------------------------------------------------------------
+
+func (d *Decoder) DecodeInt(v *int) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+		*v = int(int8(c))
+		return nil
+	}
+	switch c {
+	case int8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = int(int8(c))
+		return nil
+	case int16Code:
+		if err := d.read(d.b2); err != nil {
+			return err
+		}
+		*v = int((int16(d.b2[0]) << 8) | int16(d.b2[1]))
+		return nil
+	case int32Code:
+		if err := d.read(d.b4); err != nil {
+			return err
+		}
+		*v = int((int32(d.b4[0]) << 24) |
+			(int32(d.b4[1]) << 16) |
+			(int32(d.b4[2]) << 8) |
+			int32(d.b4[3]))
+		return nil
+	case int64Code:
+		if err := d.read(d.b8); err != nil {
+			return err
+		}
+		*v = int((int64(d.b8[0]) << 56) |
+			(int64(d.b8[1]) << 48) |
+			(int64(d.b8[2]) << 40) |
+			(int64(d.b8[3]) << 32) |
+			(int64(d.b8[4]) << 24) |
+			(int64(d.b8[5]) << 16) |
+			(int64(d.b8[6]) << 8) |
+			int64(d.b8[7]))
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding int64", c)
+}
+
+func (d *Decoder) DecodeInt8(v *int8) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+		*v = int8(c)
+		return nil
+	}
+	switch c {
+	case int8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = int8(c)
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding int8", c)
+}
+
+func (d *Decoder) DecodeInt16(v *int16) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+		*v = int16(int8(c))
+		return nil
+	}
+	switch c {
+	case int8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = int16(int8(c))
+		return nil
+	case int16Code:
+		if err := d.read(d.b2); err != nil {
+			return err
+		}
+		*v = (int16(d.b2[0]) << 8) | int16(d.b2[1])
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding int16", c)
+}
+
+func (d *Decoder) DecodeInt32(v *int32) error {
+	c, err := d.R.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+		*v = int32(int8(c))
+		return nil
+	}
+	switch c {
+	case int8Code:
+		c, err := d.R.ReadByte()
+		if err != nil {
+			return err
+		}
+		*v = int32(int8(c))
+		return nil
+	case int16Code:
+		if err := d.read(d.b2); err != nil {
+			return err
+		}
+		*v = int32((int16(d.b2[0]) << 8) | int16(d.b2[1]))
+		return nil
+	case int32Code:
+		if err := d.read(d.b4); err != nil {
+			return err
+		}
+		*v = (int32(d.b4[0]) << 24) |
+			(int32(d.b4[1]) << 16) |
+			(int32(d.b4[2]) << 8) |
+			int32(d.b4[3])
+		return nil
+	}
+	return fmt.Errorf("msgpack: invalid code %x decoding int32", c)
 }
