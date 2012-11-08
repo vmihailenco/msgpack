@@ -547,9 +547,6 @@ func (d *Decoder) structValue(v reflect.Value) error {
 }
 
 func (d *Decoder) read(b []byte) error {
-	n, err := d.R.Read(b)
-	if err == nil || n == len(b) {
-		return nil
-	}
+	_, err := io.ReadFull(d.R, b)
 	return err
 }
