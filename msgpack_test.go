@@ -298,6 +298,20 @@ func (t *MsgpackTest) TestLargeBytesArray(c *C) {
 	c.Assert(in, DeepEquals, out)
 }
 
+type testStruct struct {
+	Name string
+	Tm   time.Time
+}
+
+func (t *MsgpackTest) TestStruct(c *C) {
+	in := &testStruct{Name: "hello world", Tm: time.Now()}
+	var out testStruct
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Name, Equals, in.Name)
+	c.Assert(out.Tm.Equal(in.Tm), Equals, true)
+}
+
 type struct2 struct {
 	Name string
 }
