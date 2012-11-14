@@ -102,8 +102,14 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 }
 
 func (e *Encoder) write(data []byte) error {
-	_, err := e.W.Write(data)
-	return err
+	n, err := e.W.Write(data)
+	if err != nil {
+		return err
+	}
+	if n < len(data) {
+		return io.ErrShortWrite
+	}
+	return nil
 }
 
 func (e *Encoder) EncodeNil() error {
