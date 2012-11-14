@@ -34,7 +34,7 @@ func (e *InvalidUnmarshalError) Error() string {
 type BufferedReader interface {
 	Read([]byte) (int, error)
 	ReadByte() (byte, error)
-	Peek(int) ([]byte, error)
+	UnreadByte() error
 }
 
 type Decoder struct {
@@ -99,12 +99,15 @@ func (d *Decoder) Decode(iv interface{}) error {
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
-	b, err := d.R.Peek(1)
+	c, err := d.R.ReadByte()
 	if err != nil {
 		return err
 	}
-	if b[0] == nilCode {
+	if c == nilCode {
 		return nil
+	}
+	if err := d.R.UnreadByte(); err != nil {
+		return err
 	}
 
 	switch v.Kind() {
