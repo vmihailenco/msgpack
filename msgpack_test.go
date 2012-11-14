@@ -245,6 +245,12 @@ func (t *MsgpackTest) TestTime(c *C) {
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(out.Equal(in), Equals, true)
+
+	var zero time.Time
+	c.Assert(t.enc.Encode(zero), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Equal(zero), Equals, true)
+	c.Assert(out.IsZero(), Equals, true)
 }
 
 func (t *MsgpackTest) TestIntArray(c *C) {
