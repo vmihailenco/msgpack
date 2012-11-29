@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"bufio"
 	"bytes"
+	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
 	"io"
@@ -371,6 +372,17 @@ func (t *MsgpackTest) BenchmarkInt(c *C) {
 	c.Assert(t.buf.Len(), Equals, 0)
 }
 
+func (t *MsgpackTest) BenchmarkBinaryInt(c *C) {
+	buf := &bytes.Buffer{}
+
+	var v int32
+	for i := 0; i < c.N; i++ {
+		binary.Write(buf, binary.BigEndian, int32(1))
+		binary.Read(buf, binary.BigEndian, &v)
+	}
+	c.Assert(buf.Len(), Equals, 0)
+}
+
 func (t *MsgpackTest) BenchmarkMsgpack2Bool(c *C) {
 	buf := &bytes.Buffer{}
 	dec := msgpack2.NewDecoder(buf, nil)
@@ -429,14 +441,19 @@ func (s *benchmarkStruct) EncodeMsgpack(w io.Writer) error {
 }
 
 func (s *benchmarkStruct) DecodeMsgpack(r io.Reader) error {
+	var err error
+
 	dec := msgpack.NewDecoder(r)
-	if err := dec.DecodeString(&s.Name); err != nil {
+	s.Name, err = dec.DecodeString()
+	if err != nil {
 		return err
 	}
-	if err := dec.DecodeInt(&s.Age); err != nil {
+	s.Age, err = dec.DecodeInt()
+	if err != nil {
 		return err
 	}
-	if err := msgpack.DecodeTime(dec, &s.Tm); err != nil {
+	s.Tm, err = msgpack.DecodeTime(dec)
+	if err != nil {
 		return err
 	}
 	return nil

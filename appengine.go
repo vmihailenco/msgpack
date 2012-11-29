@@ -14,21 +14,29 @@ var (
 )
 
 func init() {
-	Register(keyPtrType, encodeAppengineKey, decodeAppengineKey)
-	Register(cursorType, encodeAppengineCursor, decodeAppengineCursor)
+	Register(keyPtrType, encodeDatastoreKeyValue, decodeDatastoreKeyValue)
+	Register(cursorType, encodeDatastoreCursor, decodeDatastoreCursor)
 }
 
-func encodeAppengineKey(e *Encoder, v reflect.Value) error {
+func EncodeDatastoreKey(e *Encoder, key *ds.Key) error {
+	return e.EncodeString(key.Encode())
+}
+
+func encodeDatastoreKeyValue(e *Encoder, v reflect.Value) error {
 	key := v.Interface().(*ds.Key)
-	return e.Encode(key.Encode())
+	return EncodeDatastoreKey(e, key)
 }
 
-func decodeAppengineKey(d *Decoder, v reflect.Value) error {
-	var data string
-	if err := d.Decode(&data); err != nil {
-		return err
+func DecodeDatastoreKey(d *Decoder) (*ds.Key, error) {
+	v, err := d.DecodeString()
+	if err != nil {
+		return nil, err
 	}
-	key, err := ds.DecodeKey(data)
+	return ds.DecodeKey(v)
+}
+
+func decodeDatastoreKeyValue(d *Decoder, v reflect.Value) error {
+	key, err := DecodeDatastoreKey(d)
 	if err != nil {
 		return err
 	}
@@ -36,17 +44,17 @@ func decodeAppengineKey(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func encodeAppengineCursor(e *Encoder, v reflect.Value) error {
+func encodeDatastoreCursor(e *Encoder, v reflect.Value) error {
 	cursor := v.Interface().(ds.Cursor)
 	return e.Encode(cursor.String())
 }
 
-func decodeAppengineCursor(d *Decoder, v reflect.Value) error {
-	var data string
-	if err := d.Decode(&data); err != nil {
+func decodeDatastoreCursor(d *Decoder, v reflect.Value) error {
+	s, err := d.DecodeString()
+	if err != nil {
 		return err
 	}
-	cursor, err := ds.DecodeCursor(data)
+	cursor, err := ds.DecodeCursor(s)
 	if err != nil {
 		return err
 	}
