@@ -354,6 +354,18 @@ func (t *MsgpackTest) TestEmbedding(c *C) {
 	c.Assert(out.Name2, Equals, in.Name2)
 }
 
+type NameStruct struct {
+	Name string
+}
+
+func (t *MsgpackTest) TestSliceOfSlices(c *C) {
+	in := [][]*NameStruct{{{"Hello"}}}
+	var out [][]*NameStruct
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out[0][0].Name, Equals, in[0][0].Name)
+}
+
 func (t *MsgpackTest) BenchmarkBool(c *C) {
 	var v bool
 	for i := 0; i < c.N; i++ {
