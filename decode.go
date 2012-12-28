@@ -105,6 +105,12 @@ func (d *Decoder) Decode(iv interface{}) error {
 	case *float64:
 		*v, err = d.DecodeFloat64()
 		return err
+	case *[]string:
+		*v, err = d.decodeStringSlice()
+		return err
+	case *map[string]string:
+		*v, err = d.decodeMapStringString()
+		return err
 	}
 
 	v := reflect.ValueOf(iv)
@@ -140,7 +146,7 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 	case reflect.String:
 		return d.stringValue(v)
 	case reflect.Array, reflect.Slice:
-		return d.arrayValue(v)
+		return d.sliceValue(v)
 	case reflect.Map:
 		return d.mapValue(v)
 	case reflect.Struct:
@@ -459,11 +465,34 @@ func (d *Decoder) arrayLen() (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
 }
 
+func (d *Decoder) decodeStringSlice() ([]string, error) {
+	n, err := d.arrayLen()
+	if err != nil {
+		return nil, err
+	}
+	s := make([]string, n)
+	for i := 0; i < n; i++ {
+		v, err := d.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		s[i] = v
+	}
+	return s, nil
+}
+
 // TODO(vmihailenco): consider using reflect.Append.
-// TODO(vmihailenco): specialized path for int*/uint* arrays.
-func (d *Decoder) arrayValue(v reflect.Value) error {
-	if v.Type().Elem().Kind() == reflect.Uint8 {
+func (d *Decoder) sliceValue(v reflect.Value) error {
+	switch v.Type().Elem().Kind() {
+	case reflect.Uint8:
 		return d.bytesValue(v)
+	case reflect.String:
+		s, err := d.decodeStringSlice()
+		if err != nil {
+			return err
+		}
+		v.Set(reflect.ValueOf(s))
+		return nil
 	}
 
 	n, err := d.arrayLen()
@@ -504,6 +533,28 @@ func (d *Decoder) mapLen() (int, error) {
 		return int(n), err
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
+}
+
+func (d *Decoder) decodeMapStringString() (map[string]string, error) {
+	n, err := d.mapLen()
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]string, n)
+	for i := 0; i < n; i++ {
+		mk, err := d.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		mv, err := d.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		m[mk] = mv
+	}
+
+	return m, nil
 }
 
 func (d *Decoder) mapValue(v reflect.Value) error {

@@ -60,6 +60,10 @@ func (e *Encoder) Encode(v interface{}) error {
 		return e.EncodeFloat32(value)
 	case float64:
 		return e.EncodeFloat64(value)
+	case []string:
+		return e.encodeStringSlice(value)
+	case map[string]string:
+		return e.encodeMapStringString(value)
 	}
 	return e.EncodeValue(reflect.ValueOf(v))
 }
@@ -79,7 +83,7 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 	case reflect.Float64:
 		return e.EncodeFloat64(v.Float())
 	case reflect.Array, reflect.Slice:
-		return e.encodeArray(v)
+		return e.encodeSlice(v)
 	case reflect.Map:
 		return e.encodeMap(v)
 	case reflect.Interface, reflect.Ptr:
@@ -277,13 +281,7 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 	return e.write(v)
 }
 
-func (e *Encoder) encodeArray(value reflect.Value) error {
-	elemType := value.Type().Elem()
-	if elemType.Kind() == reflect.Uint8 {
-		return e.EncodeBytes(value.Bytes())
-	}
-
-	l := value.Len()
+func (e *Encoder) encodeSliceLen(l int) error {
 	switch {
 	case l < 16:
 		if err := e.write([]byte{fixArrayLowCode | byte(l)}); err != nil {
@@ -304,8 +302,35 @@ func (e *Encoder) encodeArray(value reflect.Value) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (e *Encoder) encodeStringSlice(s []string) error {
+	if err := e.encodeSliceLen(len(s)); err != nil {
+		return err
+	}
+	for _, v := range s {
+		if err := e.EncodeString(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeSlice(v reflect.Value) error {
+	switch v.Type().Elem().Kind() {
+	case reflect.Uint8:
+		return e.EncodeBytes(v.Bytes())
+	case reflect.String:
+		return e.encodeStringSlice(v.Interface().([]string))
+	}
+
+	l := v.Len()
+	if err := e.encodeSliceLen(l); err != nil {
+		return err
+	}
 	for i := 0; i < l; i++ {
-		if err := e.EncodeValue(value.Index(i)); err != nil {
+		if err := e.EncodeValue(v.Index(i)); err != nil {
 			return err
 		}
 	}
@@ -313,8 +338,8 @@ func (e *Encoder) encodeArray(value reflect.Value) error {
 	return nil
 }
 
-func (e *Encoder) encodeMap(value reflect.Value) error {
-	switch l := value.Len(); {
+func (e *Encoder) encodeMapLen(l int) error {
+	switch {
 	case l < 16:
 		if err := e.write([]byte{fixMapLowCode | byte(l)}); err != nil {
 			return err
@@ -337,6 +362,28 @@ func (e *Encoder) encodeMap(value reflect.Value) error {
 		}); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeMapStringString(m map[string]string) error {
+	if err := e.encodeMapLen(len(m)); err != nil {
+		return err
+	}
+	for mk, mv := range m {
+		if err := e.EncodeString(mk); err != nil {
+			return err
+		}
+		if err := e.EncodeString(mv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeMap(value reflect.Value) error {
+	if err := e.encodeMapLen(value.Len()); err != nil {
+		return err
 	}
 	keys := value.MapKeys()
 	for _, k := range keys {
