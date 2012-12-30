@@ -68,6 +68,15 @@ func (e *Encoder) Encode(v interface{}) error {
 	return e.EncodeValue(reflect.ValueOf(v))
 }
 
+func (e *Encoder) EncodeMulti(values ...interface{}) error {
+	for _, v := range values {
+		if err := e.Encode(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (e *Encoder) EncodeValue(v reflect.Value) error {
 	switch v.Kind() {
 	case reflect.String:

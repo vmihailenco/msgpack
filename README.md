@@ -2,14 +2,11 @@ Msgpack implementation for Golang
 =================================
 
 Supports:
-- Primitives, arrays, maps and structs.
+- Primitives, arrays, maps, structs and interface{}.
 - time.Time.
-- Appengine: *datastore.Key and datastore.Cursor.
+- Appengine *datastore.Key and datastore.Cursor.
 - Extensions for user defined types.
 - Tags.
-
-Does not support:
-- Unmarhalling into interface.
 
 API docs: http://go.pkgdoc.org/github.com/vmihailenco/msgpack
 

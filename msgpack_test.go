@@ -354,17 +354,49 @@ func (t *MsgpackTest) TestEmbedding(c *C) {
 	c.Assert(out.Name2, Equals, in.Name2)
 }
 
-type NameStruct struct {
-	Name string
-}
+func (t *MsgpackTest) TestSliceInterface(c *C) {
+	in := []interface{}{1, "hello"}
+	var out []interface{}
 
-func (t *MsgpackTest) TestSliceOfSlices(c *C) {
-	in := [][]*NameStruct{{{"Hello"}}}
-	var out [][]*NameStruct
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(out[0][0].Name, Equals, in[0][0].Name)
+
+	c.Assert(out, HasLen, 2)
+	c.Assert(out[0], Equals, int64(1))
+	c.Assert(out[1], Equals, "hello")
 }
+
+func (t *MsgpackTest) TestMapStringInterface(c *C) {
+	in := map[string]interface{}{
+		"foo": "bar",
+		"hello": map[string]interface{}{
+			"foo": "bar",
+		},
+	}
+	var out map[string]interface{}
+
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+
+	c.Assert(out["foo"], Equals, "bar")
+	mm := out["hello"].(map[interface{}]interface{})
+	c.Assert(mm["foo"], Equals, "bar")
+}
+
+// func (t *MsgpackTest) BenchmarkMapElements(c *C) {
+// 	in := map[string]interface{}{
+// 		"foo": "bar",
+// 		"hello": map[string]interface{}{
+// 			"foo": "bar",
+// 		},
+// 	}
+// 	for i := 0; i < c.N; i++ {
+// 		t.enc.Encode(in)
+// 		elements, _ := t.dec.DecodeMapElements()
+// 		mapStringInterface(elements)
+// 	}
+// 	c.Assert(t.buf.Len(), Equals, 0)
+// }
 
 func (t *MsgpackTest) BenchmarkBool(c *C) {
 	var v bool
@@ -459,46 +491,51 @@ func (t *MsgpackTest) BenchmarkStringSlice(c *C) {
 }
 
 type benchmarkStruct struct {
-	Name string
-	Age  int
-	Tm   time.Time
+	Name      string
+	Colors    []string
+	Age       int
+	Data      []byte
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (s *benchmarkStruct) EncodeMsgpack(w io.Writer) error {
 	enc := msgpack.NewEncoder(w)
-	if err := enc.EncodeString(s.Name); err != nil {
-		return err
-	}
-	if err := enc.EncodeInt(s.Age); err != nil {
-		return err
-	}
-	if err := msgpack.EncodeTime(enc, s.Tm); err != nil {
-		return err
-	}
-	return nil
+	return enc.EncodeMulti(
+		s.Name,
+		s.Colors,
+		s.Age,
+		s.Data,
+		s.CreatedAt,
+		s.UpdatedAt,
+	)
 }
 
 func (s *benchmarkStruct) DecodeMsgpack(r io.Reader) error {
-	var err error
-
 	dec := msgpack.NewDecoder(r)
-	s.Name, err = dec.DecodeString()
-	if err != nil {
-		return err
+	return dec.DecodeMulti(
+		&s.Name,
+		&s.Colors,
+		&s.Age,
+		&s.Data,
+		&s.CreatedAt,
+		&s.UpdatedAt,
+	)
+}
+
+func (t *MsgpackTest) structForBenchmark() *benchmarkStruct {
+	return &benchmarkStruct{
+		Name:      "Hello World",
+		Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
+		Age:       math.MaxInt32,
+		Data:      make([]byte, 1024),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
-	s.Age, err = dec.DecodeInt()
-	if err != nil {
-		return err
-	}
-	s.Tm, err = msgpack.DecodeTime(dec)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (t *MsgpackTest) BenchmarkStruct(c *C) {
-	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
 		buf := &bytes.Buffer{}
@@ -511,7 +548,7 @@ func (t *MsgpackTest) BenchmarkStruct(c *C) {
 }
 
 func (t *MsgpackTest) BenchmarkStructManual(c *C) {
-	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
 		buf := &bytes.Buffer{}
@@ -521,7 +558,7 @@ func (t *MsgpackTest) BenchmarkStructManual(c *C) {
 }
 
 func (t *MsgpackTest) BenchmarkMsgpack2Struct(c *C) {
-	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
 		buf := &bytes.Buffer{}
@@ -534,7 +571,7 @@ func (t *MsgpackTest) BenchmarkMsgpack2Struct(c *C) {
 }
 
 func (t *MsgpackTest) BenchmarkJSONStruct(c *C) {
-	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
 		buf := &bytes.Buffer{}
@@ -547,18 +584,14 @@ func (t *MsgpackTest) BenchmarkJSONStruct(c *C) {
 }
 
 func (t *MsgpackTest) BenchmarkGOBStruct(c *C) {
-	in := &benchmarkStruct{Name: "Hello World", Age: math.MaxInt32, Tm: time.Now()}
+	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
 		buf := &bytes.Buffer{}
 		enc := gob.NewEncoder(buf)
 		dec := gob.NewDecoder(buf)
 
-		if err := enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := dec.Decode(out); err != nil {
-			panic(err)
-		}
+		enc.Encode(in)
+		dec.Decode(out)
 	}
 }

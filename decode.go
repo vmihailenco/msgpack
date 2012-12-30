@@ -33,6 +33,7 @@ func (e *InvalidUnmarshalError) Error() string {
 
 type BufferedReader interface {
 	Read([]byte) (int, error)
+	Peek(int) ([]byte, error)
 	ReadByte() (byte, error)
 	UnreadByte() error
 }
@@ -106,8 +107,7 @@ func (d *Decoder) Decode(iv interface{}) error {
 		*v, err = d.DecodeFloat64()
 		return err
 	case *[]string:
-		*v, err = d.decodeStringSlice()
-		return err
+		return d.decodeIntoStrings(v)
 	case *map[string]string:
 		*v, err = d.decodeMapStringString()
 		return err
@@ -118,6 +118,15 @@ func (d *Decoder) Decode(iv interface{}) error {
 		return &InvalidUnmarshalError{reflect.TypeOf(v)}
 	}
 	return d.DecodeValue(v.Elem())
+}
+
+func (d *Decoder) DecodeMulti(values ...interface{}) error {
+	for _, v := range values {
+		if err := d.Decode(v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
@@ -163,7 +172,9 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		}
 		return d.DecodeValue(v.Elem())
 	case reflect.Interface:
-		if !v.IsNil() {
+		if v.IsNil() {
+			return d.interfaceValue(v)
+		} else {
 			return d.DecodeValue(v.Elem())
 		}
 	}
@@ -381,205 +392,6 @@ func (d *Decoder) float64Value(value reflect.Value) error {
 		return err
 	}
 	value.SetFloat(v)
-	return nil
-}
-
-func (d *Decoder) DecodeBytes() ([]byte, error) {
-	n, err := d.bytesLen()
-	if err != nil {
-		return nil, err
-	}
-	if n == -1 {
-		return nil, nil
-	}
-	v := make([]byte, n)
-	if err := d.read(v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-func (d *Decoder) bytesLen() (int, error) {
-	c, err := d.R.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	if c == nilCode {
-		return -1, nil
-	} else if c >= fixRawLowCode && c <= fixRawHighCode {
-		return int(c & fixRawMask), nil
-	}
-	switch c {
-	case raw16Code:
-		n, err := d.uint16()
-		return int(n), err
-	case raw32Code:
-		n, err := d.uint32()
-		return int(n), err
-	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding bytes length", c)
-}
-
-func (d *Decoder) bytesValue(value reflect.Value) error {
-	v, err := d.DecodeBytes()
-	if err != nil {
-		return err
-	}
-	value.SetBytes(v)
-	return nil
-}
-
-func (d *Decoder) DecodeString() (string, error) {
-	b, err := d.DecodeBytes()
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
-func (d *Decoder) stringValue(value reflect.Value) error {
-	v, err := d.DecodeString()
-	if err != nil {
-		return err
-	}
-	value.SetString(v)
-	return nil
-}
-
-func (d *Decoder) arrayLen() (int, error) {
-	c, err := d.R.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	if c >= fixArrayLowCode && c <= fixArrayHighCode {
-		return int(c & fixArrayMask), nil
-	}
-	switch c {
-	case array16Code:
-		n, err := d.uint16()
-		return int(n), err
-	case array32Code:
-		n, err := d.uint32()
-		return int(n), err
-	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
-}
-
-func (d *Decoder) decodeStringSlice() ([]string, error) {
-	n, err := d.arrayLen()
-	if err != nil {
-		return nil, err
-	}
-	s := make([]string, n)
-	for i := 0; i < n; i++ {
-		v, err := d.DecodeString()
-		if err != nil {
-			return nil, err
-		}
-		s[i] = v
-	}
-	return s, nil
-}
-
-// TODO(vmihailenco): consider using reflect.Append.
-func (d *Decoder) sliceValue(v reflect.Value) error {
-	switch v.Type().Elem().Kind() {
-	case reflect.Uint8:
-		return d.bytesValue(v)
-	case reflect.String:
-		s, err := d.decodeStringSlice()
-		if err != nil {
-			return err
-		}
-		v.Set(reflect.ValueOf(s))
-		return nil
-	}
-
-	n, err := d.arrayLen()
-	if err != nil {
-		return err
-	}
-
-	if v.IsNil() || v.Len() < n {
-		v.Set(reflect.MakeSlice(v.Type(), n, n))
-	}
-
-	elemType := v.Type().Elem()
-	for i := 0; i < n; i++ {
-		elem := reflect.New(elemType).Elem()
-		if err := d.DecodeValue(elem); err != nil {
-			return err
-		}
-		v.Index(i).Set(elem)
-	}
-
-	return nil
-}
-
-func (d *Decoder) mapLen() (int, error) {
-	c, err := d.R.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	if c >= fixMapLowCode && c <= fixMapHighCode {
-		return int(c & fixMapMask), nil
-	}
-	switch c {
-	case map16Code:
-		n, err := d.uint16()
-		return int(n), err
-	case map32Code:
-		n, err := d.uint32()
-		return int(n), err
-	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
-}
-
-func (d *Decoder) decodeMapStringString() (map[string]string, error) {
-	n, err := d.mapLen()
-	if err != nil {
-		return nil, err
-	}
-
-	m := make(map[string]string, n)
-	for i := 0; i < n; i++ {
-		mk, err := d.DecodeString()
-		if err != nil {
-			return nil, err
-		}
-		mv, err := d.DecodeString()
-		if err != nil {
-			return nil, err
-		}
-		m[mk] = mv
-	}
-
-	return m, nil
-}
-
-func (d *Decoder) mapValue(v reflect.Value) error {
-	n, err := d.mapLen()
-	if err != nil {
-		return err
-	}
-
-	typ := v.Type()
-	if v.IsNil() {
-		v.Set(reflect.MakeMap(typ))
-	}
-	keyType := typ.Key()
-	valueType := typ.Elem()
-
-	for i := 0; i < n; i++ {
-		key := reflect.New(keyType).Elem()
-		d.DecodeValue(key)
-
-		value := reflect.New(valueType).Elem()
-		d.DecodeValue(value)
-
-		v.SetMapIndex(key, value)
-	}
-
 	return nil
 }
 
@@ -878,4 +690,66 @@ func (d *Decoder) DecodeInt32() (int32, error) {
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int32", c)
+}
+
+//------------------------------------------------------------------------------
+
+func (d *Decoder) interfaceValue(v reflect.Value) error {
+	iface, err := d.DecodeInterface()
+	if err != nil {
+		return err
+	}
+	v.Set(reflect.ValueOf(iface))
+	return nil
+}
+
+// Decodes value into interface. Possible value types are:
+// - nil,
+// - int64,
+// - uint64,
+// - bool,
+// - float32 and float64,
+// - string,
+// - slices of any of the above,
+// - maps of any of the above.
+func (d *Decoder) DecodeInterface() (interface{}, error) {
+	b, err := d.R.Peek(1)
+	if err != nil {
+		return nil, err
+	}
+	c := b[0]
+
+	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+		return d.DecodeInt64()
+	} else if c >= fixMapLowCode && c <= fixMapHighCode {
+		return d.DecodeMap()
+	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
+		return d.DecodeSlice()
+	} else if c >= fixRawLowCode && c <= fixRawHighCode {
+		return d.DecodeString()
+	}
+
+	switch c {
+	case nilCode:
+		_, err := d.R.ReadByte()
+		return nil, err
+	case falseCode, trueCode:
+		return d.DecodeBool()
+	case floatCode:
+		return d.DecodeFloat32()
+	case doubleCode:
+		return d.DecodeFloat64()
+	case uint8Code, uint16Code, uint32Code, uint64Code:
+		return d.DecodeUint64()
+	case int8Code, int16Code, int32Code, int64Code:
+		return d.DecodeInt64()
+	case raw16Code, raw32Code:
+		return d.DecodeString()
+	case array16Code, array32Code:
+		return d.DecodeSlice()
+	case map16Code, map32Code:
+		return d.DecodeMap()
+	}
+
+	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)
 }
