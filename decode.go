@@ -704,14 +704,14 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 }
 
 // Decodes value into interface. Possible value types are:
-// - nil,
-// - int64,
-// - uint64,
-// - bool,
-// - float32 and float64,
-// - string,
-// - slices of any of the above,
-// - maps of any of the above.
+//   - nil,
+//   - int64,
+//   - uint64,
+//   - bool,
+//   - float32 and float64,
+//   - string,
+//   - slices of any of the above,
+//   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
 	b, err := d.R.Peek(1)
 	if err != nil {

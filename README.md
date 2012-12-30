@@ -8,7 +8,7 @@ Supports:
 - Extensions for user defined types.
 - Tags.
 
-API docs: http://go.pkgdoc.org/github.com/vmihailenco/msgpack
+API docs: http://godoc.org/github.com/vmihailenco/msgpack
 
 Installation
 ------------
