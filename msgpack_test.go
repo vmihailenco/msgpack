@@ -542,14 +542,31 @@ func (t *MsgpackTest) BenchmarkBytes(c *C) {
 }
 
 func (t *MsgpackTest) BenchmarkMapStringString(c *C) {
-	in := make(map[string]string)
-	in["hello"] = "world"
-	in["foo"] = "bar"
+	in := map[string]string{
+		"hello": "world",
+		"foo":   "bar",
+	}
 	var out map[string]string
 
 	for i := 0; i < c.N; i++ {
 		t.enc.Encode(in)
 		t.dec.Decode(&out)
+	}
+
+	c.Assert(t.buf.Len(), Equals, 0)
+}
+
+func (t *MsgpackTest) BenchmarkPointerToMapStringString(c *C) {
+	in := map[string]string{
+		"hello": "world",
+		"foo":   "bar",
+	}
+	var out map[string]string
+	out2 := &out
+
+	for i := 0; i < c.N; i++ {
+		t.enc.Encode(in)
+		t.dec.Decode(&out2)
 	}
 
 	c.Assert(t.buf.Len(), Equals, 0)
@@ -576,6 +593,19 @@ func (t *MsgpackTest) BenchmarkStringSlice(c *C) {
 	for i := 0; i < c.N; i++ {
 		t.enc.Encode(in)
 		t.dec.Decode(&out)
+	}
+
+	c.Assert(t.buf.Len(), Equals, 0)
+}
+
+func (t *MsgpackTest) BenchmarkPointerToStringSlice(c *C) {
+	in := []string{"hello", "world"}
+	var out []string
+	out2 := &out
+
+	for i := 0; i < c.N; i++ {
+		t.enc.Encode(in)
+		t.dec.Decode(&out2)
 	}
 
 	c.Assert(t.buf.Len(), Equals, 0)

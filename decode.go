@@ -95,7 +95,7 @@ func (d *Decoder) Decode(iv interface{}) error {
 	case *[]string:
 		return d.decodeIntoStrings(v)
 	case *map[string]string:
-		*v, err = d.decodeMapStringString()
+		return d.decodeIntoMapStringString(v)
 		return err
 	case Coder:
 		return v.DecodeMsgpack(d.R)

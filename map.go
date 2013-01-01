@@ -49,26 +49,30 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
 }
 
-func (d *Decoder) decodeMapStringString() (map[string]string, error) {
+func (d *Decoder) decodeIntoMapStringString(mp *map[string]string) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	m := make(map[string]string, n)
+	m := *mp
+	if m == nil {
+		m = make(map[string]string, n)
+	}
+
 	for i := 0; i < n; i++ {
 		mk, err := d.DecodeString()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		mv, err := d.DecodeString()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		m[mk] = mv
 	}
 
-	return m, nil
+	return nil
 }
 
 func (d *Decoder) DecodeMap() (interface{}, error) {
