@@ -122,16 +122,14 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 }
 
 func (d *Decoder) sliceValue(v reflect.Value) error {
-	switch vv := v.Interface().(type) {
-	case *[]byte:
+	switch v.Type().Elem().Kind() {
+	case reflect.Uint8:
 		b, err := d.DecodeBytes()
 		if err != nil {
 			return err
 		}
-		*vv = b
+		v.SetBytes(b)
 		return nil
-	case *[]string:
-		return d.decodeIntoStrings(vv)
 	}
 
 	n, err := d.DecodeSliceLen()
