@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-func (d *Decoder) bytesLen() (int, error) {
+func (d *Decoder) DecodeBytesLen() (int, error) {
 	c, err := d.R.ReadByte()
 	if err != nil {
 		return 0, err
@@ -27,7 +27,7 @@ func (d *Decoder) bytesLen() (int, error) {
 }
 
 func (d *Decoder) DecodeBytes() ([]byte, error) {
-	n, err := d.bytesLen()
+	n, err := d.DecodeBytesLen()
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (d *Decoder) stringValue(value reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) sliceLen() (int, error) {
+func (d *Decoder) DecodeSliceLen() (int, error) {
 	c, err := d.R.ReadByte()
 	if err != nil {
 		return 0, err
@@ -87,7 +87,7 @@ func (d *Decoder) sliceLen() (int, error) {
 }
 
 func (d *Decoder) decodeIntoStrings(sp *[]string) error {
-	n, err := d.sliceLen()
+	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 }
 
 func (d *Decoder) DecodeSlice() ([]interface{}, error) {
-	n, err := d.sliceLen()
+	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 		return d.decodeIntoStrings(vv)
 	}
 
-	n, err := d.sliceLen()
+	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err
 	}

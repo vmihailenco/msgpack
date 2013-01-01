@@ -3,32 +3,20 @@ package msgpack
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"reflect"
 )
 
+var (
+	ErrNilPtr = errors.New("msgpack: non-nil pointer expected")
+)
+
 func Unmarshal(data []byte, v interface{}) error {
 	buf := bytes.NewBuffer(data)
 	return NewDecoder(buf).Decode(v)
-}
-
-// An InvalidUnmarshalError describes an invalid argument passed to Unmarshal.
-// (The argument to Unmarshal must be a non-nil pointer.)
-type InvalidUnmarshalError struct {
-	Type reflect.Type
-}
-
-func (e *InvalidUnmarshalError) Error() string {
-	if e.Type == nil {
-		return "msgpack: Decode(nil)"
-	}
-
-	if e.Type.Kind() != reflect.Ptr {
-		return "msgpack: Decode(non-pointer " + e.Type.String() + ")"
-	}
-	return "msgpack: Decode(nil " + e.Type.String() + ")"
 }
 
 type BufferedReader interface {
@@ -40,6 +28,7 @@ type BufferedReader interface {
 
 type Decoder struct {
 	R                  BufferedReader
+	DecodeMapFunc      func(*Decoder) (interface{}, error)
 	b1, b2, b3, b4, b8 []byte
 }
 
@@ -50,11 +39,12 @@ func NewDecoder(reader io.Reader) *Decoder {
 		r = bufio.NewReader(reader)
 	}
 	return &Decoder{
-		R:  r,
-		b1: b[:1],
-		b2: b[:2],
-		b4: b[:4],
-		b8: b[:8],
+		R:             r,
+		DecodeMapFunc: DecodeMap,
+		b1:            b[:1],
+		b2:            b[:2],
+		b4:            b[:4],
+		b8:            b[:8],
 	}
 }
 
@@ -111,11 +101,19 @@ func (d *Decoder) Decode(iv interface{}) error {
 	case *map[string]string:
 		*v, err = d.decodeMapStringString()
 		return err
+	case Coder:
+		return v.DecodeMsgpack(d.R)
 	}
 
 	v := reflect.ValueOf(iv)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return &InvalidUnmarshalError{reflect.TypeOf(v)}
+	if !v.IsValid() {
+		return errors.New("msgpack: Decode(" + v.String() + ")")
+	}
+	if v.Kind() != reflect.Ptr {
+		return errors.New("msgpack: pointer expected")
+	}
+	if v.IsNil() {
+		return ErrNilPtr
 	}
 	return d.DecodeValue(v.Elem())
 }
@@ -165,7 +163,7 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		return d.structValue(v)
 	case reflect.Ptr:
 		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
+			return ErrNilPtr
 		}
 		if dec, ok := typDecMap[v.Type()]; ok {
 			return dec(d, v)
@@ -432,7 +430,7 @@ func (d *Decoder) structValue(v reflect.Value) error {
 			continue
 		}
 
-		if err := d.DecodeValue(v.FieldByIndex(f.idx)); err != nil {
+		if err := d.DecodeValue(v.FieldByIndex(f.idx)); err != nil && err != ErrNilPtr {
 			return fmt.Errorf("msgpack: can't decode value for field %q: %v", name, err)
 		}
 	}

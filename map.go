@@ -9,7 +9,28 @@ func isBytes(v reflect.Value) bool {
 	return v.Elem().Kind() == reflect.Slice && v.Elem().Type().Elem().Kind() == reflect.Uint8
 }
 
-func (d *Decoder) mapLen() (int, error) {
+func DecodeMap(d *Decoder) (interface{}, error) {
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[interface{}]interface{}, n)
+	for i := 0; i < n; i++ {
+		mk, err := d.DecodeInterface()
+		if err != nil {
+			return nil, err
+		}
+		mv, err := d.DecodeInterface()
+		if err != nil {
+			return nil, err
+		}
+		m[mk] = mv
+	}
+	return m, nil
+}
+
+func (d *Decoder) DecodeMapLen() (int, error) {
 	c, err := d.R.ReadByte()
 	if err != nil {
 		return 0, err
@@ -29,7 +50,7 @@ func (d *Decoder) mapLen() (int, error) {
 }
 
 func (d *Decoder) decodeMapStringString() (map[string]string, error) {
-	n, err := d.mapLen()
+	n, err := d.DecodeMapLen()
 	if err != nil {
 		return nil, err
 	}
@@ -50,37 +71,12 @@ func (d *Decoder) decodeMapStringString() (map[string]string, error) {
 	return m, nil
 }
 
-func (d *Decoder) DecodeMap() (map[interface{}]interface{}, error) {
-	n, err := d.mapLen()
-	if err != nil {
-		return nil, err
-	}
-
-	m := make(map[interface{}]interface{}, n)
-	for i := 0; i < n; i++ {
-		mk, err := d.DecodeInterface()
-		if err != nil {
-			return nil, err
-		}
-		if b, ok := mk.([]byte); ok {
-			mk = string(b)
-		}
-
-		mv, err := d.DecodeInterface()
-		if err != nil {
-			return nil, err
-		}
-		if b, ok := mv.([]byte); ok {
-			mv = string(b)
-		}
-
-		m[mk] = mv
-	}
-	return m, nil
+func (d *Decoder) DecodeMap() (interface{}, error) {
+	return d.DecodeMapFunc(d)
 }
 
 func (d *Decoder) mapValue(v reflect.Value) error {
-	n, err := d.mapLen()
+	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err
 	}

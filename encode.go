@@ -64,6 +64,8 @@ func (e *Encoder) Encode(v interface{}) error {
 		return e.encodeStringSlice(value)
 	case map[string]string:
 		return e.encodeMapStringString(value)
+	case Coder:
+		return value.EncodeMsgpack(e.W)
 	}
 	return e.EncodeValue(reflect.ValueOf(v))
 }
