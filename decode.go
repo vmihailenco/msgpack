@@ -10,10 +10,6 @@ import (
 	"reflect"
 )
 
-var (
-	ErrNilPtr = errors.New("msgpack: non-nil pointer expected")
-)
-
 func Unmarshal(data []byte, v interface{}) error {
 	buf := bytes.NewBuffer(data)
 	return NewDecoder(buf).Decode(v)
@@ -112,9 +108,6 @@ func (d *Decoder) Decode(iv interface{}) error {
 	if v.Kind() != reflect.Ptr {
 		return errors.New("msgpack: pointer expected")
 	}
-	if v.IsNil() {
-		return ErrNilPtr
-	}
 	return d.DecodeValue(v.Elem())
 }
 
@@ -163,7 +156,7 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		return d.structValue(v)
 	case reflect.Ptr:
 		if v.IsNil() {
-			return ErrNilPtr
+			v.Set(reflect.New(v.Type().Elem()))
 		}
 		if dec, ok := typDecMap[v.Type()]; ok {
 			return dec(d, v)
@@ -430,7 +423,7 @@ func (d *Decoder) structValue(v reflect.Value) error {
 			continue
 		}
 
-		if err := d.DecodeValue(v.FieldByIndex(f.idx)); err != nil && err != ErrNilPtr {
+		if err := d.DecodeValue(v.FieldByIndex(f.idx)); err != nil {
 			return fmt.Errorf("msgpack: can't decode value for field %q: %v", name, err)
 		}
 	}
