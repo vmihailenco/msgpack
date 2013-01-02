@@ -55,9 +55,11 @@ func (d *Decoder) decodeIntoMapStringString(mp *map[string]string) error {
 		return err
 	}
 
+	// TODO(vmihailenco): simpler way?
 	m := *mp
 	if m == nil {
-		m = make(map[string]string, n)
+		*mp = make(map[string]string, n)
+		m = *mp
 	}
 
 	for i := 0; i < n; i++ {

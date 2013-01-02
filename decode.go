@@ -96,8 +96,8 @@ func (d *Decoder) Decode(iv interface{}) error {
 		return d.decodeIntoStrings(v)
 	case *map[string]string:
 		return d.decodeIntoMapStringString(v)
-		return err
 	case Coder:
+		// TODO(vmihailenco): fix handling pointer to nil struct
 		return v.DecodeMsgpack(d.R)
 	}
 
