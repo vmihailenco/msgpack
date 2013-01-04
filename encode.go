@@ -37,21 +37,9 @@ func (e *Encoder) Encode(iv interface{}) error {
 		return e.EncodeBytes(v)
 	case int:
 		return e.EncodeInt64(int64(v))
-	case int8:
-		return e.EncodeInt64(int64(v))
-	case int16:
-		return e.EncodeInt64(int64(v))
-	case int32:
-		return e.EncodeInt64(int64(v))
 	case int64:
 		return e.EncodeInt64(v)
 	case uint:
-		return e.EncodeUint64(uint64(v))
-	case uint8:
-		return e.EncodeUint64(uint64(v))
-	case uint16:
-		return e.EncodeUint64(uint64(v))
-	case uint32:
 		return e.EncodeUint64(uint64(v))
 	case uint64:
 		return e.EncodeUint64(v)
