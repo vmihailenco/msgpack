@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"time"
 )
 
 func Marshal(v interface{}) ([]byte, error) {
@@ -24,50 +25,54 @@ func NewEncoder(writer io.Writer) *Encoder {
 	}
 }
 
-func (e *Encoder) Encode(v interface{}) error {
-	if v == nil {
+func (e *Encoder) Encode(iv interface{}) error {
+	if iv == nil {
 		return e.EncodeNil()
 	}
 
-	switch value := v.(type) {
+	switch v := iv.(type) {
 	case string:
-		return e.EncodeBytes([]byte(value))
+		return e.EncodeBytes([]byte(v))
 	case []byte:
-		return e.EncodeBytes(value)
+		return e.EncodeBytes(v)
 	case int:
-		return e.EncodeInt64(int64(value))
+		return e.EncodeInt64(int64(v))
 	case int8:
-		return e.EncodeInt64(int64(value))
+		return e.EncodeInt64(int64(v))
 	case int16:
-		return e.EncodeInt64(int64(value))
+		return e.EncodeInt64(int64(v))
 	case int32:
-		return e.EncodeInt64(int64(value))
+		return e.EncodeInt64(int64(v))
 	case int64:
-		return e.EncodeInt64(value)
+		return e.EncodeInt64(v)
 	case uint:
-		return e.EncodeUint64(uint64(value))
+		return e.EncodeUint64(uint64(v))
 	case uint8:
-		return e.EncodeUint64(uint64(value))
+		return e.EncodeUint64(uint64(v))
 	case uint16:
-		return e.EncodeUint64(uint64(value))
+		return e.EncodeUint64(uint64(v))
 	case uint32:
-		return e.EncodeUint64(uint64(value))
+		return e.EncodeUint64(uint64(v))
 	case uint64:
-		return e.EncodeUint64(value)
+		return e.EncodeUint64(v)
 	case bool:
-		return e.EncodeBool(value)
+		return e.EncodeBool(v)
 	case float32:
-		return e.EncodeFloat32(value)
+		return e.EncodeFloat32(v)
 	case float64:
-		return e.EncodeFloat64(value)
+		return e.EncodeFloat64(v)
 	case []string:
-		return e.encodeStringSlice(value)
+		return e.encodeStringSlice(v)
 	case map[string]string:
-		return e.encodeMapStringString(value)
+		return e.encodeMapStringString(v)
+	case time.Duration:
+		return e.EncodeInt64(int64(v))
+	case time.Time:
+		return e.EncodeTime(v)
 	case Coder:
-		return value.EncodeMsgpack(e.W)
+		return v.EncodeMsgpack(e.W)
 	}
-	return e.EncodeValue(reflect.ValueOf(v))
+	return e.EncodeValue(reflect.ValueOf(iv))
 }
 
 func (e *Encoder) EncodeMulti(values ...interface{}) error {

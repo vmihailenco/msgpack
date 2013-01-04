@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"time"
 )
 
 func Unmarshal(data []byte, v interface{}) error {
@@ -96,6 +97,13 @@ func (d *Decoder) Decode(iv interface{}) error {
 		return d.decodeIntoStrings(v)
 	case *map[string]string:
 		return d.decodeIntoMapStringString(v)
+	case *time.Duration:
+		vv, err := d.DecodeInt64()
+		*v = time.Duration(vv)
+		return err
+	case *time.Time:
+		*v, err = d.DecodeTime()
+		return err
 	case Coder:
 		// TODO(vmihailenco): fix handling pointer to nil struct
 		return v.DecodeMsgpack(d.R)

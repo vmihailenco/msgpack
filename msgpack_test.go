@@ -474,21 +474,6 @@ func (t *MsgpackTest) TestMapStringInterface2(c *C) {
 
 //------------------------------------------------------------------------------
 
-// func (t *MsgpackTest) BenchmarkMapElements(c *C) {
-// 	in := map[string]interface{}{
-// 		"foo": "bar",
-// 		"hello": map[string]interface{}{
-// 			"foo": "bar",
-// 		},
-// 	}
-// 	for i := 0; i < c.N; i++ {
-// 		t.enc.Encode(in)
-// 		elements, _ := t.dec.DecodeMapElements()
-// 		mapStringInterface(elements)
-// 	}
-// 	c.Assert(t.buf.Len(), Equals, 0)
-// }
-
 func (t *MsgpackTest) BenchmarkBool(c *C) {
 	var v bool
 	for i := 0; i < c.N; i++ {
@@ -507,13 +492,33 @@ func (t *MsgpackTest) BenchmarkInt(c *C) {
 	c.Assert(t.buf.Len(), Equals, 0)
 }
 
+func (t *MsgpackTest) BenchmarkTime(c *C) {
+	in := time.Now()
+	var out time.Time
+	for i := 0; i < c.N; i++ {
+		t.enc.Encode(in)
+		t.dec.Decode(&out)
+	}
+	c.Assert(t.buf.Len(), Equals, 0)
+}
+
+func (t *MsgpackTest) BenchmarkDuration(c *C) {
+	in := time.Hour
+	var out time.Duration
+	for i := 0; i < c.N; i++ {
+		t.enc.Encode(in)
+		t.dec.Decode(&out)
+	}
+	c.Assert(t.buf.Len(), Equals, 0)
+}
+
 func (t *MsgpackTest) BenchmarkBinaryInt(c *C) {
 	buf := &bytes.Buffer{}
 
-	var v int32
+	var out int32
 	for i := 0; i < c.N; i++ {
 		binary.Write(buf, binary.BigEndian, int32(1))
-		binary.Read(buf, binary.BigEndian, &v)
+		binary.Read(buf, binary.BigEndian, &out)
 	}
 	c.Assert(buf.Len(), Equals, 0)
 }

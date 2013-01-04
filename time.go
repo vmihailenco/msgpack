@@ -13,19 +13,14 @@ func init() {
 	Register(timeType, encodeTime, decodeTime)
 }
 
-func EncodeTime(e *Encoder, tm time.Time) error {
+func (e *Encoder) EncodeTime(tm time.Time) error {
 	if err := e.EncodeInt64(tm.Unix()); err != nil {
 		return err
 	}
 	return e.EncodeInt(tm.Nanosecond())
 }
 
-func encodeTime(e *Encoder, v reflect.Value) error {
-	tm := v.Interface().(time.Time)
-	return EncodeTime(e, tm)
-}
-
-func DecodeTime(d *Decoder) (time.Time, error) {
+func (d *Decoder) DecodeTime() (time.Time, error) {
 	sec, err := d.DecodeInt64()
 	if err != nil {
 		return time.Time{}, err
@@ -37,8 +32,13 @@ func DecodeTime(d *Decoder) (time.Time, error) {
 	return time.Unix(sec, nsec), nil
 }
 
+func encodeTime(e *Encoder, v reflect.Value) error {
+	tm := v.Interface().(time.Time)
+	return e.EncodeTime(tm)
+}
+
 func decodeTime(d *Decoder, v reflect.Value) error {
-	tm, err := DecodeTime(d)
+	tm, err := d.DecodeTime()
 	if err != nil {
 		return err
 	}
