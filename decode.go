@@ -158,16 +158,24 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 	case reflect.Map:
 		return d.mapValue(v)
 	case reflect.Struct:
-		if dec, ok := typDecMap[v.Type()]; ok {
+		typ := v.Type()
+		if dec, ok := typDecMap[typ]; ok {
 			return dec(d, v)
+		}
+		if typ.Implements(coderType) {
+			return v.Interface().(Coder).DecodeMsgpack(d.R)
 		}
 		return d.structValue(v)
 	case reflect.Ptr:
+		typ := v.Type()
 		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
+			v.Set(reflect.New(typ.Elem()))
 		}
-		if dec, ok := typDecMap[v.Type()]; ok {
+		if dec, ok := typDecMap[typ]; ok {
 			return dec(d, v)
+		}
+		if typ.Implements(coderType) {
+			return v.Interface().(Coder).DecodeMsgpack(d.R)
 		}
 		return d.DecodeValue(v.Elem())
 	case reflect.Interface:

@@ -347,11 +347,22 @@ func (s *coderStruct) DecodeMsgpack(r io.Reader) error {
 	return err
 }
 
+var _ msgpack.Coder = &coderStruct{}
+
 func (t *MsgpackTest) TestCoder(c *C) {
 	in := &coderStruct{name: "hello"}
 	var out coderStruct
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Name(), Equals, "hello")
+}
+
+func (t *MsgpackTest) TestPtrToCoder(c *C) {
+	in := &coderStruct{name: "hello"}
+	var out coderStruct
+	out2 := &out
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out2), IsNil)
 	c.Assert(out.Name(), Equals, "hello")
 }
 

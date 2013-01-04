@@ -111,8 +111,12 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		}
 		return e.EncodeValue(v.Elem())
 	case reflect.Struct:
-		if enc, ok := typEncMap[v.Type()]; ok {
+		typ := v.Type()
+		if enc, ok := typEncMap[typ]; ok {
 			return enc(e, v)
+		}
+		if typ.Implements(coderType) {
+			return v.Interface().(Coder).EncodeMsgpack(e.W)
 		}
 		return e.encodeStruct(v)
 	default:
