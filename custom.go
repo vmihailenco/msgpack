@@ -5,15 +5,15 @@ import (
 )
 
 var (
-	typEncMap = make(map[reflect.Type]encoder)
-	typDecMap = make(map[reflect.Type]decoder)
+	typEncMap = make(map[reflect.Type]encoderFunc)
+	typDecMap = make(map[reflect.Type]decoderFunc)
 )
 
-type encoder func(*Encoder, reflect.Value) error
+type encoderFunc func(*Encoder, reflect.Value) error
 
-type decoder func(*Decoder, reflect.Value) error
+type decoderFunc func(*Decoder, reflect.Value) error
 
-func Register(typ reflect.Type, enc encoder, dec decoder) {
+func Register(typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 	typEncMap[typ] = enc
 	typDecMap[typ] = dec
 }

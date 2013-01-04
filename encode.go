@@ -57,7 +57,7 @@ func (e *Encoder) Encode(iv interface{}) error {
 		return e.EncodeInt64(int64(v))
 	case time.Time:
 		return e.EncodeTime(v)
-	case Coder:
+	case encoder:
 		return v.EncodeMsgpack(e.W)
 	}
 	return e.EncodeValue(reflect.ValueOf(iv))
@@ -97,14 +97,17 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		if enc, ok := typEncMap[v.Type()]; ok {
 			return enc(e, v)
 		}
+		if enc, ok := v.Interface().(encoder); ok {
+			return enc.EncodeMsgpack(e.W)
+		}
 		return e.EncodeValue(v.Elem())
 	case reflect.Struct:
 		typ := v.Type()
 		if enc, ok := typEncMap[typ]; ok {
 			return enc(e, v)
 		}
-		if typ.Implements(coderType) {
-			return v.Interface().(Coder).EncodeMsgpack(e.W)
+		if enc, ok := v.Interface().(encoder); ok {
+			return enc.EncodeMsgpack(e.W)
 		}
 		return e.encodeStruct(v)
 	default:

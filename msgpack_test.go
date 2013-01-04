@@ -333,13 +333,11 @@ func (s *coderStruct) Name() string {
 }
 
 func (s *coderStruct) EncodeMsgpack(w io.Writer) error {
-	return msgpack.NewEncoder(w).EncodeString(s.name)
+	return msgpack.NewEncoder(w).EncodeMulti(s.name)
 }
 
 func (s *coderStruct) DecodeMsgpack(r io.Reader) error {
-	var err error
-	s.name, err = msgpack.NewDecoder(r).DecodeString()
-	return err
+	return msgpack.NewDecoder(r).DecodeMulti(&s.name)
 }
 
 var _ msgpack.Coder = &coderStruct{}
@@ -359,6 +357,15 @@ func (t *MsgpackTest) TestNilCoder(c *C) {
 	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(out.Name(), Equals, "hello")
 }
+
+// func (t *MsgpackTest) TestNilCoderValue(c *C) {
+// 	in := &coderStruct{name: "hello"}
+// 	var out *coderStruct
+// 	v := reflect.ValueOf(out)
+// 	c.Assert(t.enc.Encode(in), IsNil)
+// 	c.Assert(t.dec.DecodeValue(v), IsNil)
+// 	c.Assert(out.Name(), Equals, "hello")
+// }
 
 func (t *MsgpackTest) TestPtrToCoder(c *C) {
 	in := &coderStruct{name: "hello"}

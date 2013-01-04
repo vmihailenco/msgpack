@@ -2,14 +2,17 @@ package msgpack
 
 import (
 	"io"
-	"reflect"
 )
 
-var (
-	coderType = reflect.TypeOf((*Coder)(nil)).Elem()
-)
+type encoder interface {
+	EncodeMsgpack(io.Writer) error
+}
+
+type decoder interface {
+	DecodeMsgpack(io.Reader) error
+}
 
 type Coder interface {
-	EncodeMsgpack(io.Writer) error
-	DecodeMsgpack(io.Reader) error
+	encoder
+	decoder
 }
