@@ -104,9 +104,9 @@ func (d *Decoder) Decode(iv interface{}) error {
 	case *time.Time:
 		*v, err = d.DecodeTime()
 		return err
-	case Coder:
-		// TODO(vmihailenco): fix handling pointer to nil struct
-		return v.DecodeMsgpack(d.R)
+		// case Coder:
+		// 	// TODO(vmihailenco): fix handling pointer to nil struct
+		// 	return v.DecodeMsgpack(d.R)
 	}
 
 	v := reflect.ValueOf(iv)
@@ -116,7 +116,7 @@ func (d *Decoder) Decode(iv interface{}) error {
 	if v.Kind() != reflect.Ptr {
 		return errors.New("msgpack: pointer expected")
 	}
-	return d.DecodeValue(v.Elem())
+	return d.DecodeValue(v)
 }
 
 func (d *Decoder) DecodeMulti(values ...interface{}) error {
@@ -141,6 +141,18 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 	}
 
 	switch v.Kind() {
+	case reflect.Ptr:
+		typ := v.Type()
+		if v.IsNil() {
+			v.Set(reflect.New(typ.Elem()))
+		}
+		if dec, ok := typDecMap[typ]; ok {
+			return dec(d, v)
+		}
+		if typ.Implements(coderType) {
+			return v.Interface().(Coder).DecodeMsgpack(d.R)
+		}
+		return d.DecodeValue(v.Elem())
 	case reflect.Bool:
 		return d.boolValue(v)
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
@@ -166,18 +178,6 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 			return v.Interface().(Coder).DecodeMsgpack(d.R)
 		}
 		return d.structValue(v)
-	case reflect.Ptr:
-		typ := v.Type()
-		if v.IsNil() {
-			v.Set(reflect.New(typ.Elem()))
-		}
-		if dec, ok := typDecMap[typ]; ok {
-			return dec(d, v)
-		}
-		if typ.Implements(coderType) {
-			return v.Interface().(Coder).DecodeMsgpack(d.R)
-		}
-		return d.DecodeValue(v.Elem())
 	case reflect.Interface:
 		if v.IsNil() {
 			return d.interfaceValue(v)

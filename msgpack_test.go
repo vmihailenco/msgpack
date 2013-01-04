@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
-	"errors"
 	"io"
 	"math"
 	"testing"
@@ -338,10 +337,6 @@ func (s *coderStruct) EncodeMsgpack(w io.Writer) error {
 }
 
 func (s *coderStruct) DecodeMsgpack(r io.Reader) error {
-	if s == nil {
-		return errors.New("coderStruct is nil")
-	}
-
 	var err error
 	s.name, err = msgpack.NewDecoder(r).DecodeString()
 	return err
@@ -352,6 +347,14 @@ var _ msgpack.Coder = &coderStruct{}
 func (t *MsgpackTest) TestCoder(c *C) {
 	in := &coderStruct{name: "hello"}
 	var out coderStruct
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Name(), Equals, "hello")
+}
+
+func (t *MsgpackTest) TestNilCoder(c *C) {
+	in := &coderStruct{name: "hello"}
+	var out *coderStruct
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(out.Name(), Equals, "hello")
