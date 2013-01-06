@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"encoding/csv"
 	"encoding/gob"
 	"encoding/json"
 	"io"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -763,5 +765,41 @@ func (t *MsgpackTest) BenchmarkGOBStruct(c *C) {
 
 		enc.Encode(in)
 		dec.Decode(out)
+	}
+}
+
+func (t *MsgpackTest) BenchmarkCSV(c *C) {
+	for i := 0; i < c.N; i++ {
+		record := []string{strconv.FormatInt(int64(1), 10), "hello", "world"}
+
+		buf := &bytes.Buffer{}
+		r := csv.NewReader(buf)
+		w := csv.NewWriter(buf)
+
+		if err := w.Write(record); err != nil {
+			panic(err)
+		}
+		w.Flush()
+		if _, err := r.Read(); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (t *MsgpackTest) BenchmarkCSVMsgpack(c *C) {
+	for i := 0; i < c.N; i++ {
+		var num int
+		var hello, world string
+
+		buf := &bytes.Buffer{}
+		enc := msgpack.NewEncoder(buf)
+		dec := msgpack.NewDecoder(buf)
+
+		if err := enc.EncodeMulti(1, "hello", "world"); err != nil {
+			panic(err)
+		}
+		if err := dec.DecodeMulti(&num, &hello, &world); err != nil {
+			panic(err)
+		}
 	}
 }
