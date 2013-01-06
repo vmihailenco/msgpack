@@ -436,8 +436,8 @@ func (d *Decoder) structValue(v reflect.Value) error {
 			continue
 		}
 
-		if err := d.DecodeValue(v.FieldByIndex(f.idx)); err != nil {
-			return fmt.Errorf("msgpack: can't decode value for field %q: %v", name, err)
+		if err := f.DecodeValue(d, v); err != nil {
+			return err
 		}
 	}
 	return nil

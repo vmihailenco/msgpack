@@ -434,11 +434,11 @@ func (e *Encoder) encodeStruct(value reflect.Value) error {
 			return err
 		}
 	}
-	for _, field := range fields {
-		if err := e.EncodeBytes([]byte(field.name)); err != nil {
+	for _, f := range fields {
+		if err := e.EncodeBytes([]byte(f.Name())); err != nil {
 			return err
 		}
-		if err := e.EncodeValue(value.FieldByIndex(field.idx)); err != nil {
+		if err := f.EncodeValue(e, value); err != nil {
 			return err
 		}
 	}

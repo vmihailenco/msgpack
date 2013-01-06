@@ -122,7 +122,8 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 }
 
 func (d *Decoder) sliceValue(v reflect.Value) error {
-	switch v.Type().Elem().Kind() {
+	elemType := v.Type().Elem()
+	switch elemType.Kind() {
 	case reflect.Uint8:
 		b, err := d.DecodeBytes()
 		if err != nil {
@@ -141,13 +142,11 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 		v.Set(reflect.MakeSlice(v.Type(), n, n))
 	}
 
-	elemType := v.Type().Elem()
 	for i := 0; i < n; i++ {
-		elem := reflect.New(elemType).Elem()
-		if err := d.DecodeValue(elem); err != nil {
+		sv := v.Index(i)
+		if err := d.DecodeValue(sv); err != nil {
 			return err
 		}
-		v.Index(i).Set(elem)
 	}
 
 	return nil
