@@ -35,6 +35,9 @@ func DecodeDatastoreKey(d *Decoder) (*ds.Key, error) {
 	if err != nil {
 		return nil, err
 	}
+	if v == "" {
+		return nil, nil
+	}
 	return ds.DecodeKey(v)
 }
 
