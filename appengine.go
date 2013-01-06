@@ -19,6 +19,9 @@ func init() {
 }
 
 func EncodeDatastoreKey(e *Encoder, key *ds.Key) error {
+	if key == nil {
+		return e.EncodeNil()
+	}
 	return e.EncodeString(key.Encode())
 }
 

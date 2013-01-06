@@ -30,14 +30,14 @@ func (f *defaultFieldInfo) Name() string {
 	return f.name
 }
 
-func (f *defaultFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *defaultFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeValue(fv)
+	return e.EncodeValue(fv)
 }
 
-func (f *defaultFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *defaultFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.DecodeValue(fv)
+	return d.DecodeValue(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -46,14 +46,14 @@ type boolFieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *boolFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *boolFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeBool(fv.Bool())
+	return e.EncodeBool(fv.Bool())
 }
 
-func (f *boolFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *boolFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.boolValue(fv)
+	return d.boolValue(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -62,14 +62,14 @@ type float32FieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *float32FieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *float32FieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeFloat32(float32(fv.Float()))
+	return e.EncodeFloat32(float32(fv.Float()))
 }
 
-func (f *float32FieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *float32FieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.float32Value(fv)
+	return d.float32Value(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -78,14 +78,14 @@ type float64FieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *float64FieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *float64FieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeFloat64(fv.Float())
+	return e.EncodeFloat64(fv.Float())
 }
 
-func (f *float64FieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *float64FieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.float64Value(fv)
+	return d.float64Value(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -94,14 +94,14 @@ type stringFieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *stringFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *stringFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeString(fv.String())
+	return e.EncodeString(fv.String())
 }
 
-func (f *stringFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *stringFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.stringValue(fv)
+	return d.stringValue(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -110,14 +110,14 @@ type bytesFieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *bytesFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *bytesFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeBytes(fv.Bytes())
+	return e.EncodeBytes(fv.Bytes())
 }
 
-func (f *bytesFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *bytesFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.bytesValue(fv)
+	return d.bytesValue(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -126,14 +126,14 @@ type intFieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *intFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *intFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeInt64(fv.Int())
+	return e.EncodeInt64(fv.Int())
 }
 
-func (f *intFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *intFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.int64Value(fv)
+	return d.int64Value(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -142,14 +142,14 @@ type uintFieldInfo struct {
 	*defaultFieldInfo
 }
 
-func (f *uintFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *uintFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return enc.EncodeUint64(fv.Uint())
+	return e.EncodeUint64(fv.Uint())
 }
 
-func (f *uintFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *uintFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return dec.uint64Value(fv)
+	return d.uint64Value(fv)
 }
 
 //------------------------------------------------------------------------------
@@ -160,14 +160,14 @@ type customFieldInfo struct {
 	decode decoderFunc
 }
 
-func (f *customFieldInfo) EncodeValue(enc *Encoder, v reflect.Value) error {
+func (f *customFieldInfo) EncodeValue(e *Encoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return f.encode(enc, fv)
+	return f.encode(e, fv)
 }
 
-func (f *customFieldInfo) DecodeValue(dec *Decoder, v reflect.Value) error {
+func (f *customFieldInfo) DecodeValue(d *Decoder, v reflect.Value) error {
 	fv := v.FieldByIndex(f.idx)
-	return f.decode(dec, fv)
+	return f.decode(d, fv)
 }
 
 //------------------------------------------------------------------------------
