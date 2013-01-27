@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -14,6 +15,9 @@ func init() {
 }
 
 func (e *Encoder) EncodeTime(tm time.Time) error {
+	if err := e.W.WriteByte(0x92); err != nil {
+		return err
+	}
 	if err := e.EncodeInt64(tm.Unix()); err != nil {
 		return err
 	}
@@ -21,6 +25,14 @@ func (e *Encoder) EncodeTime(tm time.Time) error {
 }
 
 func (d *Decoder) DecodeTime() (time.Time, error) {
+	b, err := d.R.ReadByte()
+	if err != nil {
+		return time.Time{}, err
+	}
+	if b != 0x92 {
+		return time.Time{}, fmt.Errorf("msgpack: invalid code %x decoding time", b)
+	}
+
 	sec, err := d.DecodeInt64()
 	if err != nil {
 		return time.Time{}, err
