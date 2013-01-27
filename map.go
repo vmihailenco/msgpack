@@ -5,8 +5,63 @@ import (
 	"reflect"
 )
 
-func isBytes(v reflect.Value) bool {
-	return v.Elem().Kind() == reflect.Slice && v.Elem().Type().Elem().Kind() == reflect.Uint8
+func (e *Encoder) encodeMapLen(l int) error {
+	switch {
+	case l < 16:
+		if err := e.W.WriteByte(fixMapLowCode | byte(l)); err != nil {
+			return err
+		}
+	case l < 65536:
+		if err := e.write([]byte{
+			map16Code,
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	default:
+		if err := e.write([]byte{
+			map32Code,
+			byte(l >> 24),
+			byte(l >> 16),
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeMapStringString(m map[string]string) error {
+	if err := e.encodeMapLen(len(m)); err != nil {
+		return err
+	}
+	for mk, mv := range m {
+		if err := e.EncodeString(mk); err != nil {
+			return err
+		}
+		if err := e.EncodeString(mv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeMap(value reflect.Value) error {
+	if err := e.encodeMapLen(value.Len()); err != nil {
+		return err
+	}
+	keys := value.MapKeys()
+	for _, k := range keys {
+		if err := e.EncodeValue(k); err != nil {
+			return err
+		}
+		if err := e.EncodeValue(value.MapIndex(k)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func DecodeMap(d *Decoder) (interface{}, error) {

@@ -15,7 +15,7 @@ var (
 
 func init() {
 	Register(keyPtrType, encodeDatastoreKeyValue, decodeDatastoreKeyValue)
-	Register(cursorType, encodeDatastoreCursor, decodeDatastoreCursor)
+	Register(cursorType, encodeDatastoreCursorValue, decodeDatastoreCursorValue)
 }
 
 func EncodeDatastoreKey(e *Encoder, key *ds.Key) error {
@@ -50,12 +50,12 @@ func decodeDatastoreKeyValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func encodeDatastoreCursor(e *Encoder, v reflect.Value) error {
+func encodeDatastoreCursorValue(e *Encoder, v reflect.Value) error {
 	cursor := v.Interface().(ds.Cursor)
 	return e.Encode(cursor.String())
 }
 
-func decodeDatastoreCursor(d *Decoder, v reflect.Value) error {
+func decodeDatastoreCursorValue(d *Decoder, v reflect.Value) error {
 	s, err := d.DecodeString()
 	if err != nil {
 		return err

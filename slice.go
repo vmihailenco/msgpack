@@ -5,6 +5,95 @@ import (
 	"reflect"
 )
 
+func (e *Encoder) EncodeString(v string) error {
+	return e.EncodeBytes([]byte(v))
+}
+
+func (e *Encoder) EncodeBytes(v []byte) error {
+	switch l := len(v); {
+	case l < 32:
+		if err := e.W.WriteByte(fixRawLowCode | uint8(l)); err != nil {
+			return err
+		}
+	case l < 65536:
+		if err := e.write([]byte{
+			raw16Code,
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	default:
+		if err := e.write([]byte{
+			raw32Code,
+			byte(l >> 24),
+			byte(l >> 16),
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	}
+	return e.write(v)
+}
+
+func (e *Encoder) encodeSliceLen(l int) error {
+	switch {
+	case l < 16:
+		if err := e.W.WriteByte(fixArrayLowCode | byte(l)); err != nil {
+			return err
+		}
+	case l < 65536:
+		if err := e.write([]byte{array16Code, byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+	default:
+		if err := e.write([]byte{
+			array32Code,
+			byte(l >> 24),
+			byte(l >> 16),
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeStringSlice(s []string) error {
+	if err := e.encodeSliceLen(len(s)); err != nil {
+		return err
+	}
+	for _, v := range s {
+		if err := e.EncodeString(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeSlice(v reflect.Value) error {
+	switch v.Type().Elem().Kind() {
+	case reflect.Uint8:
+		return e.EncodeBytes(v.Bytes())
+	case reflect.String:
+		return e.encodeStringSlice(v.Interface().([]string))
+	}
+
+	l := v.Len()
+	if err := e.encodeSliceLen(l); err != nil {
+		return err
+	}
+	for i := 0; i < l; i++ {
+		if err := e.EncodeValue(v.Index(i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (d *Decoder) DecodeBytesLen() (int, error) {
 	c, err := d.R.ReadByte()
 	if err != nil {
@@ -138,7 +227,7 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 		return err
 	}
 
-	if v.IsNil() || v.Len() < n {
+	if v.Len() < n || (v.Kind() == reflect.Slice && v.IsNil()) {
 		v.Set(reflect.MakeSlice(v.Type(), n, n))
 	}
 
