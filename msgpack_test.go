@@ -445,6 +445,15 @@ func (t *MsgpackTest) TestSliceInterface(c *C) {
 	c.Assert(out[1], Equals, "hello")
 }
 
+func (t *MsgpackTest) TestSliceNil(c *C) {
+	in := [][]*int{nil}
+	var out [][]*int
+
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out, DeepEquals, in)
+}
+
 //------------------------------------------------------------------------------
 
 func (t *MsgpackTest) TestMapStringInterface(c *C) {
