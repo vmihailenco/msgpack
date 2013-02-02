@@ -16,7 +16,7 @@ func Unmarshal(data []byte, v interface{}) error {
 	return NewDecoder(buf).Decode(v)
 }
 
-type BufferedReader interface {
+type bufferedReader interface {
 	Read([]byte) (int, error)
 	Peek(int) ([]byte, error)
 	ReadByte() (byte, error)
@@ -24,14 +24,14 @@ type BufferedReader interface {
 }
 
 type Decoder struct {
-	R                  BufferedReader
+	R                  bufferedReader
 	DecodeMapFunc      func(*Decoder) (interface{}, error)
 	b1, b2, b3, b4, b8 []byte
 }
 
 func NewDecoder(reader io.Reader) *Decoder {
 	b := make([]byte, 8)
-	r, ok := reader.(BufferedReader)
+	r, ok := reader.(bufferedReader)
 	if !ok {
 		r = bufio.NewReader(reader)
 	}
