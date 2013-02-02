@@ -37,7 +37,7 @@ func NewDecoder(reader io.Reader) *Decoder {
 	}
 	return &Decoder{
 		R:             r,
-		DecodeMapFunc: DecodeMap,
+		DecodeMapFunc: decodeMap,
 		b1:            b[:1],
 		b2:            b[:2],
 		b4:            b[:4],

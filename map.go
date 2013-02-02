@@ -64,7 +64,7 @@ func (e *Encoder) encodeMap(value reflect.Value) error {
 	return nil
 }
 
-func DecodeMap(d *Decoder) (interface{}, error) {
+func decodeMap(d *Decoder) (interface{}, error) {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return nil, err
