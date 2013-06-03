@@ -16,6 +16,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 
 	msgpack2 "github.com/ugorji/go-msgpack"
+	"github.com/ugorji/go/codec"
 	. "launchpad.net/gocheck"
 )
 
@@ -300,6 +301,13 @@ func (t *MsgpackTest) TestMap(c *C) {
 	}
 }
 
+func (t *MsgpackTest) TestSlice(c *C) {
+	var out []string
+	c.Assert(t.enc.Encode([]string{"key1"}), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out, DeepEquals, []string{"key1"})
+}
+
 func (t *MsgpackTest) TestLargeBytesArray(c *C) {
 	in := make([]byte, 1e6)
 	for i := 0; i < 1e6; i++ {
@@ -572,6 +580,23 @@ func (t *MsgpackTest) BenchmarkIntMsgpack2(c *C) {
 	c.Assert(t.buf.Len(), Equals, 0)
 }
 
+func (t *MsgpackTest) BenchmarkIntMsgpack3(c *C) {
+	buf := &bytes.Buffer{}
+	enc := codec.NewEncoder(buf, &codec.MsgpackHandle{})
+	dec := codec.NewDecoder(buf, &codec.MsgpackHandle{})
+
+	var out int
+	for i := 0; i < c.N; i++ {
+		if err := enc.Encode(1); err != nil {
+			panic(err)
+		}
+		if err := dec.Decode(&out); err != nil {
+			panic(err)
+		}
+	}
+	c.Assert(t.buf.Len(), Equals, 0)
+}
+
 func (t *MsgpackTest) BenchmarkTime(c *C) {
 	in := time.Now()
 	var out time.Time
@@ -705,12 +730,12 @@ func (t *MsgpackTest) BenchmarkPointerToStringSlice(c *C) {
 }
 
 type benchmarkStruct struct {
-	Name      string
-	Colors    []string
-	Age       int
-	Data      []byte
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name string
+	// Colors    []string
+	// Age       int
+	// Data      []byte
+	// CreatedAt time.Time
+	// UpdatedAt time.Time
 }
 
 type benchmarkStruct2 struct {
@@ -750,12 +775,12 @@ var _ msgpack.Coder = &benchmarkStruct2{}
 
 func (t *MsgpackTest) structForBenchmark() *benchmarkStruct {
 	return &benchmarkStruct{
-		Name:      "Hello World",
-		Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
-		Age:       math.MaxInt32,
-		Data:      make([]byte, 1024),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Name: "Hello World",
+		//Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
+		//Age:       math.MaxInt32,
+		//Data:      make([]byte, 1024),
+		//CreatedAt: time.Now(),
+		//UpdatedAt: time.Now(),
 	}
 }
 
@@ -811,6 +836,23 @@ func (t *MsgpackTest) BenchmarkStructMsgpack2(c *C) {
 		buf := &bytes.Buffer{}
 		dec := msgpack2.NewDecoder(buf, nil)
 		enc := msgpack2.NewEncoder(buf)
+
+		if err := enc.Encode(in); err != nil {
+			panic(err)
+		}
+		if err := dec.Decode(out); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (t *MsgpackTest) BenchmarkStructMsgpack3(c *C) {
+	in := t.structForBenchmark()
+	out := &benchmarkStruct{}
+	for i := 0; i < c.N; i++ {
+		buf := &bytes.Buffer{}
+		enc := codec.NewEncoder(buf, &codec.MsgpackHandle{})
+		dec := codec.NewDecoder(buf, &codec.MsgpackHandle{})
 
 		if err := enc.Encode(in); err != nil {
 			panic(err)

@@ -12,6 +12,7 @@ import (
 type writer interface {
 	io.Writer
 	WriteByte(byte) error
+	WriteString(string) (int, error)
 }
 
 type writeByte struct {
@@ -27,6 +28,10 @@ func (w *writeByte) WriteByte(b byte) error {
 		return io.ErrShortWrite
 	}
 	return nil
+}
+
+func (w *writeByte) WriteString(s string) (int, error) {
+	return w.Write([]byte(s))
 }
 
 func Marshal(v interface{}) ([]byte, error) {
@@ -56,7 +61,7 @@ func (e *Encoder) Encode(iv interface{}) error {
 
 	switch v := iv.(type) {
 	case string:
-		return e.EncodeBytes([]byte(v))
+		return e.EncodeString(v)
 	case []byte:
 		return e.EncodeBytes(v)
 	case int:
@@ -99,7 +104,7 @@ func (e *Encoder) EncodeMulti(values ...interface{}) error {
 func (e *Encoder) EncodeValue(v reflect.Value) error {
 	switch v.Kind() {
 	case reflect.String:
-		return e.EncodeBytes([]byte(v.String()))
+		return e.EncodeString(v.String())
 	case reflect.Bool:
 		return e.EncodeBool(v.Bool())
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
@@ -235,7 +240,7 @@ func (e *Encoder) EncodeInt64(v int64) error {
 	case v < -32:
 		return e.write([]byte{int8Code, byte(v)})
 	default:
-		return e.write([]byte{byte(v)})
+		return e.W.WriteByte(byte(v))
 	}
 	panic("not reached")
 }
@@ -316,6 +321,17 @@ func (e *Encoder) write(data []byte) error {
 		return err
 	}
 	if n < len(data) {
+		return io.ErrShortWrite
+	}
+	return nil
+}
+
+func (e *Encoder) writeString(s string) error {
+	n, err := e.W.WriteString(s)
+	if err != nil {
+		return err
+	}
+	if n < len(s) {
 		return io.ErrShortWrite
 	}
 	return nil

@@ -5,12 +5,8 @@ import (
 	"reflect"
 )
 
-func (e *Encoder) EncodeString(v string) error {
-	return e.EncodeBytes([]byte(v))
-}
-
-func (e *Encoder) EncodeBytes(v []byte) error {
-	switch l := len(v); {
+func (e *Encoder) encodeBytesLen(l int) error {
+	switch {
 	case l < 32:
 		if err := e.W.WriteByte(fixRawLowCode | uint8(l)); err != nil {
 			return err
@@ -33,6 +29,20 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 		}); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (e *Encoder) EncodeString(v string) error {
+	if err := e.encodeBytesLen(len(v)); err != nil {
+		return err
+	}
+	return e.writeString(v)
+}
+
+func (e *Encoder) EncodeBytes(v []byte) error {
+	if err := e.encodeBytesLen(len(v)); err != nil {
+		return err
 	}
 	return e.write(v)
 }
@@ -195,6 +205,7 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 		}
 		s[i] = v
 	}
+	*sp = s
 	return nil
 }
 
