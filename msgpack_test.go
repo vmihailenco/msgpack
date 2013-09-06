@@ -238,12 +238,37 @@ func (t *MsgpackTest) TestBytes(c *C) {
 }
 
 func (t *MsgpackTest) TestNil(c *C) {
-	c.Assert(t.enc.Encode(nil), IsNil)
-	c.Assert(t.buf.Bytes(), DeepEquals, []byte{0xC0})
-	c.Assert(t.dec.Decode(new(string)), IsNil)
+	table := []interface{}{
+		(*string)(nil),
+		(*[]byte)(nil),
+		(*int)(nil),
+		(*int8)(nil),
+		(*int16)(nil),
+		(*int32)(nil),
+		(*int64)(nil),
+		(*uint)(nil),
+		(*uint8)(nil),
+		(*uint16)(nil),
+		(*uint32)(nil),
+		(*uint64)(nil),
+		(*bool)(nil),
+		(*float32)(nil),
+		(*float64)(nil),
+		(*[]string)(nil),
+		(*map[string]string)(nil),
+		(*time.Duration)(nil),
+		(*time.Time)(nil),
+		(*struct{})(nil),
+	}
+	for _, dst := range table {
+		c.Assert(t.enc.Encode(nil), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, []byte{0xC0})
+		c.Assert(t.dec.Decode(dst), IsNil)
+		c.Assert(dst, IsNil)
+	}
 }
 
-func (t *MsgpackTest) TestDecodingNil(c *C) {
+func (t *MsgpackTest) TestDecodeNil(c *C) {
 	c.Assert(t.dec.Decode(nil), NotNil)
 }
 
@@ -319,6 +344,15 @@ func (t *MsgpackTest) TestLargeBytesArray(c *C) {
 	var out []byte
 	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(in, DeepEquals, out)
+}
+
+func (t *MsgpackTest) TestStructNil(c *C) {
+	var dst *nameStruct
+
+	c.Assert(t.enc.Encode(nameStruct{Name: "foo"}), IsNil)
+	c.Assert(t.dec.Decode(&dst), IsNil)
+	c.Assert(dst, Not(IsNil))
+	c.Assert(dst.Name, Equals, "foo")
 }
 
 type testStruct struct {

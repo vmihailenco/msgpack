@@ -175,7 +175,9 @@ func (d *Decoder) DecodeSliceLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c >= fixArrayLowCode && c <= fixArrayHighCode {
+	if c == nilCode {
+		return -1, nil
+	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
 		return int(c & fixArrayMask), nil
 	}
 	switch c {
@@ -193,6 +195,9 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err
+	}
+	if n == -1 {
+		return nil
 	}
 	s := *sp
 	if len(s) < n {
@@ -213,6 +218,9 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return nil, err
+	}
+	if n == -1 {
+		return nil, nil
 	}
 	s := make([]interface{}, n)
 	for i := 0; i < n; i++ {

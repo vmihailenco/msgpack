@@ -49,61 +49,95 @@ func (d *Decoder) Decode(iv interface{}) error {
 	var err error
 	switch v := iv.(type) {
 	case *string:
-		*v, err = d.DecodeString()
-		return err
+		if v != nil {
+			*v, err = d.DecodeString()
+			return err
+		}
 	case *[]byte:
-		*v, err = d.DecodeBytes()
-		return err
+		if v != nil {
+			*v, err = d.DecodeBytes()
+			return err
+		}
 	case *int:
-		*v, err = d.DecodeInt()
-		return err
+		if v != nil {
+			*v, err = d.DecodeInt()
+			return err
+		}
 	case *int8:
-		*v, err = d.DecodeInt8()
-		return err
+		if v != nil {
+			*v, err = d.DecodeInt8()
+			return err
+		}
 	case *int16:
-		*v, err = d.DecodeInt16()
-		return err
+		if v != nil {
+			*v, err = d.DecodeInt16()
+			return err
+		}
 	case *int32:
-		*v, err = d.DecodeInt32()
-		return err
+		if v != nil {
+			*v, err = d.DecodeInt32()
+			return err
+		}
 	case *int64:
-		*v, err = d.DecodeInt64()
-		return err
+		if v != nil {
+			*v, err = d.DecodeInt64()
+			return err
+		}
 	case *uint:
-		*v, err = d.DecodeUint()
-		return err
+		if v != nil {
+			*v, err = d.DecodeUint()
+			return err
+		}
 	case *uint8:
-		*v, err = d.DecodeUint8()
-		return err
+		if v != nil {
+			*v, err = d.DecodeUint8()
+			return err
+		}
 	case *uint16:
-		*v, err = d.DecodeUint16()
-		return err
+		if v != nil {
+			*v, err = d.DecodeUint16()
+			return err
+		}
 	case *uint32:
-		*v, err = d.DecodeUint32()
-		return err
+		if v != nil {
+			*v, err = d.DecodeUint32()
+			return err
+		}
 	case *uint64:
-		*v, err = d.DecodeUint64()
-		return err
+		if v != nil {
+			*v, err = d.DecodeUint64()
+			return err
+		}
 	case *bool:
-		*v, err = d.DecodeBool()
-		return err
+		if v != nil {
+			*v, err = d.DecodeBool()
+			return err
+		}
 	case *float32:
-		*v, err = d.DecodeFloat32()
-		return err
+		if v != nil {
+			*v, err = d.DecodeFloat32()
+			return err
+		}
 	case *float64:
-		*v, err = d.DecodeFloat64()
-		return err
+		if v != nil {
+			*v, err = d.DecodeFloat64()
+			return err
+		}
 	case *[]string:
 		return d.decodeIntoStrings(v)
 	case *map[string]string:
 		return d.decodeIntoMapStringString(v)
 	case *time.Duration:
-		vv, err := d.DecodeInt64()
-		*v = time.Duration(vv)
-		return err
+		if v != nil {
+			vv, err := d.DecodeInt64()
+			*v = time.Duration(vv)
+			return err
+		}
 	case *time.Time:
-		*v, err = d.DecodeTime()
-		return err
+		if v != nil {
+			*v, err = d.DecodeTime()
+			return err
+		}
 	}
 
 	v := reflect.ValueOf(iv)

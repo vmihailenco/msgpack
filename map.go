@@ -90,7 +90,9 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c >= fixMapLowCode && c <= fixMapHighCode {
+	if c == nilCode {
+		return -1, nil
+	} else if c >= fixMapLowCode && c <= fixMapHighCode {
 		return int(c & fixMapMask), nil
 	}
 	switch c {
@@ -108,6 +110,9 @@ func (d *Decoder) decodeIntoMapStringString(mp *map[string]string) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err
+	}
+	if n == -1 {
+		return nil
 	}
 
 	// TODO(vmihailenco): simpler way?
@@ -140,6 +145,9 @@ func (d *Decoder) mapValue(v reflect.Value) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err
+	}
+	if n == -1 {
+		return nil
 	}
 
 	typ := v.Type()
