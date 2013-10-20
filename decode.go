@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"math"
 	"reflect"
 	"time"
+
+	"github.com/vmihailenco/bufio"
 )
 
 func Unmarshal(data []byte, v interface{}) error {
@@ -16,32 +17,17 @@ func Unmarshal(data []byte, v interface{}) error {
 	return NewDecoder(buf).Decode(v)
 }
 
-type bufferedReader interface {
-	Read([]byte) (int, error)
-	Peek(int) ([]byte, error)
-	ReadByte() (byte, error)
-	UnreadByte() error
-}
-
 type Decoder struct {
-	R                  bufferedReader
+	R                  *bufio.Reader
 	DecodeMapFunc      func(*Decoder) (interface{}, error)
 	b1, b2, b3, b4, b8 []byte
 }
 
 func NewDecoder(reader io.Reader) *Decoder {
-	b := make([]byte, 8)
-	r, ok := reader.(bufferedReader)
-	if !ok {
-		r = bufio.NewReader(reader)
-	}
+	r := bufio.NewReader(reader)
 	return &Decoder{
 		R:             r,
 		DecodeMapFunc: decodeMap,
-		b1:            b[:1],
-		b2:            b[:2],
-		b4:            b[:4],
-		b8:            b[:8],
 	}
 }
 
@@ -243,35 +229,38 @@ func (d *Decoder) boolValue(value reflect.Value) error {
 }
 
 func (d *Decoder) uint16() (uint16, error) {
-	if err := d.read(d.b2); err != nil {
+	b, err := d.R.ReadN(2)
+	if err != nil {
 		return 0, err
 	}
-	return (uint16(d.b2[0]) << 8) | uint16(d.b2[1]), nil
+	return (uint16(b[0]) << 8) | uint16(b[1]), nil
 }
 
 func (d *Decoder) uint32() (uint32, error) {
-	if err := d.read(d.b4); err != nil {
+	b, err := d.R.ReadN(4)
+	if err != nil {
 		return 0, err
 	}
-	n := (uint32(d.b4[0]) << 24) |
-		(uint32(d.b4[1]) << 16) |
-		(uint32(d.b4[2]) << 8) |
-		uint32(d.b4[3])
+	n := (uint32(b[0]) << 24) |
+		(uint32(b[1]) << 16) |
+		(uint32(b[2]) << 8) |
+		uint32(b[3])
 	return n, nil
 }
 
 func (d *Decoder) uint64() (uint64, error) {
-	if err := d.read(d.b8); err != nil {
+	b, err := d.R.ReadN(8)
+	if err != nil {
 		return 0, err
 	}
-	n := (uint64(d.b8[0]) << 56) |
-		(uint64(d.b8[1]) << 48) |
-		(uint64(d.b8[2]) << 40) |
-		(uint64(d.b8[3]) << 32) |
-		(uint64(d.b8[4]) << 24) |
-		(uint64(d.b8[5]) << 16) |
-		(uint64(d.b8[6]) << 8) |
-		uint64(d.b8[7])
+	n := (uint64(b[0]) << 56) |
+		(uint64(b[1]) << 48) |
+		(uint64(b[2]) << 40) |
+		(uint64(b[3]) << 32) |
+		(uint64(b[4]) << 24) |
+		(uint64(b[5]) << 16) |
+		(uint64(b[6]) << 8) |
+		uint64(b[7])
 	return n, nil
 }
 
@@ -291,31 +280,34 @@ func (d *Decoder) DecodeUint64() (uint64, error) {
 		}
 		return uint64(c), nil
 	case uint16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return (uint64(d.b2[0]) << 8) | uint64(d.b2[1]), nil
+		return (uint64(b[0]) << 8) | uint64(b[1]), nil
 	case uint32Code:
-		if err := d.read(d.b4); err != nil {
+		b, err := d.R.ReadN(4)
+		if err != nil {
 			return 0, err
 		}
-		v := (uint64(d.b4[0]) << 24) |
-			(uint64(d.b4[1]) << 16) |
-			(uint64(d.b4[2]) << 8) |
-			uint64(d.b4[3])
+		v := (uint64(b[0]) << 24) |
+			(uint64(b[1]) << 16) |
+			(uint64(b[2]) << 8) |
+			uint64(b[3])
 		return v, nil
 	case uint64Code:
-		if err := d.read(d.b8); err != nil {
+		b, err := d.R.ReadN(8)
+		if err != nil {
 			return 0, err
 		}
-		v := (uint64(d.b8[0]) << 56) |
-			(uint64(d.b8[1]) << 48) |
-			(uint64(d.b8[2]) << 40) |
-			(uint64(d.b8[3]) << 32) |
-			(uint64(d.b8[4]) << 24) |
-			(uint64(d.b8[5]) << 16) |
-			(uint64(d.b8[6]) << 8) |
-			uint64(d.b8[7])
+		v := (uint64(b[0]) << 56) |
+			(uint64(b[1]) << 48) |
+			(uint64(b[2]) << 40) |
+			(uint64(b[3]) << 32) |
+			(uint64(b[4]) << 24) |
+			(uint64(b[5]) << 16) |
+			(uint64(b[6]) << 8) |
+			uint64(b[7])
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
@@ -346,31 +338,34 @@ func (d *Decoder) DecodeInt64() (int64, error) {
 		}
 		return int64(int8(c)), nil
 	case int16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return int64((int16(d.b2[0]) << 8) | int16(d.b2[1])), nil
+		return int64((int16(b[0]) << 8) | int16(b[1])), nil
 	case int32Code:
-		if err := d.read(d.b4); err != nil {
+		b, err := d.R.ReadN(4)
+		if err != nil {
 			return 0, err
 		}
-		v := int64((int32(d.b4[0]) << 24) |
-			(int32(d.b4[1]) << 16) |
-			(int32(d.b4[2]) << 8) |
-			int32(d.b4[3]))
+		v := int64((int32(b[0]) << 24) |
+			(int32(b[1]) << 16) |
+			(int32(b[2]) << 8) |
+			int32(b[3]))
 		return v, nil
 	case int64Code:
-		if err := d.read(d.b8); err != nil {
+		b, err := d.R.ReadN(8)
+		if err != nil {
 			return 0, err
 		}
-		v := (int64(d.b8[0]) << 56) |
-			(int64(d.b8[1]) << 48) |
-			(int64(d.b8[2]) << 40) |
-			(int64(d.b8[3]) << 32) |
-			(int64(d.b8[4]) << 24) |
-			(int64(d.b8[5]) << 16) |
-			(int64(d.b8[6]) << 8) |
-			int64(d.b8[7])
+		v := (int64(b[0]) << 56) |
+			(int64(b[1]) << 48) |
+			(int64(b[2]) << 40) |
+			(int64(b[3]) << 32) |
+			(int64(b[4]) << 24) |
+			(int64(b[5]) << 16) |
+			(int64(b[6]) << 8) |
+			int64(b[7])
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int64", c)
@@ -477,10 +472,10 @@ func (d *Decoder) structValue(v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) read(b []byte) error {
-	_, err := io.ReadFull(d.R, b)
-	return err
-}
+// func (d *Decoder) read(b []byte) error {
+// 	_, err := io.ReadFull(d.R, b)
+// 	return err
+// }
 
 //------------------------------------------------------------------------------
 
@@ -500,31 +495,34 @@ func (d *Decoder) DecodeUint() (uint, error) {
 		}
 		return uint(c), nil
 	case uint16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return (uint(d.b2[0]) << 8) | uint(d.b2[1]), nil
+		return (uint(b[0]) << 8) | uint(b[1]), nil
 	case uint32Code:
-		if err := d.read(d.b4); err != nil {
+		b, err := d.R.ReadN(4)
+		if err != nil {
 			return 0, err
 		}
-		v := (uint(d.b4[0]) << 24) |
-			(uint(d.b4[1]) << 16) |
-			(uint(d.b4[2]) << 8) |
-			uint(d.b4[3])
+		v := (uint(b[0]) << 24) |
+			(uint(b[1]) << 16) |
+			(uint(b[2]) << 8) |
+			uint(b[3])
 		return v, nil
 	case uint64Code:
-		if err := d.read(d.b8); err != nil {
+		b, err := d.R.ReadN(8)
+		if err != nil {
 			return 0, err
 		}
-		v := (uint(d.b8[0]) << 56) |
-			(uint(d.b8[1]) << 48) |
-			(uint(d.b8[2]) << 40) |
-			(uint(d.b8[3]) << 32) |
-			(uint(d.b8[4]) << 24) |
-			(uint(d.b8[5]) << 16) |
-			(uint(d.b8[6]) << 8) |
-			uint(d.b8[7])
+		v := (uint(b[0]) << 56) |
+			(uint(b[1]) << 48) |
+			(uint(b[2]) << 40) |
+			(uint(b[3]) << 32) |
+			(uint(b[4]) << 24) |
+			(uint(b[5]) << 16) |
+			(uint(b[6]) << 8) |
+			uint(b[7])
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint", c)
@@ -565,10 +563,11 @@ func (d *Decoder) DecodeUint16() (uint16, error) {
 		}
 		return uint16(c), nil
 	case uint16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return (uint16(d.b2[0]) << 8) | uint16(d.b2[1]), nil
+		return (uint16(b[0]) << 8) | uint16(b[1]), nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint16", c)
 }
@@ -589,18 +588,20 @@ func (d *Decoder) DecodeUint32() (uint32, error) {
 		}
 		return uint32(c), nil
 	case uint16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return (uint32(d.b2[0]) << 8) | uint32(d.b2[1]), nil
+		return (uint32(b[0]) << 8) | uint32(b[1]), nil
 	case uint32Code:
-		if err := d.read(d.b4); err != nil {
+		b, err := d.R.ReadN(4)
+		if err != nil {
 			return 0, err
 		}
-		v := (uint32(d.b4[0]) << 24) |
-			(uint32(d.b4[1]) << 16) |
-			(uint32(d.b4[2]) << 8) |
-			uint32(d.b4[3])
+		v := (uint32(b[0]) << 24) |
+			(uint32(b[1]) << 16) |
+			(uint32(b[2]) << 8) |
+			uint32(b[3])
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint32", c)
@@ -624,31 +625,34 @@ func (d *Decoder) DecodeInt() (int, error) {
 		}
 		return int(int8(c)), nil
 	case int16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return int((int16(d.b2[0]) << 8) | int16(d.b2[1])), nil
+		return int((int16(b[0]) << 8) | int16(b[1])), nil
 	case int32Code:
-		if err := d.read(d.b4); err != nil {
+		b, err := d.R.ReadN(4)
+		if err != nil {
 			return 0, err
 		}
-		v := int((int32(d.b4[0]) << 24) |
-			(int32(d.b4[1]) << 16) |
-			(int32(d.b4[2]) << 8) |
-			int32(d.b4[3]))
+		v := int((int32(b[0]) << 24) |
+			(int32(b[1]) << 16) |
+			(int32(b[2]) << 8) |
+			int32(b[3]))
 		return v, nil
 	case int64Code:
-		if err := d.read(d.b8); err != nil {
+		b, err := d.R.ReadN(8)
+		if err != nil {
 			return 0, err
 		}
-		v := int((int64(d.b8[0]) << 56) |
-			(int64(d.b8[1]) << 48) |
-			(int64(d.b8[2]) << 40) |
-			(int64(d.b8[3]) << 32) |
-			(int64(d.b8[4]) << 24) |
-			(int64(d.b8[5]) << 16) |
-			(int64(d.b8[6]) << 8) |
-			int64(d.b8[7]))
+		v := int((int64(b[0]) << 56) |
+			(int64(b[1]) << 48) |
+			(int64(b[2]) << 40) |
+			(int64(b[3]) << 32) |
+			(int64(b[4]) << 24) |
+			(int64(b[5]) << 16) |
+			(int64(b[6]) << 8) |
+			int64(b[7]))
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int64", c)
@@ -689,10 +693,11 @@ func (d *Decoder) DecodeInt16() (int16, error) {
 		}
 		return int16(int8(c)), nil
 	case int16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return (int16(d.b2[0]) << 8) | int16(d.b2[1]), nil
+		return (int16(b[0]) << 8) | int16(b[1]), nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int16", c)
 }
@@ -713,18 +718,20 @@ func (d *Decoder) DecodeInt32() (int32, error) {
 		}
 		return int32(int8(c)), nil
 	case int16Code:
-		if err := d.read(d.b2); err != nil {
+		b, err := d.R.ReadN(2)
+		if err != nil {
 			return 0, err
 		}
-		return int32((int16(d.b2[0]) << 8) | int16(d.b2[1])), nil
+		return int32((int16(b[0]) << 8) | int16(b[1])), nil
 	case int32Code:
-		if err := d.read(d.b4); err != nil {
+		b, err := d.R.ReadN(4)
+		if err != nil {
 			return 0, err
 		}
-		v := (int32(d.b4[0]) << 24) |
-			(int32(d.b4[1]) << 16) |
-			(int32(d.b4[2]) << 8) |
-			int32(d.b4[3])
+		v := (int32(b[0]) << 24) |
+			(int32(b[1]) << 16) |
+			(int32(b[2]) << 8) |
+			int32(b[3])
 		return v, nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int32", c)

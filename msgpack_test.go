@@ -764,12 +764,12 @@ func (t *MsgpackTest) BenchmarkPointerToStringSlice(c *C) {
 }
 
 type benchmarkStruct struct {
-	Name string
-	// Colors    []string
-	// Age       int
-	// Data      []byte
-	// CreatedAt time.Time
-	// UpdatedAt time.Time
+	Name      string
+	Colors    []string
+	Age       int
+	Data      []byte
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type benchmarkStruct2 struct {
@@ -809,12 +809,12 @@ var _ msgpack.Coder = &benchmarkStruct2{}
 
 func (t *MsgpackTest) structForBenchmark() *benchmarkStruct {
 	return &benchmarkStruct{
-		Name: "Hello World",
-		//Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
-		//Age:       math.MaxInt32,
-		//Data:      make([]byte, 1024),
-		//CreatedAt: time.Now(),
-		//UpdatedAt: time.Now(),
+		Name:      "Hello World",
+		Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
+		Age:       math.MaxInt32,
+		Data:      make([]byte, 1024),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 

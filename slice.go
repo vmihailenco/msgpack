@@ -2,6 +2,7 @@ package msgpack
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -137,11 +138,12 @@ func (d *Decoder) DecodeBytes() ([]byte, error) {
 	if n == -1 {
 		return nil, nil
 	}
-	v := make([]byte, n)
-	if err := d.read(v); err != nil {
+	b := make([]byte, n)
+	_, err = io.ReadFull(d.R, b)
+	if err != nil {
 		return nil, err
 	}
-	return v, nil
+	return b, nil
 }
 
 func (d *Decoder) bytesValue(value reflect.Value) error {
@@ -154,7 +156,14 @@ func (d *Decoder) bytesValue(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeString() (string, error) {
-	b, err := d.DecodeBytes()
+	n, err := d.DecodeBytesLen()
+	if err != nil {
+		return "", err
+	}
+	if n == -1 {
+		return "", nil
+	}
+	b, err := d.R.ReadN(n)
 	if err != nil {
 		return "", err
 	}

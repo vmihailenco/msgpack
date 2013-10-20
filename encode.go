@@ -305,7 +305,7 @@ func (e *Encoder) encodeStruct(value reflect.Value) error {
 		}
 	}
 	for _, f := range fields {
-		if err := e.EncodeBytes([]byte(f.Name())); err != nil {
+		if err := e.EncodeString(f.Name()); err != nil {
 			return err
 		}
 		if err := f.EncodeValue(e, value); err != nil {
