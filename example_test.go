@@ -7,20 +7,20 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-func ExampleEncode() {
+func ExampleMarshal() {
 	b, err := msgpack.Marshal(true)
 	fmt.Printf("%v %#v\n", err, b)
 	// Output: <nil> []byte{0xc3}
 }
 
-func ExampleDecode() {
+func ExampleUnmarshal() {
 	var out bool
 	err := msgpack.Unmarshal([]byte{0xc3}, &out)
 	fmt.Println(err, out)
 	// Output: <nil> true
 }
 
-func ExampleMapStringInterface() {
+func Example_mapStringInterface() {
 	in := map[string]interface{}{"foo": 1, "hello": "world"}
 	b, err := msgpack.Marshal(in)
 	_ = err
@@ -31,7 +31,7 @@ func ExampleMapStringInterface() {
 	// Output: <nil> map[string]interface {}{"foo":1, "hello":"world"}
 }
 
-func ExampleRecursiveMapStringInterface() {
+func Example_recursiveMapStringInterface() {
 	buf := &bytes.Buffer{}
 
 	enc := msgpack.NewEncoder(buf)
