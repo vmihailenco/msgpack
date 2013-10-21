@@ -849,14 +849,12 @@ func (t *MsgpackTest) BenchmarkStruct(c *C) {
 	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
-		buf := &bytes.Buffer{}
-		enc := msgpack.NewEncoder(buf)
-		dec := msgpack.NewDecoder(buf)
-
-		if err := enc.Encode(in); err != nil {
+		b, err := msgpack.Marshal(in)
+		if err != nil {
 			panic(err)
 		}
-		if err := dec.Decode(out); err != nil {
+		err = msgpack.Unmarshal(b, out)
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -866,14 +864,12 @@ func (t *MsgpackTest) BenchmarkStructManual(c *C) {
 	in := t.structForBenchmark2()
 	out := &benchmarkStruct2{}
 	for i := 0; i < c.N; i++ {
-		buf := &bytes.Buffer{}
-		enc := msgpack.NewEncoder(buf)
-		dec := msgpack.NewDecoder(buf)
-
-		if err := enc.Encode(in); err != nil {
+		b, err := msgpack.Marshal(in)
+		if err != nil {
 			panic(err)
 		}
-		if err := dec.Decode(out); err != nil {
+		err = msgpack.Unmarshal(b, out)
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -883,14 +879,12 @@ func (t *MsgpackTest) BenchmarkStructMsgpack2(c *C) {
 	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
-		buf := &bytes.Buffer{}
-		dec := msgpack2.NewDecoder(buf, nil)
-		enc := msgpack2.NewEncoder(buf)
-
-		if err := enc.Encode(in); err != nil {
+		b, err := msgpack2.Marshal(in)
+		if err != nil {
 			panic(err)
 		}
-		if err := dec.Decode(out); err != nil {
+		err = msgpack2.Unmarshal(b, out, nil)
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -917,14 +911,12 @@ func (t *MsgpackTest) BenchmarkStructJSON(c *C) {
 	in := t.structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < c.N; i++ {
-		buf := &bytes.Buffer{}
-		enc := json.NewEncoder(buf)
-		dec := json.NewDecoder(buf)
-
-		if err := enc.Encode(in); err != nil {
+		b, err := json.Marshal(in)
+		if err != nil {
 			panic(err)
 		}
-		if err := dec.Decode(out); err != nil {
+		err = json.Unmarshal(b, out)
+		if err != nil {
 			panic(err)
 		}
 	}

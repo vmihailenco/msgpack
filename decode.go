@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -12,21 +11,31 @@ import (
 	"github.com/vmihailenco/bufio"
 )
 
+type bufReader interface {
+	Read([]byte) (int, error)
+	ReadByte() (byte, error)
+	UnreadByte() error
+	Peek(int) ([]byte, error)
+	ReadN(int) ([]byte, error)
+}
+
 func Unmarshal(data []byte, v interface{}) error {
-	buf := bytes.NewBuffer(data)
+	buf := bufio.NewBuffer(data)
 	return NewDecoder(buf).Decode(v)
 }
 
 type Decoder struct {
-	R                  *bufio.Reader
-	DecodeMapFunc      func(*Decoder) (interface{}, error)
-	b1, b2, b3, b4, b8 []byte
+	R             bufReader
+	DecodeMapFunc func(*Decoder) (interface{}, error)
 }
 
-func NewDecoder(reader io.Reader) *Decoder {
-	r := bufio.NewReader(reader)
+func NewDecoder(rd io.Reader) *Decoder {
+	brd, ok := rd.(bufReader)
+	if !ok {
+		brd = bufio.NewReader(rd)
+	}
 	return &Decoder{
-		R:             r,
+		R:             brd,
 		DecodeMapFunc: decodeMap,
 	}
 }
