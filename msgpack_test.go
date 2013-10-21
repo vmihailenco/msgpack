@@ -333,17 +333,33 @@ func (t *MsgpackTest) TestSlice(c *C) {
 	c.Assert(out, DeepEquals, []string{"key1"})
 }
 
-func (t *MsgpackTest) TestLargeBytesArray(c *C) {
-	in := make([]byte, 1e6)
-	for i := 0; i < 1e6; i++ {
+func (t *MsgpackTest) TestLargeBytes(c *C) {
+	N := int(1e6)
+
+	in := make([]byte, N)
+	for i := 0; i < N; i++ {
 		in[i] = '1'
 	}
 
 	c.Assert(t.enc.Encode(in), IsNil)
-	c.Assert(len(t.buf.Bytes()), Equals, 1000005)
 	var out []byte
 	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(in, DeepEquals, out)
+	c.Assert(out, DeepEquals, in)
+}
+
+func (t *MsgpackTest) TestLargeString(c *C) {
+	N := int(1e6)
+
+	b := make([]byte, N)
+	for i := 0; i < N; i++ {
+		b[i] = '1'
+	}
+	src := string(b)
+
+	c.Assert(t.enc.Encode(src), IsNil)
+	var dst string
+	c.Assert(t.dec.Decode(&dst), IsNil)
+	c.Assert(dst, Equals, src)
 }
 
 func (t *MsgpackTest) TestStructNil(c *C) {

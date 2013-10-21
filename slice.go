@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+
+	"github.com/vmihailenco/bufio"
 )
 
 func (e *Encoder) encodeBytesLen(l int) error {
@@ -164,7 +166,16 @@ func (d *Decoder) DecodeString() (string, error) {
 		return "", nil
 	}
 	b, err := d.R.ReadN(n)
-	if err != nil {
+	if err == bufio.ErrBufferFull {
+		newB := make([]byte, n)
+		n := copy(newB, b)
+		b = newB
+
+		_, err := io.ReadFull(d.R, newB[n:])
+		if err != nil {
+			return "", err
+		}
+	} else if err != nil {
 		return "", err
 	}
 	return string(b), nil
