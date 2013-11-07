@@ -34,9 +34,9 @@ func (w *writeByte) WriteString(s string) (int, error) {
 	return w.Write([]byte(s))
 }
 
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v ...interface{}) ([]byte, error) {
 	buf := &bytes.Buffer{}
-	err := NewEncoder(buf).Encode(v)
+	err := NewEncoder(buf).Encode(v...)
 	return buf.Bytes(), err
 }
 
@@ -54,7 +54,16 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 }
 
-func (e *Encoder) Encode(iv interface{}) error {
+func (e *Encoder) Encode(v ...interface{}) error {
+	for _, vv := range v {
+		if err := e.encode(vv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encode(iv interface{}) error {
 	if iv == nil {
 		return e.EncodeNil()
 	}
@@ -90,15 +99,6 @@ func (e *Encoder) Encode(iv interface{}) error {
 		return v.EncodeMsgpack(e.W)
 	}
 	return e.EncodeValue(reflect.ValueOf(iv))
-}
-
-func (e *Encoder) EncodeMulti(values ...interface{}) error {
-	for _, v := range values {
-		if err := e.Encode(v); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (e *Encoder) EncodeValue(v reflect.Value) error {

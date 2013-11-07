@@ -19,9 +19,9 @@ type bufReader interface {
 	ReadN(int) ([]byte, error)
 }
 
-func Unmarshal(data []byte, v interface{}) error {
+func Unmarshal(data []byte, v ...interface{}) error {
 	buf := bufio.NewBuffer(data)
-	return NewDecoder(buf).Decode(v)
+	return NewDecoder(buf).Decode(v...)
 }
 
 type Decoder struct {
@@ -40,7 +40,16 @@ func NewDecoder(rd io.Reader) *Decoder {
 	}
 }
 
-func (d *Decoder) Decode(iv interface{}) error {
+func (d *Decoder) Decode(v ...interface{}) error {
+	for _, vv := range v {
+		if err := d.decode(vv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *Decoder) decode(iv interface{}) error {
 	var err error
 	switch v := iv.(type) {
 	case *string:
@@ -143,15 +152,6 @@ func (d *Decoder) Decode(iv interface{}) error {
 		return errors.New("msgpack: pointer expected")
 	}
 	return d.DecodeValue(v)
-}
-
-func (d *Decoder) DecodeMulti(values ...interface{}) error {
-	for _, v := range values {
-		if err := d.Decode(v); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {

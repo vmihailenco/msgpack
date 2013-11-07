@@ -405,11 +405,11 @@ func (s *coderStruct) Name() string {
 }
 
 func (s *coderStruct) EncodeMsgpack(w io.Writer) error {
-	return msgpack.NewEncoder(w).EncodeMulti(s.name)
+	return msgpack.NewEncoder(w).Encode(s.name)
 }
 
 func (s *coderStruct) DecodeMsgpack(r io.Reader) error {
-	return msgpack.NewDecoder(r).DecodeMulti(&s.name)
+	return msgpack.NewDecoder(r).Decode(&s.name)
 }
 
 var _ msgpack.Coder = &coderStruct{}
@@ -799,7 +799,7 @@ type benchmarkStruct2 struct {
 
 func (s *benchmarkStruct2) EncodeMsgpack(w io.Writer) error {
 	enc := msgpack.NewEncoder(w)
-	return enc.EncodeMulti(
+	return enc.Encode(
 		s.Name,
 		s.Colors,
 		s.Age,
@@ -811,7 +811,7 @@ func (s *benchmarkStruct2) EncodeMsgpack(w io.Writer) error {
 
 func (s *benchmarkStruct2) DecodeMsgpack(r io.Reader) error {
 	dec := msgpack.NewDecoder(r)
-	return dec.DecodeMulti(
+	return dec.Decode(
 		&s.Name,
 		&s.Colors,
 		&s.Age,
@@ -966,10 +966,10 @@ func (t *MsgpackTest) BenchmarkCSVMsgpack(c *C) {
 		enc := msgpack.NewEncoder(buf)
 		dec := msgpack.NewDecoder(buf)
 
-		if err := enc.EncodeMulti(1, "hello", "world"); err != nil {
+		if err := enc.Encode(1, "hello", "world"); err != nil {
 			panic(err)
 		}
-		if err := dec.DecodeMulti(&num, &hello, &world); err != nil {
+		if err := dec.Decode(&num, &hello, &world); err != nil {
 			panic(err)
 		}
 	}
