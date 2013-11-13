@@ -391,7 +391,16 @@ func (t *MsgpackTest) TestStruct(c *C) {
 	c.Assert(out.Name, Equals, "hello world")
 	c.Assert(out.Tm.Equal(in.Tm), Equals, true)
 	c.Assert(out.Data, DeepEquals, []byte{1, 2, 3})
-	c.Assert(out.Colors, DeepEquals, []string{"red", "orange", "yellow", "green", "blue", "violet"})
+	c.Assert(
+		out.Colors,
+		DeepEquals,
+		[]string{"red", "orange", "yellow", "green", "blue", "violet"},
+	)
+}
+
+func (t *MsgpackTest) TestStructError(c *C) {
+	c.Assert(t.enc.Encode(struct{ Test string }{Test: "hello"}), IsNil)
+	c.Assert(t.dec.Decode(&struct{}{}).Error(), Equals, `msgpack: can not map field "Test"`)
 }
 
 //------------------------------------------------------------------------------

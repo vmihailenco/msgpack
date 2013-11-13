@@ -471,7 +471,7 @@ func (d *Decoder) structValue(v reflect.Value) error {
 
 		f := tinfoMap.Field(typ, name)
 		if f == nil {
-			continue
+			return fmt.Errorf("msgpack: can not map field %q", name)
 		}
 
 		if err := f.DecodeValue(d, v); err != nil {
@@ -480,11 +480,6 @@ func (d *Decoder) structValue(v reflect.Value) error {
 	}
 	return nil
 }
-
-// func (d *Decoder) read(b []byte) error {
-// 	_, err := io.ReadFull(d.R, b)
-// 	return err
-// }
 
 //------------------------------------------------------------------------------
 
