@@ -398,9 +398,23 @@ func (t *MsgpackTest) TestStruct(c *C) {
 	)
 }
 
-func (t *MsgpackTest) TestStructError(c *C) {
-	c.Assert(t.enc.Encode(struct{ Test string }{Test: "hello"}), IsNil)
-	c.Assert(t.dec.Decode(&struct{}{}).Error(), Equals, `msgpack: can not map field "Test"`)
+func (t *MsgpackTest) TestStructUnknownField(c *C) {
+	in := struct {
+		Field1 string
+		Field2 string
+		Field3 string
+	}{
+		Field1: "value1",
+		Field2: "value2",
+		Field3: "value3",
+	}
+	c.Assert(t.enc.Encode(in), IsNil)
+
+	out := struct {
+		Field2 string
+	}{}
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Field2, Equals, "value2")
 }
 
 //------------------------------------------------------------------------------

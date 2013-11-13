@@ -278,8 +278,8 @@ func (e *Encoder) EncodeFloat64(value float64) error {
 	})
 }
 
-func (e *Encoder) encodeStruct(value reflect.Value) error {
-	fields := tinfoMap.Fields(value.Type())
+func (e *Encoder) encodeStruct(v reflect.Value) error {
+	fields := structs.Fields(v.Type())
 	switch l := len(fields); {
 	case l < 16:
 		if err := e.W.WriteByte(fixMapLowCode | byte(l)); err != nil {
@@ -308,7 +308,7 @@ func (e *Encoder) encodeStruct(value reflect.Value) error {
 		if err := e.EncodeString(f.Name()); err != nil {
 			return err
 		}
-		if err := f.EncodeValue(e, value); err != nil {
+		if err := f.EncodeValue(e, v); err != nil {
 			return err
 		}
 	}

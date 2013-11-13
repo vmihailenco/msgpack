@@ -469,13 +469,16 @@ func (d *Decoder) structValue(v reflect.Value) error {
 			return err
 		}
 
-		f := tinfoMap.Field(typ, name)
-		if f == nil {
-			return fmt.Errorf("msgpack: can not map field %q", name)
-		}
-
-		if err := f.DecodeValue(d, v); err != nil {
-			return err
+		f := structs.Field(typ, name)
+		if f != nil {
+			if err := f.DecodeValue(d, v); err != nil {
+				return err
+			}
+		} else {
+			_, err := d.DecodeInterface()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
