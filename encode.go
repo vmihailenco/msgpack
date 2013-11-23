@@ -115,7 +115,12 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		return e.EncodeFloat32(float32(v.Float()))
 	case reflect.Float64:
 		return e.EncodeFloat64(v.Float())
-	case reflect.Array, reflect.Slice:
+	case reflect.Array:
+		return e.encodeSlice(v)
+	case reflect.Slice:
+		if v.IsNil() {
+			return e.EncodeNil()
+		}
 		return e.encodeSlice(v)
 	case reflect.Map:
 		return e.encodeMap(v)

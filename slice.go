@@ -44,6 +44,9 @@ func (e *Encoder) EncodeString(v string) error {
 }
 
 func (e *Encoder) EncodeBytes(v []byte) error {
+	if v == nil {
+		return e.EncodeNil()
+	}
 	if err := e.encodeBytesLen(len(v)); err != nil {
 		return err
 	}
@@ -75,6 +78,9 @@ func (e *Encoder) encodeSliceLen(l int) error {
 }
 
 func (e *Encoder) encodeStringSlice(s []string) error {
+	if s == nil {
+		return e.EncodeNil()
+	}
 	if err := e.encodeSliceLen(len(s)); err != nil {
 		return err
 	}
@@ -87,15 +93,9 @@ func (e *Encoder) encodeStringSlice(s []string) error {
 }
 
 func (e *Encoder) encodeSlice(v reflect.Value) error {
-	if v.IsNil() {
-		return e.EncodeNil()
-	}
-
 	switch v.Type().Elem().Kind() {
 	case reflect.Uint8:
 		return e.EncodeBytes(v.Bytes())
-	case reflect.String:
-		return e.encodeStringSlice(v.Interface().([]string))
 	}
 
 	l := v.Len()
@@ -220,7 +220,7 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 		return nil
 	}
 	s := *sp
-	if len(s) < n {
+	if s == nil || len(s) < n {
 		s = make([]string, n)
 	}
 	for i := 0; i < n; i++ {

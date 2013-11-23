@@ -212,31 +212,6 @@ func (t *MsgpackTest) TestBool(c *C) {
 	}
 }
 
-func (t *MsgpackTest) TestBytes(c *C) {
-	for _, i := range []struct {
-		s string
-		b []byte
-	}{
-		{"", []byte{0xa0}},
-		{"a", []byte{0xa1, 'a'}},
-		{"hello", append([]byte{0xa5}, []byte("hello")...)},
-		{
-			"world world world",
-			append([]byte{0xb1}, []byte("world world world")...),
-		},
-		{
-			"world world world world world world",
-			append([]byte{0xda, 0x0, 0x23}, []byte("world world world world world world")...),
-		},
-	} {
-		c.Assert(t.enc.Encode(i.s), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
-		var s string
-		c.Assert(t.dec.Decode(&s), IsNil)
-		c.Assert(s, Equals, i.s)
-	}
-}
-
 func (t *MsgpackTest) TestNil(c *C) {
 	table := []interface{}{
 		(*string)(nil),
@@ -286,23 +261,128 @@ func (t *MsgpackTest) TestTime(c *C) {
 	c.Assert(out.IsZero(), Equals, true)
 }
 
-func (t *MsgpackTest) TestArrayOfInts(c *C) {
+func (t *MsgpackTest) TestSliceOfInts(c *C) {
 	for _, i := range []struct {
-		s []int
-		b []byte
+		src []int
+		b   []byte
 	}{
+		{nil, []byte{0xc0}},
 		{[]int{}, []byte{0x90}},
 		{[]int{0}, []byte{0x91, 0x0}},
 	} {
-		c.Assert(t.enc.Encode(i.s), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, i.b, Commentf("err encoding %v", i.s))
-		var s []int
-		c.Assert(t.dec.Decode(&s), IsNil)
-		c.Assert(s, DeepEquals, i.s)
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+		var dst []int
+		c.Assert(t.dec.Decode(&dst), IsNil)
+		c.Assert(dst, DeepEquals, i.src)
 	}
 }
 
-func (t *MsgpackTest) TestArrayOfStructs(c *C) {
+func (t *MsgpackTest) TestArrayOfInts(c *C) {
+	src := [3]int{1, 2, 3}
+	c.Assert(t.enc.Encode(src), IsNil)
+	var dst [3]int
+	c.Assert(t.dec.Decode(&dst), IsNil)
+	c.Assert(dst, DeepEquals, src)
+}
+
+func (t *MsgpackTest) TestSliceOfStrings(c *C) {
+	for _, i := range []struct {
+		src []string
+		b   []byte
+	}{
+		{nil, []byte{0xc0}},
+		{[]string{}, []byte{0x90}},
+		{[]string{"foo", "bar"}, []byte{0x92, 0xa3, 'f', 'o', 'o', 0xa3, 'b', 'a', 'r'}},
+	} {
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+		var dst []string
+		c.Assert(t.dec.Decode(&dst), IsNil)
+		c.Assert(dst, DeepEquals, i.src)
+	}
+}
+
+func (t *MsgpackTest) TestArrayOfStrings(c *C) {
+	src := [2]string{"hello", "world"}
+	c.Assert(t.enc.Encode(src), IsNil)
+	var dst [2]string
+	c.Assert(t.dec.Decode(&dst), IsNil)
+	c.Assert(dst, DeepEquals, src)
+}
+
+func (t *MsgpackTest) TestString(c *C) {
+	for _, i := range []struct {
+		src string
+		b   []byte
+	}{
+		{"", []byte{0xa0}},
+		{"a", []byte{0xa1, 'a'}},
+		{"hello", append([]byte{0xa5}, "hello"...)},
+		{
+			"world world world",
+			append([]byte{0xb1}, "world world world"...),
+		},
+		{
+			"world world world world world world",
+			append([]byte{0xda, 0x0, 0x23}, "world world world world world world"...),
+		},
+	} {
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+		var dst string
+		c.Assert(t.dec.Decode(&dst), IsNil)
+		c.Assert(dst, Equals, i.src)
+	}
+}
+
+func (t *MsgpackTest) TestBytes(c *C) {
+	for _, i := range []struct {
+		src []byte
+		b   []byte
+	}{
+		{nil, []byte{0xc0}},
+		{[]byte{}, []byte{0xa0}},
+		{[]byte("a"), []byte{0xa1, 'a'}},
+		{[]byte("hello"), append([]byte{0xa5}, "hello"...)},
+		{
+			[]byte("world world world"),
+			append([]byte{0xb1}, "world world world"...),
+		},
+		{
+			[]byte("world world world world world world"),
+			append([]byte{0xda, 0x0, 0x23}, "world world world world world world"...),
+		},
+	} {
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+		var dst []byte
+		c.Assert(t.dec.Decode(&dst), IsNil)
+		c.Assert(dst, DeepEquals, i.src)
+	}
+}
+
+func (t *MsgpackTest) TestLargeBytes(c *C) {
+	N := int(1e6)
+
+	src := bytes.Repeat([]byte{'1'}, N)
+	c.Assert(t.enc.Encode(src), IsNil)
+	var dst []byte
+	c.Assert(t.dec.Decode(&dst), IsNil)
+	c.Assert(dst, DeepEquals, src)
+}
+
+func (t *MsgpackTest) TestLargeString(c *C) {
+	N := int(1e6)
+
+	src := string(bytes.Repeat([]byte{'1'}, N))
+	c.Assert(t.enc.Encode(src), IsNil)
+	var dst string
+	c.Assert(t.dec.Decode(&dst), IsNil)
+	c.Assert(dst, Equals, src)
+}
+
+func (t *MsgpackTest) TestSliceOfStructs(c *C) {
 	in := []*nameStruct{&nameStruct{"hello"}}
 	var out []*nameStruct
 	c.Assert(t.enc.Encode(in), IsNil)
@@ -324,42 +404,6 @@ func (t *MsgpackTest) TestMap(c *C) {
 		c.Assert(t.dec.Decode(&m), IsNil)
 		c.Assert(m, DeepEquals, i.m)
 	}
-}
-
-func (t *MsgpackTest) TestSlice(c *C) {
-	var out []string
-	c.Assert(t.enc.Encode([]string{"key1"}), IsNil)
-	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(out, DeepEquals, []string{"key1"})
-}
-
-func (t *MsgpackTest) TestLargeBytes(c *C) {
-	N := int(1e6)
-
-	in := make([]byte, N)
-	for i := 0; i < N; i++ {
-		in[i] = '1'
-	}
-
-	c.Assert(t.enc.Encode(in), IsNil)
-	var out []byte
-	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(out, DeepEquals, in)
-}
-
-func (t *MsgpackTest) TestLargeString(c *C) {
-	N := int(1e6)
-
-	b := make([]byte, N)
-	for i := 0; i < N; i++ {
-		b[i] = '1'
-	}
-	src := string(b)
-
-	c.Assert(t.enc.Encode(src), IsNil)
-	var dst string
-	c.Assert(t.dec.Decode(&dst), IsNil)
-	c.Assert(dst, Equals, src)
 }
 
 func (t *MsgpackTest) TestStructNil(c *C) {
@@ -731,7 +775,7 @@ func (t *MsgpackTest) BenchmarkMapStringString(c *C) {
 	c.Assert(t.buf.Len(), Equals, 0)
 }
 
-func (t *MsgpackTest) BenchmarkPointerToMapStringString(c *C) {
+func (t *MsgpackTest) BenchmarkMapStringStringPtr(c *C) {
 	in := map[string]string{
 		"hello": "world",
 		"foo":   "bar",
@@ -740,7 +784,7 @@ func (t *MsgpackTest) BenchmarkPointerToMapStringString(c *C) {
 	out2 := &out
 
 	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
+		if err := t.enc.Encode(&in); err != nil {
 			panic(err)
 		}
 		if err := t.dec.Decode(&out2); err != nil {
@@ -752,9 +796,10 @@ func (t *MsgpackTest) BenchmarkPointerToMapStringString(c *C) {
 }
 
 func (t *MsgpackTest) BenchmarkMapIntInt(c *C) {
-	in := make(map[int]int)
-	in[1] = 10
-	in[2] = 20
+	in := map[int]int{
+		1: 10,
+		2: 20,
+	}
 	var out map[int]int
 
 	for i := 0; i < c.N; i++ {
@@ -785,13 +830,13 @@ func (t *MsgpackTest) BenchmarkStringSlice(c *C) {
 	c.Assert(t.buf.Len(), Equals, 0)
 }
 
-func (t *MsgpackTest) BenchmarkPointerToStringSlice(c *C) {
+func (t *MsgpackTest) BenchmarkStringSlicePtr(c *C) {
 	in := []string{"hello", "world"}
 	var out []string
 	out2 := &out
 
 	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
+		if err := t.enc.Encode(&in); err != nil {
 			panic(err)
 		}
 		if err := t.dec.Decode(&out2); err != nil {
