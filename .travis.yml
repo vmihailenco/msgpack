@@ -8,6 +8,7 @@ go:
   - tip
 
 install:
+  - go get github.com/vmihailenco/bufio
   - go get gopkg.in/check.v1
   - go get github.com/ugorji/go-msgpack
   - go get github.com/ugorji/go/codec

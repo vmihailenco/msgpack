@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"io"
 	"math"
-	"strconv"
 	"testing"
 	"time"
 
@@ -643,208 +642,132 @@ func (t *MsgpackTest) TestMapStringInterface2(c *C) {
 
 //------------------------------------------------------------------------------
 
-func (t *MsgpackTest) BenchmarkBool(c *C) {
-	var v bool
-	for i := 0; i < c.N; i++ {
-		t.enc.Encode(true)
-		t.dec.Decode(&v)
-	}
-	c.Assert(t.buf.Len(), Equals, 0)
-}
-
-func (t *MsgpackTest) BenchmarkInt(c *C) {
-	var v int
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(1); err != nil {
-			panic(err)
+func benchmarkEncodeDecode(b *testing.B, src, dst interface{}) {
+	buf := &bytes.Buffer{}
+	enc := msgpack.NewEncoder(buf)
+	dec := msgpack.NewDecoder(buf)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := enc.Encode(src); err != nil {
+			b.Fatal(err)
 		}
-		if err := t.dec.Decode(&v); err != nil {
-			panic(err)
+		if err := dec.Decode(dst); err != nil {
+			b.Fatal(err)
 		}
 	}
-	c.Assert(t.buf.Len(), Equals, 0)
 }
 
-func (t *MsgpackTest) BenchmarkIntBinary(c *C) {
+func BenchmarkBool(b *testing.B) {
+	var dst bool
+	benchmarkEncodeDecode(b, true, &dst)
+}
+
+func BenchmarkInt(b *testing.B) {
+	var dst int
+	benchmarkEncodeDecode(b, 1, &dst)
+}
+
+func BenchmarkIntBinary(b *testing.B) {
 	buf := &bytes.Buffer{}
 
 	var out int32
-	for i := 0; i < c.N; i++ {
+	for i := 0; i < b.N; i++ {
 		if err := binary.Write(buf, binary.BigEndian, int32(1)); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		if err := binary.Read(buf, binary.BigEndian, &out); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
-	c.Assert(buf.Len(), Equals, 0)
 }
 
-func (t *MsgpackTest) BenchmarkIntMsgpack2(c *C) {
+func BenchmarkIntMsgpack2(b *testing.B) {
 	buf := &bytes.Buffer{}
 	dec := msgpack2.NewDecoder(buf, nil)
 	enc := msgpack2.NewEncoder(buf)
 
 	var out int
-	for i := 0; i < c.N; i++ {
+	for i := 0; i < b.N; i++ {
 		if err := enc.Encode(1); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		if err := dec.Decode(&out); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
-	c.Assert(t.buf.Len(), Equals, 0)
 }
 
-func (t *MsgpackTest) BenchmarkIntMsgpack3(c *C) {
+func BenchmarkIntMsgpack3(b *testing.B) {
 	buf := &bytes.Buffer{}
 	enc := codec.NewEncoder(buf, &codec.MsgpackHandle{})
 	dec := codec.NewDecoder(buf, &codec.MsgpackHandle{})
 
 	var out int
-	for i := 0; i < c.N; i++ {
+	for i := 0; i < b.N; i++ {
 		if err := enc.Encode(1); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		if err := dec.Decode(&out); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
-	c.Assert(t.buf.Len(), Equals, 0)
 }
 
-func (t *MsgpackTest) BenchmarkTime(c *C) {
-	in := time.Now()
-	var out time.Time
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out); err != nil {
-			panic(err)
-		}
-	}
-	c.Assert(t.buf.Len(), Equals, 0)
+func BenchmarkTime(b *testing.B) {
+	var dst time.Time
+	benchmarkEncodeDecode(b, time.Now(), &dst)
 }
 
-func (t *MsgpackTest) BenchmarkDuration(c *C) {
-	in := time.Hour
-	var out time.Duration
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out); err != nil {
-			panic(err)
-		}
-	}
-	c.Assert(t.buf.Len(), Equals, 0)
+func BenchmarkDuration(b *testing.B) {
+	var dst time.Duration
+	benchmarkEncodeDecode(b, time.Hour, &dst)
 }
 
-func (t *MsgpackTest) BenchmarkBytes(c *C) {
-	in := make([]byte, 1024)
-	var out []byte
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out); err != nil {
-			panic(err)
-		}
-	}
-	c.Assert(t.buf.Len(), Equals, 0)
+func BenchmarkBytes(b *testing.B) {
+	src := make([]byte, 1024)
+	var dst []byte
+	benchmarkEncodeDecode(b, src, &dst)
 }
 
-func (t *MsgpackTest) BenchmarkMapStringString(c *C) {
-	in := map[string]string{
+func BenchmarkMapStringString(b *testing.B) {
+	src := map[string]string{
 		"hello": "world",
 		"foo":   "bar",
 	}
-	var out map[string]string
-
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out); err != nil {
-			panic(err)
-		}
-	}
-
-	c.Assert(t.buf.Len(), Equals, 0)
+	var dst map[string]string
+	benchmarkEncodeDecode(b, src, &dst)
 }
 
-func (t *MsgpackTest) BenchmarkMapStringStringPtr(c *C) {
-	in := map[string]string{
+func BenchmarkMapStringStringPtr(b *testing.B) {
+	src := map[string]string{
 		"hello": "world",
 		"foo":   "bar",
 	}
-	var out map[string]string
-	out2 := &out
-
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(&in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out2); err != nil {
-			panic(err)
-		}
-	}
-
-	c.Assert(t.buf.Len(), Equals, 0)
+	var dst map[string]string
+	dstptr := &dst
+	benchmarkEncodeDecode(b, src, &dstptr)
 }
 
-func (t *MsgpackTest) BenchmarkMapIntInt(c *C) {
-	in := map[int]int{
+func BenchmarkMapIntInt(b *testing.B) {
+	src := map[int]int{
 		1: 10,
 		2: 20,
 	}
-	var out map[int]int
-
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out); err != nil {
-			panic(err)
-		}
-	}
-
-	c.Assert(t.buf.Len(), Equals, 0)
+	var dst map[int]int
+	benchmarkEncodeDecode(b, src, &dst)
 }
 
-func (t *MsgpackTest) BenchmarkStringSlice(c *C) {
-	in := []string{"hello", "world"}
-	var out []string
-
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out); err != nil {
-			panic(err)
-		}
-	}
-
-	c.Assert(t.buf.Len(), Equals, 0)
+func BenchmarkStringSlice(b *testing.B) {
+	src := []string{"hello", "world"}
+	var dst []string
+	benchmarkEncodeDecode(b, src, &dst)
 }
 
-func (t *MsgpackTest) BenchmarkStringSlicePtr(c *C) {
-	in := []string{"hello", "world"}
-	var out []string
-	out2 := &out
-
-	for i := 0; i < c.N; i++ {
-		if err := t.enc.Encode(&in); err != nil {
-			panic(err)
-		}
-		if err := t.dec.Decode(&out2); err != nil {
-			panic(err)
-		}
-	}
-
-	c.Assert(t.buf.Len(), Equals, 0)
+func BenchmarkStringSlicePtr(b *testing.B) {
+	src := []string{"hello", "world"}
+	var dst []string
+	dstptr := &dst
+	benchmarkEncodeDecode(b, src, &dstptr)
 }
 
 type benchmarkStruct struct {
@@ -891,7 +814,7 @@ func (s *benchmarkStruct2) DecodeMsgpack(r io.Reader) error {
 
 var _ msgpack.Coder = &benchmarkStruct2{}
 
-func (t *MsgpackTest) structForBenchmark() *benchmarkStruct {
+func structForBenchmark() *benchmarkStruct {
 	return &benchmarkStruct{
 		Name:      "Hello World",
 		Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
@@ -902,7 +825,7 @@ func (t *MsgpackTest) structForBenchmark() *benchmarkStruct {
 	}
 }
 
-func (t *MsgpackTest) structForBenchmark2() *benchmarkStruct2 {
+func structForBenchmark2() *benchmarkStruct2 {
 	return &benchmarkStruct2{
 		Name:      "Hello World",
 		Colors:    []string{"red", "orange", "yellow", "green", "blue", "violet"},
@@ -913,120 +836,120 @@ func (t *MsgpackTest) structForBenchmark2() *benchmarkStruct2 {
 	}
 }
 
-func (t *MsgpackTest) BenchmarkStruct(c *C) {
-	in := t.structForBenchmark()
+func BenchmarkStruct(b *testing.B) {
+	in := structForBenchmark()
 	out := &benchmarkStruct{}
-	for i := 0; i < c.N; i++ {
-		b, err := msgpack.Marshal(in)
+	for i := 0; i < b.N; i++ {
+		buf, err := msgpack.Marshal(in)
 		if err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
-		err = msgpack.Unmarshal(b, out)
+		err = msgpack.Unmarshal(buf, out)
 		if err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
 
-func (t *MsgpackTest) BenchmarkStructManual(c *C) {
-	in := t.structForBenchmark2()
+func BenchmarkStructManual(b *testing.B) {
+	in := structForBenchmark2()
 	out := &benchmarkStruct2{}
-	for i := 0; i < c.N; i++ {
-		b, err := msgpack.Marshal(in)
+	for i := 0; i < b.N; i++ {
+		buf, err := msgpack.Marshal(in)
 		if err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
-		err = msgpack.Unmarshal(b, out)
+		err = msgpack.Unmarshal(buf, out)
 		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func (t *MsgpackTest) BenchmarkStructMsgpack2(c *C) {
-	in := t.structForBenchmark()
-	out := &benchmarkStruct{}
-	for i := 0; i < c.N; i++ {
-		b, err := msgpack2.Marshal(in)
-		if err != nil {
-			panic(err)
-		}
-		err = msgpack2.Unmarshal(b, out, nil)
-		if err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
 
-func (t *MsgpackTest) BenchmarkStructMsgpack3(c *C) {
-	in := t.structForBenchmark()
+func BenchmarkStructMsgpack2(b *testing.B) {
+	in := structForBenchmark()
 	out := &benchmarkStruct{}
-	for i := 0; i < c.N; i++ {
+	for i := 0; i < b.N; i++ {
+		buf, err := msgpack2.Marshal(in)
+		if err != nil {
+			b.Fatal(err)
+		}
+		err = msgpack2.Unmarshal(buf, out, nil)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkStructMsgpack3(b *testing.B) {
+	in := structForBenchmark()
+	out := &benchmarkStruct{}
+	for i := 0; i < b.N; i++ {
 		buf := &bytes.Buffer{}
 		enc := codec.NewEncoder(buf, &codec.MsgpackHandle{})
 		dec := codec.NewDecoder(buf, &codec.MsgpackHandle{})
 
 		if err := enc.Encode(in); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		if err := dec.Decode(out); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
 
-func (t *MsgpackTest) BenchmarkStructJSON(c *C) {
-	in := t.structForBenchmark()
+func BenchmarkStructJSON(b *testing.B) {
+	in := structForBenchmark()
 	out := &benchmarkStruct{}
-	for i := 0; i < c.N; i++ {
-		b, err := json.Marshal(in)
+	for i := 0; i < b.N; i++ {
+		buf, err := json.Marshal(in)
 		if err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
-		err = json.Unmarshal(b, out)
+		err = json.Unmarshal(buf, out)
 		if err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
 
-func (t *MsgpackTest) BenchmarkStructGOB(c *C) {
-	in := t.structForBenchmark()
+func BenchmarkStructGOB(b *testing.B) {
+	in := structForBenchmark()
 	out := &benchmarkStruct{}
-	for i := 0; i < c.N; i++ {
+	for i := 0; i < b.N; i++ {
 		buf := &bytes.Buffer{}
 		enc := gob.NewEncoder(buf)
 		dec := gob.NewDecoder(buf)
 
 		if err := enc.Encode(in); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		if err := dec.Decode(out); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
 
-func (t *MsgpackTest) BenchmarkCSV(c *C) {
-	for i := 0; i < c.N; i++ {
-		record := []string{strconv.FormatInt(int64(1), 10), "hello", "world"}
+func BenchmarkCSV(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		record := []string{"1", "hello", "world"}
 
 		buf := &bytes.Buffer{}
 		r := csv.NewReader(buf)
 		w := csv.NewWriter(buf)
 
 		if err := w.Write(record); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		w.Flush()
 		if _, err := r.Read(); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
 
-func (t *MsgpackTest) BenchmarkCSVMsgpack(c *C) {
-	for i := 0; i < c.N; i++ {
+func BenchmarkCSVMsgpack(b *testing.B) {
+	for i := 0; i < b.N; i++ {
 		var num int
 		var hello, world string
 
@@ -1035,10 +958,10 @@ func (t *MsgpackTest) BenchmarkCSVMsgpack(c *C) {
 		dec := msgpack.NewDecoder(buf)
 
 		if err := enc.Encode(1, "hello", "world"); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 		if err := dec.Decode(&num, &hello, &world); err != nil {
-			panic(err)
+			b.Fatal(err)
 		}
 	}
 }
