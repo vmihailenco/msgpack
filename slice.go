@@ -53,7 +53,7 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 	return e.write(v)
 }
 
-func (e *Encoder) encodeSliceLen(l int) error {
+func (e *Encoder) EncodeSliceLen(l int) error {
 	switch {
 	case l < 16:
 		if err := e.W.WriteByte(fixArrayLowCode | byte(l)); err != nil {
@@ -81,7 +81,7 @@ func (e *Encoder) encodeStringSlice(s []string) error {
 	if s == nil {
 		return e.EncodeNil()
 	}
-	if err := e.encodeSliceLen(len(s)); err != nil {
+	if err := e.EncodeSliceLen(len(s)); err != nil {
 		return err
 	}
 	for _, v := range s {
@@ -99,7 +99,7 @@ func (e *Encoder) encodeSlice(v reflect.Value) error {
 	}
 
 	l := v.Len()
-	if err := e.encodeSliceLen(l); err != nil {
+	if err := e.EncodeSliceLen(l); err != nil {
 		return err
 	}
 	for i := 0; i < l; i++ {
