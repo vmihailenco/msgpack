@@ -1,5 +1,5 @@
-Msgpack implementation for Golang
-=================================
+Msgpack implementation for Golang [![Build Status](https://travis-ci.org/vmihailenco/msgpack.svg)](https://travis-ci.org/vmihailenco/msgpack)
+===
 
 Supports:
 - Primitives, arrays, maps, structs and interface{}.

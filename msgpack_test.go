@@ -17,7 +17,7 @@ import (
 
 	msgpack2 "github.com/ugorji/go-msgpack"
 	"github.com/ugorji/go/codec"
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 type nameStruct struct {
