@@ -68,11 +68,17 @@ func (t *MsgpackTest) TestUint(c *C) {
 		{18446744073709551615, []byte{0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}},
 	}
 	for _, r := range table {
+		var int64v int64
 		c.Assert(t.enc.Encode(r.v), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
-		var v uint
-		c.Assert(t.dec.Decode(&v), IsNil)
-		c.Assert(v, Equals, r.v)
+		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
+		c.Assert(t.dec.Decode(&int64v), IsNil, Commentf("n=%d", r.v))
+		c.Assert(int64v, Equals, int64(r.v), Commentf("n=%d", r.v))
+
+		var uint64v uint64
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
+		c.Assert(t.dec.Decode(&uint64v), IsNil, Commentf("n=%d", r.v))
+		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
 	}
 }
 
@@ -128,11 +134,17 @@ func (t *MsgpackTest) TestInt(c *C) {
 		{4294967298, []byte{0xd3, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02}},
 	}
 	for _, r := range table {
+		var int64v int64
 		c.Assert(t.enc.Encode(r.v), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
-		var v int
-		c.Assert(t.dec.Decode(&v), IsNil)
-		c.Assert(v, Equals, r.v)
+		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
+		c.Assert(t.dec.Decode(&int64v), IsNil, Commentf("n=%d", r.v))
+		c.Assert(int64v, Equals, int64(r.v), Commentf("n=%d", r.v))
+
+		var uint64v uint64
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
+		c.Assert(t.dec.Decode(&uint64v), IsNil, Commentf("n=%d", r.v))
+		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
 	}
 }
 
