@@ -22,11 +22,16 @@ const (
 	int32Code = 0xd2
 	int64Code = 0xd3
 
-	fixRawLowCode  = 0xa0
-	fixRawHighCode = 0xbf
-	fixRawMask     = 0x1f
-	raw16Code      = 0xda
-	raw32Code      = 0xdb
+	fixStrLowCode  = 0xa0
+	fixStrHighCode = 0xbf
+	fixStrMask     = 0x1f
+	str8Code       = 0xd9
+	str16Code      = 0xda
+	str32Code      = 0xdb
+
+	bin8Code  = 0xc4
+	bin16Code = 0xc5
+	bin32Code = 0xc6
 
 	fixArrayLowCode  = 0x90
 	fixArrayHighCode = 0x9f

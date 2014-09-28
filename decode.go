@@ -314,7 +314,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeMap()
 	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
 		return d.DecodeSlice()
-	} else if c >= fixRawLowCode && c <= fixRawHighCode {
+	} else if c >= fixStrLowCode && c <= fixStrHighCode {
 		return d.DecodeString()
 	}
 
@@ -332,7 +332,9 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeUint64()
 	case int8Code, int16Code, int32Code, int64Code:
 		return d.DecodeInt64()
-	case raw16Code, raw32Code:
+	case bin8Code, bin16Code, bin32Code:
+		return d.DecodeBytes()
+	case str16Code, str32Code:
 		return d.DecodeString()
 	case array16Code, array32Code:
 		return d.DecodeSlice()

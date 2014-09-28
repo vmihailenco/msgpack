@@ -10,13 +10,16 @@ import (
 
 func (e *Encoder) encodeBytesLen(l int) error {
 	switch {
-	case l < 32:
-		if err := e.W.WriteByte(fixRawLowCode | uint8(l)); err != nil {
+	case l < 256:
+		if err := e.write([]byte{
+			bin8Code,
+			byte(l),
+		}); err != nil {
 			return err
 		}
 	case l < 65536:
 		if err := e.write([]byte{
-			raw16Code,
+			bin16Code,
 			byte(l >> 8),
 			byte(l),
 		}); err != nil {
@@ -24,7 +27,42 @@ func (e *Encoder) encodeBytesLen(l int) error {
 		}
 	default:
 		if err := e.write([]byte{
-			raw32Code,
+			bin32Code,
+			byte(l >> 24),
+			byte(l >> 16),
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) encodeStrLen(l int) error {
+	switch {
+	case l < 32:
+		if err := e.W.WriteByte(fixStrLowCode | uint8(l)); err != nil {
+			return err
+		}
+	case l < 256:
+		if err := e.write([]byte{
+			str8Code,
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	case l < 65536:
+		if err := e.write([]byte{
+			str16Code,
+			byte(l >> 8),
+			byte(l),
+		}); err != nil {
+			return err
+		}
+	default:
+		if err := e.write([]byte{
+			str32Code,
 			byte(l >> 24),
 			byte(l >> 16),
 			byte(l >> 8),
@@ -37,7 +75,7 @@ func (e *Encoder) encodeBytesLen(l int) error {
 }
 
 func (e *Encoder) EncodeString(v string) error {
-	if err := e.encodeBytesLen(len(v)); err != nil {
+	if err := e.encodeStrLen(len(v)); err != nil {
 		return err
 	}
 	return e.writeString(v)
@@ -118,14 +156,17 @@ func (d *Decoder) DecodeBytesLen() (int, error) {
 	}
 	if c == nilCode {
 		return -1, nil
-	} else if c >= fixRawLowCode && c <= fixRawHighCode {
-		return int(c & fixRawMask), nil
+	} else if c >= fixStrLowCode && c <= fixStrHighCode {
+		return int(c & fixStrMask), nil
 	}
 	switch c {
-	case raw16Code:
+	case str8Code, bin8Code:
+		n, err := d.uint8()
+		return int(n), err
+	case str16Code, bin16Code:
 		n, err := d.uint16()
 		return int(n), err
-	case raw32Code:
+	case str32Code, bin32Code:
 		n, err := d.uint32()
 		return int(n), err
 	}
