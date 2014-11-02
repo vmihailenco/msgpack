@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"bytes"
 	"fmt"
+	"sort"
 
 	"github.com/vmihailenco/msgpack"
 )
@@ -27,8 +28,22 @@ func Example_mapStringInterface() {
 
 	var out map[string]interface{}
 	err = msgpack.Unmarshal(b, &out)
-	fmt.Printf("%v %#v\n", err, out)
-	// Output: <nil> map[string]interface {}{"foo":1, "hello":"world"}
+
+	var outKeys []string
+	for k := range out {
+		outKeys = append(outKeys, k)
+	}
+	sort.Strings(outKeys)
+
+	fmt.Printf("err: %v\n", err)
+
+	for _, k := range outKeys {
+		fmt.Printf("out[\"%v\"]: %#v\n", k, out[k])
+	}
+
+	// Output: err: <nil>
+	// out["foo"]: 1
+	// out["hello"]: "world"
 }
 
 func Example_recursiveMapStringInterface() {
