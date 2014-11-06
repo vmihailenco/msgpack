@@ -334,7 +334,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeInt64()
 	case bin8Code, bin16Code, bin32Code:
 		return d.DecodeBytes()
-	case str16Code, str32Code:
+	case str8Code, str16Code, str32Code:
 		return d.DecodeString()
 	case array16Code, array32Code:
 		return d.DecodeSlice()

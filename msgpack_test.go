@@ -80,6 +80,18 @@ func (t *MsgpackTest) TestUint(c *C) {
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
 		c.Assert(t.dec.Decode(&uint64v), IsNil, Commentf("n=%d", r.v))
 		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
+
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		switch iface.(type) {
+		case int64:
+			c.Assert(iface, Equals, int64(r.v))
+		case uint64:
+			c.Assert(iface, Equals, uint64(r.v))
+		default:
+			panic("not reached")
+		}
 	}
 }
 
@@ -146,6 +158,18 @@ func (t *MsgpackTest) TestInt(c *C) {
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
 		c.Assert(t.dec.Decode(&uint64v), IsNil, Commentf("n=%d", r.v))
 		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
+
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		switch iface.(type) {
+		case int64:
+			c.Assert(iface, Equals, int64(r.v))
+		case uint64:
+			c.Assert(iface, Equals, uint64(r.v))
+		default:
+			panic("not reached")
+		}
 	}
 }
 
@@ -166,9 +190,15 @@ func (t *MsgpackTest) TestFloat32(c *C) {
 	for _, r := range table {
 		c.Assert(t.enc.Encode(r.v), IsNil)
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
+
 		var v float32
 		c.Assert(t.dec.Decode(&v), IsNil)
 		c.Assert(v, Equals, r.v)
+
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		c.Assert(iface, Equals, r.v)
 	}
 
 	in := float32(math.NaN())
@@ -195,9 +225,15 @@ func (t *MsgpackTest) TestFloat64(c *C) {
 	for _, r := range table {
 		c.Assert(t.enc.Encode(r.v), IsNil)
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
+
 		var v float64
 		c.Assert(t.dec.Decode(&v), IsNil)
 		c.Assert(v, Equals, r.v)
+
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		c.Assert(iface, Equals, r.v)
 	}
 
 	in := math.NaN()
@@ -218,9 +254,15 @@ func (t *MsgpackTest) TestBool(c *C) {
 	for _, r := range table {
 		c.Assert(t.enc.Encode(r.v), IsNil)
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
+
 		var v bool
 		c.Assert(t.dec.Decode(&v), IsNil)
 		c.Assert(v, Equals, r.v)
+
+		c.Assert(t.enc.Encode(r.v), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		c.Assert(iface, Equals, r.v)
 	}
 }
 
@@ -274,19 +316,19 @@ func (t *MsgpackTest) TestTime(c *C) {
 }
 
 func (t *MsgpackTest) TestSliceOfInts(c *C) {
-	for _, i := range []struct {
-		src []int
-		b   []byte
+	for _, test := range []struct {
+		v []int64
+		b []byte
 	}{
 		{nil, []byte{0xc0}},
-		{[]int{}, []byte{0x90}},
-		{[]int{0}, []byte{0x91, 0x0}},
+		{[]int64{}, []byte{0x90}},
+		{[]int64{0}, []byte{0x91, 0x0}},
 	} {
-		c.Assert(t.enc.Encode(i.src), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
-		var dst []int
+		c.Assert(t.enc.Encode(test.v), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, test.b)
+		var dst []int64
 		c.Assert(t.dec.Decode(&dst), IsNil)
-		c.Assert(dst, DeepEquals, i.src)
+		c.Assert(dst, DeepEquals, test.v)
 	}
 }
 
@@ -356,9 +398,15 @@ func (t *MsgpackTest) TestBin(c *C) {
 	} {
 		c.Assert(t.enc.Encode(i.src), IsNil)
 		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+
 		var dst []byte
 		c.Assert(t.dec.Decode(&dst), IsNil)
-		c.Assert(bytes.Compare(dst, i.src), Equals, 0)
+		c.Assert(dst, DeepEquals, i.src)
+
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		c.Assert(iface, DeepEquals, i.src)
 	}
 }
 
@@ -403,9 +451,15 @@ func (t *MsgpackTest) TestString(c *C) {
 	} {
 		c.Assert(t.enc.Encode(i.src), IsNil)
 		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+
 		var dst string
 		c.Assert(t.dec.Decode(&dst), IsNil)
 		c.Assert(dst, Equals, i.src)
+
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		iface, err := t.dec.DecodeInterface()
+		c.Assert(err, IsNil)
+		c.Assert(iface, DeepEquals, i.src)
 	}
 }
 
