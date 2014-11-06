@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vmihailenco/msgpack"
-
 	msgpack2 "github.com/ugorji/go-msgpack"
 	"github.com/ugorji/go/codec"
 	. "gopkg.in/check.v1"
+
+	"gopkg.in/vmihailenco/msgpack.v1"
 )
 
 type nameStruct struct {
