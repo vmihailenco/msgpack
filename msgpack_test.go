@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -322,21 +323,82 @@ func (t *MsgpackTest) TestArrayOfStrings(c *C) {
 	c.Assert(dst, DeepEquals, src)
 }
 
+func (t *MsgpackTest) TestBin(c *C) {
+	lowBin8 := []byte(strings.Repeat("w", 32))
+	highBin8 := []byte(strings.Repeat("w", 255))
+	lowBin16 := []byte(strings.Repeat("w", 256))
+	highBin16 := []byte(strings.Repeat("w", 65535))
+	lowBin32 := []byte(strings.Repeat("w", 65536))
+	for _, i := range []struct {
+		src []byte
+		b   []byte
+	}{
+		{
+			lowBin8,
+			append([]byte{0xc4, byte(len(lowBin8))}, lowBin8...),
+		},
+		{
+			highBin8,
+			append([]byte{0xc4, byte(len(highBin8))}, highBin8...),
+		},
+		{
+			lowBin16,
+			append([]byte{0xc5, 1, 0}, lowBin16...),
+		},
+		{
+			highBin16,
+			append([]byte{0xc5, 255, 255}, highBin16...),
+		},
+		{
+			lowBin32,
+			append([]byte{0xc6, 0, 1, 0, 0}, lowBin32...),
+		},
+	} {
+		c.Assert(t.enc.Encode(i.src), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
+		var dst []byte
+		c.Assert(t.dec.Decode(&dst), IsNil)
+		c.Assert(bytes.Compare(dst, i.src), Equals, 0)
+	}
+}
+
 func (t *MsgpackTest) TestString(c *C) {
+	highFixStr := strings.Repeat("w", 31)
+	lowStr8 := strings.Repeat("w", 32)
+	highStr8 := strings.Repeat("w", 255)
+	lowStr16 := strings.Repeat("w", 256)
+	highStr16 := strings.Repeat("w", 65535)
+	lowStr32 := strings.Repeat("w", 65536)
 	for _, i := range []struct {
 		src string
 		b   []byte
 	}{
-		{"", []byte{0xa0}},
-		{"a", []byte{0xa1, 'a'}},
-		{"hello", append([]byte{0xa5}, "hello"...)},
+		{"", []byte{0xa0}},                          // fixstr
+		{"a", []byte{0xa1, 'a'}},                    // fixstr
+		{"hello", append([]byte{0xa5}, "hello"...)}, // fixstr
 		{
-			"world world world",
-			append([]byte{0xb1}, "world world world"...),
+			highFixStr,
+			append([]byte{0xbf}, highFixStr...),
 		},
 		{
-			"world world world world world world",
-			append([]byte{0xda, 0x0, 0x23}, "world world world world world world"...),
+			lowStr8,
+			append([]byte{0xd9, byte(len(lowStr8))}, lowStr8...),
+		},
+		{
+			highStr8,
+			append([]byte{0xd9, byte(len(highStr8))}, highStr8...),
+		},
+		{
+			lowStr16,
+			append([]byte{0xda, 1, 0}, lowStr16...),
+		},
+		{
+			highStr16,
+			append([]byte{0xda, 255, 255}, highStr16...),
+		},
+		{
+			lowStr32,
+			append([]byte{0xdb, 0, 1, 0, 0}, lowStr32...),
 		},
 	} {
 		c.Assert(t.enc.Encode(i.src), IsNil)
@@ -344,32 +406,6 @@ func (t *MsgpackTest) TestString(c *C) {
 		var dst string
 		c.Assert(t.dec.Decode(&dst), IsNil)
 		c.Assert(dst, Equals, i.src)
-	}
-}
-
-func (t *MsgpackTest) TestBytes(c *C) {
-	for _, i := range []struct {
-		src []byte
-		b   []byte
-	}{
-		{nil, []byte{0xc0}},
-		{[]byte{}, []byte{0xa0}},
-		{[]byte("a"), []byte{0xa1, 'a'}},
-		{[]byte("hello"), append([]byte{0xa5}, "hello"...)},
-		{
-			[]byte("world world world"),
-			append([]byte{0xb1}, "world world world"...),
-		},
-		{
-			[]byte("world world world world world world"),
-			append([]byte{0xda, 0x0, 0x23}, "world world world world world world"...),
-		},
-	} {
-		c.Assert(t.enc.Encode(i.src), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
-		var dst []byte
-		c.Assert(t.dec.Decode(&dst), IsNil)
-		c.Assert(dst, DeepEquals, i.src)
 	}
 }
 
