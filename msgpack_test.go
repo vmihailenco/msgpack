@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ import (
 	"github.com/ugorji/go/codec"
 	. "gopkg.in/check.v1"
 
-	"gopkg.in/vmihailenco/msgpack.v1"
+	"github.com/vmihailenco/msgpack"
 )
 
 type nameStruct struct {
@@ -523,24 +524,28 @@ type testStruct struct {
 	Colors []string
 }
 
-func (t *MsgpackTest) TestStruct(c *C) {
-	in := &testStruct{
+func TestStruct(t *testing.T) {
+	in := testStruct{
 		Name:   "hello world",
 		Tm:     time.Now(),
 		Data:   []byte{1, 2, 3},
 		Colors: []string{"red", "orange", "yellow", "green", "blue", "violet"},
 	}
 	var out testStruct
-	c.Assert(t.enc.Encode(in), IsNil)
-	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(out.Name, Equals, "hello world")
-	c.Assert(out.Tm.Equal(in.Tm), Equals, true)
-	c.Assert(out.Data, DeepEquals, []byte{1, 2, 3})
-	c.Assert(
-		out.Colors,
-		DeepEquals,
-		[]string{"red", "orange", "yellow", "green", "blue", "violet"},
-	)
+
+	b, err := msgpack.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = msgpack.Unmarshal(b, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(out, in) {
+		t.Fatal("%#v != %#v", out, in)
+	}
 }
 
 func (t *MsgpackTest) TestStructUnknownField(c *C) {
@@ -645,7 +650,7 @@ type Struct3 struct {
 	Name1 string
 }
 
-func (t *MsgpackTest) TestEmbedding(c *C) {
+func TestEmbedding(t *testing.T) {
 	in := &Struct3{
 		Name1: "hello",
 		Struct4: Struct4{
@@ -653,10 +658,22 @@ func (t *MsgpackTest) TestEmbedding(c *C) {
 		},
 	}
 	var out Struct3
-	c.Assert(t.enc.Encode(in), IsNil)
-	c.Assert(t.dec.Decode(&out), IsNil)
-	c.Assert(out.Name1, Equals, in.Name1)
-	c.Assert(out.Name2, Equals, in.Name2)
+
+	b, err := msgpack.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = msgpack.Unmarshal(b, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Name1 != in.Name1 {
+		t.Fatalf("")
+	}
+	if out.Name2 != in.Name2 {
+		t.Fatalf("")
+	}
 }
 
 func (t *MsgpackTest) TestSliceInterface(c *C) {
@@ -946,6 +963,7 @@ func BenchmarkStruct(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+
 		err = msgpack.Unmarshal(buf, out)
 		if err != nil {
 			b.Fatal(err)
@@ -961,6 +979,7 @@ func BenchmarkStructManual(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+
 		err = msgpack.Unmarshal(buf, out)
 		if err != nil {
 			b.Fatal(err)
@@ -976,6 +995,7 @@ func BenchmarkStructMsgpack2(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+
 		err = msgpack2.Unmarshal(buf, out, nil)
 		if err != nil {
 			b.Fatal(err)
@@ -1008,6 +1028,7 @@ func BenchmarkStructJSON(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+
 		err = json.Unmarshal(buf, out)
 		if err != nil {
 			b.Fatal(err)
@@ -1026,6 +1047,7 @@ func BenchmarkStructGOB(b *testing.B) {
 		if err := enc.Encode(in); err != nil {
 			b.Fatal(err)
 		}
+
 		if err := dec.Decode(out); err != nil {
 			b.Fatal(err)
 		}

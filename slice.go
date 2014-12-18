@@ -324,3 +324,30 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 
 	return nil
 }
+
+func (d *Decoder) strings() ([]string, error) {
+	n, err := d.DecodeSliceLen()
+	if err != nil {
+		return nil, err
+	}
+
+	ss := make([]string, n)
+	for i := 0; i < n; i++ {
+		s, err := d.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		ss[i] = s
+	}
+
+	return ss, nil
+}
+
+func (d *Decoder) stringsValue(value reflect.Value) error {
+	ss, err := d.strings()
+	if err != nil {
+		return err
+	}
+	value.Set(reflect.ValueOf(ss))
+	return nil
+}

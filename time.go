@@ -11,7 +11,7 @@ var (
 )
 
 func init() {
-	Register(timeType, encodeTime, decodeTime)
+	Register(timeType, encodeTimeValue, decodeTimeValue)
 }
 
 func (e *Encoder) EncodeTime(tm time.Time) error {
@@ -44,12 +44,12 @@ func (d *Decoder) DecodeTime() (time.Time, error) {
 	return time.Unix(sec, nsec), nil
 }
 
-func encodeTime(e *Encoder, v reflect.Value) error {
+func encodeTimeValue(e *Encoder, v reflect.Value) error {
 	tm := v.Interface().(time.Time)
 	return e.EncodeTime(tm)
 }
 
-func decodeTime(d *Decoder, v reflect.Value) error {
+func decodeTimeValue(d *Decoder, v reflect.Value) error {
 	tm, err := d.DecodeTime()
 	if err != nil {
 		return err

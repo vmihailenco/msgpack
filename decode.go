@@ -261,16 +261,15 @@ func (d *Decoder) structValue(v reflect.Value) error {
 		return err
 	}
 
-	typ := v.Type()
+	fields := structs.Fields(v.Type())
 	for i := 0; i < n; i++ {
 		name, err := d.DecodeString()
 		if err != nil {
 			return err
 		}
 
-		f := structs.Field(typ, name)
-		if f != nil {
-			if err := f.DecodeValue(d, v); err != nil {
+		if field := fields[name]; field != nil {
+			if err := field.DecodeValue(d, v); err != nil {
 				return err
 			}
 		} else {

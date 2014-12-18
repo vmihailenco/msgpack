@@ -187,7 +187,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		}
 	}
 	for _, f := range fields {
-		if err := e.EncodeString(f.Name()); err != nil {
+		if err := e.EncodeString(f.Name); err != nil {
 			return err
 		}
 		if err := f.EncodeValue(e, v); err != nil {
