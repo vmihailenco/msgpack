@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"reflect"
 	"time"
 
@@ -18,8 +19,14 @@ type bufReader interface {
 	ReadN(int) ([]byte, error)
 }
 
-func Unmarshal(data []byte, v ...interface{}) error {
-	buf := bufio.NewBuffer(data)
+func Unmarshal(b []byte, v ...interface{}) error {
+	if len(v) == 1 {
+		unmarshaler, ok := v[0].(Unmarshaler)
+		if ok {
+			return unmarshaler.UnmarshalMsgpack(b)
+		}
+	}
+	buf := bufio.NewBuffer(b)
 	return NewDecoder(buf).Decode(v...)
 }
 
@@ -187,8 +194,12 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		if dec, ok := typDecMap[typ]; ok {
 			return dec(d, v)
 		}
-		if dec, ok := v.Interface().(decoder); ok {
-			return dec.DecodeMsgpack(d.R)
+		if unmarshaler, ok := v.Interface().(Unmarshaler); ok {
+			b, err := ioutil.ReadAll(d.R)
+			if err != nil {
+				return err
+			}
+			return unmarshaler.UnmarshalMsgpack(b)
 		}
 		return d.structValue(v)
 	case reflect.Ptr:
@@ -199,8 +210,12 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		if dec, ok := typDecMap[typ]; ok {
 			return dec(d, v)
 		}
-		if dec, ok := v.Interface().(decoder); ok {
-			return dec.DecodeMsgpack(d.R)
+		if unmarshaler, ok := v.Interface().(Unmarshaler); ok {
+			b, err := ioutil.ReadAll(d.R)
+			if err != nil {
+				return err
+			}
+			return unmarshaler.UnmarshalMsgpack(b)
 		}
 		return d.DecodeValue(v.Elem())
 	case reflect.Interface:

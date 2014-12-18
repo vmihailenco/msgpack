@@ -7,7 +7,6 @@ import (
 	"encoding/csv"
 	"encoding/gob"
 	"encoding/json"
-	"io"
 	"math"
 	"reflect"
 	"strings"
@@ -577,15 +576,16 @@ func (s *coderStruct) Name() string {
 	return s.name
 }
 
-func (s *coderStruct) EncodeMsgpack(w io.Writer) error {
-	return msgpack.NewEncoder(w).Encode(s.name)
+func (s *coderStruct) MarshalMsgpack() ([]byte, error) {
+	return msgpack.Marshal(s.name)
 }
 
-func (s *coderStruct) DecodeMsgpack(r io.Reader) error {
-	return msgpack.NewDecoder(r).Decode(&s.name)
+func (s *coderStruct) UnmarshalMsgpack(b []byte) error {
+	return msgpack.Unmarshal(b, &s.name)
 }
 
-var _ msgpack.Coder = &coderStruct{}
+var _ msgpack.Marshaler = &coderStruct{}
+var _ msgpack.Unmarshaler = &coderStruct{}
 
 func (t *MsgpackTest) TestCoder(c *C) {
 	in := &coderStruct{name: "hello"}
@@ -907,9 +907,8 @@ type benchmarkStruct2 struct {
 	UpdatedAt time.Time
 }
 
-func (s *benchmarkStruct2) EncodeMsgpack(w io.Writer) error {
-	enc := msgpack.NewEncoder(w)
-	return enc.Encode(
+func (s *benchmarkStruct2) MarshalMsgpack() ([]byte, error) {
+	return msgpack.Marshal(
 		s.Name,
 		s.Colors,
 		s.Age,
@@ -919,9 +918,9 @@ func (s *benchmarkStruct2) EncodeMsgpack(w io.Writer) error {
 	)
 }
 
-func (s *benchmarkStruct2) DecodeMsgpack(r io.Reader) error {
-	dec := msgpack.NewDecoder(r)
-	return dec.Decode(
+func (s *benchmarkStruct2) UnmarshalMsgpack(b []byte) error {
+	return msgpack.Unmarshal(
+		b,
 		&s.Name,
 		&s.Colors,
 		&s.Age,
@@ -931,7 +930,8 @@ func (s *benchmarkStruct2) DecodeMsgpack(r io.Reader) error {
 	)
 }
 
-var _ msgpack.Coder = &benchmarkStruct2{}
+var _ msgpack.Marshaler = &benchmarkStruct2{}
+var _ msgpack.Unmarshaler = &benchmarkStruct2{}
 
 func structForBenchmark() *benchmarkStruct {
 	return &benchmarkStruct{

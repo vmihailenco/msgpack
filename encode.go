@@ -34,6 +34,12 @@ func (w *writeByte) WriteString(s string) (int, error) {
 }
 
 func Marshal(v ...interface{}) ([]byte, error) {
+	if len(v) == 1 {
+		marshaler, ok := v[0].(Marshaler)
+		if ok {
+			return marshaler.MarshalMsgpack()
+		}
+	}
 	buf := &bytes.Buffer{}
 	err := NewEncoder(buf).Encode(v...)
 	return buf.Bytes(), err
@@ -94,8 +100,13 @@ func (e *Encoder) encode(iv interface{}) error {
 		return e.EncodeInt64(int64(v))
 	case time.Time:
 		return e.EncodeTime(v)
-	case encoder:
-		return v.EncodeMsgpack(e.W)
+	case Marshaler:
+		b, err := v.MarshalMsgpack()
+		if err != nil {
+			return err
+		}
+		_, err = e.W.Write(b)
+		return err
 	}
 	return e.EncodeValue(reflect.ValueOf(iv))
 }
@@ -130,8 +141,13 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		if enc, ok := typEncMap[v.Type()]; ok {
 			return enc(e, v)
 		}
-		if enc, ok := v.Interface().(encoder); ok {
-			return enc.EncodeMsgpack(e.W)
+		if marshaler, ok := v.Interface().(Marshaler); ok {
+			b, err := marshaler.MarshalMsgpack()
+			if err != nil {
+				return err
+			}
+			_, err = e.W.Write(b)
+			return err
 		}
 		return e.EncodeValue(v.Elem())
 	case reflect.Struct:
@@ -139,8 +155,13 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		if enc, ok := typEncMap[typ]; ok {
 			return enc(e, v)
 		}
-		if enc, ok := v.Interface().(encoder); ok {
-			return enc.EncodeMsgpack(e.W)
+		if marshaler, ok := v.Interface().(Marshaler); ok {
+			b, err := marshaler.MarshalMsgpack()
+			if err != nil {
+				return err
+			}
+			_, err = e.W.Write(b)
+			return err
 		}
 		return e.encodeStruct(v)
 	default:
