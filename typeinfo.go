@@ -181,33 +181,33 @@ func newStructCache() *structCache {
 
 func (m *structCache) Fields(typ reflect.Type) []field {
 	m.l.RLock()
-	fields, ok := m.m[typ]
+	fs, ok := m.m[typ]
 	m.l.RUnlock()
 	if ok {
-		return fields
-	}
-
-	numField := typ.NumField()
-	fields = make([]field, 0, numField)
-	for i := 0; i < numField; i++ {
-		f := typ.Field(i)
-		if f.PkgPath != "" {
-			continue
-		}
-		finfo := m.newStructField(typ, &f)
-		if finfo != nil {
-			fields = append(fields, finfo)
-		}
+		return fs
 	}
 
 	m.l.Lock()
-	m.m[typ] = fields
+	fs, ok = m.m[typ]
+	if !ok {
+		fs = fields(typ)
+		m.m[typ] = fs
+	}
 	m.l.Unlock()
 
-	return fields
+	return fs
 }
 
-func (m *structCache) newStructField(typ reflect.Type, f *reflect.StructField) field {
+func (m *structCache) Field(typ reflect.Type, name string) field {
+	for _, f := range m.Fields(typ) {
+		if f.Name() == name {
+			return f
+		}
+	}
+	return nil
+}
+
+func newStructField(typ reflect.Type, f *reflect.StructField) field {
 	tokens := strings.Split(f.Tag.Get("msgpack"), ",")
 	name := tokens[0]
 	if name == "-" {
@@ -266,12 +266,18 @@ func (m *structCache) newStructField(typ reflect.Type, f *reflect.StructField) f
 	return baseField
 }
 
-func (m *structCache) Field(typ reflect.Type, name string) field {
-	// TODO(vmihailenco): binary search?
-	for _, f := range m.Fields(typ) {
-		if f.Name() == name {
-			return f
+func fields(typ reflect.Type) []field {
+	numField := typ.NumField()
+	fields := make([]field, 0, numField)
+	for i := 0; i < numField; i++ {
+		f := typ.Field(i)
+		if f.PkgPath != "" {
+			continue
+		}
+		field := newStructField(typ, &f)
+		if field != nil {
+			fields = append(fields, field)
 		}
 	}
-	return nil
+	return fields
 }
