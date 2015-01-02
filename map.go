@@ -12,21 +12,11 @@ func (e *Encoder) encodeMapLen(l int) error {
 			return err
 		}
 	case l < 65536:
-		if err := e.write([]byte{
-			map16Code,
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write2(map16Code, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write([]byte{
-			map32Code,
-			byte(l >> 24),
-			byte(l >> 16),
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write4(map32Code, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -171,5 +161,21 @@ func (d *Decoder) mapValue(v reflect.Value) error {
 		v.SetMapIndex(mk, mv)
 	}
 
+	return nil
+}
+
+func (e *Encoder) encodeStruct(v reflect.Value) error {
+	fields := structs.Fields(v.Type())
+	if err := e.encodeMapLen(len(fields)); err != nil {
+		return err
+	}
+	for _, f := range fields {
+		if err := e.EncodeString(f.Name); err != nil {
+			return err
+		}
+		if err := f.EncodeValue(e, v); err != nil {
+			return err
+		}
+	}
 	return nil
 }

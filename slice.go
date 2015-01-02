@@ -11,28 +11,15 @@ import (
 func (e *Encoder) encodeBytesLen(l int) error {
 	switch {
 	case l < 256:
-		if err := e.write([]byte{
-			bin8Code,
-			byte(l),
-		}); err != nil {
+		if err := e.write1(bin8Code, uint64(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write([]byte{
-			bin16Code,
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write2(bin16Code, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write([]byte{
-			bin32Code,
-			byte(l >> 24),
-			byte(l >> 16),
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write4(bin32Code, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -46,28 +33,15 @@ func (e *Encoder) encodeStrLen(l int) error {
 			return err
 		}
 	case l < 256:
-		if err := e.write([]byte{
-			str8Code,
-			byte(l),
-		}); err != nil {
+		if err := e.write1(str8Code, uint64(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write([]byte{
-			str16Code,
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write2(str16Code, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write([]byte{
-			str32Code,
-			byte(l >> 24),
-			byte(l >> 16),
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write4(str32Code, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -98,17 +72,11 @@ func (e *Encoder) EncodeSliceLen(l int) error {
 			return err
 		}
 	case l < 65536:
-		if err := e.write([]byte{array16Code, byte(l >> 8), byte(l)}); err != nil {
+		if err := e.write2(array16Code, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write([]byte{
-			array32Code,
-			byte(l >> 24),
-			byte(l >> 16),
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
+		if err := e.write4(array32Code, uint64(l)); err != nil {
 			return err
 		}
 	}

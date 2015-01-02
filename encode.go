@@ -46,7 +46,8 @@ func Marshal(v ...interface{}) ([]byte, error) {
 }
 
 type Encoder struct {
-	W writer
+	W   writer
+	buf []byte
 }
 
 func NewEncoder(w io.Writer) *Encoder {
@@ -55,7 +56,8 @@ func NewEncoder(w io.Writer) *Encoder {
 		ww = &writeByte{Writer: w}
 	}
 	return &Encoder{
-		W: ww,
+		W:   ww,
+		buf: make([]byte, 9),
 	}
 }
 
@@ -122,7 +124,7 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		return e.EncodeInt64(v.Int())
 	case reflect.Float32:
-		return e.EncodeFloat32(float32(v.Float()))
+		return e.EncodeFloat64(v.Float())
 	case reflect.Float64:
 		return e.EncodeFloat64(v.Float())
 	case reflect.Array:
@@ -181,49 +183,12 @@ func (e *Encoder) EncodeBool(value bool) error {
 	return e.W.WriteByte(falseCode)
 }
 
-func (e *Encoder) encodeStruct(v reflect.Value) error {
-	fields := structs.Fields(v.Type())
-	switch l := len(fields); {
-	case l < 16:
-		if err := e.W.WriteByte(fixMapLowCode | byte(l)); err != nil {
-			return err
-		}
-	case l < 65536:
-		if err := e.write([]byte{
-			map16Code,
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
-			return err
-		}
-	default:
-		if err := e.write([]byte{
-			map32Code,
-			byte(l >> 24),
-			byte(l >> 16),
-			byte(l >> 8),
-			byte(l),
-		}); err != nil {
-			return err
-		}
-	}
-	for _, f := range fields {
-		if err := e.EncodeString(f.Name); err != nil {
-			return err
-		}
-		if err := f.EncodeValue(e, v); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (e *Encoder) write(data []byte) error {
-	n, err := e.W.Write(data)
+func (e *Encoder) write(b []byte) error {
+	n, err := e.W.Write(b)
 	if err != nil {
 		return err
 	}
-	if n < len(data) {
+	if n < len(b) {
 		return io.ErrShortWrite
 	}
 	return nil

@@ -781,9 +781,29 @@ func BenchmarkBool(b *testing.B) {
 	benchmarkEncodeDecode(b, true, &dst)
 }
 
-func BenchmarkInt(b *testing.B) {
+func BenchmarkInt0(b *testing.B) {
 	var dst int
 	benchmarkEncodeDecode(b, 1, &dst)
+}
+
+func BenchmarkInt1(b *testing.B) {
+	var dst int
+	benchmarkEncodeDecode(b, -33, &dst)
+}
+
+func BenchmarkInt2(b *testing.B) {
+	var dst int
+	benchmarkEncodeDecode(b, 128, &dst)
+}
+
+func BenchmarkInt4(b *testing.B) {
+	var dst int
+	benchmarkEncodeDecode(b, 32768, &dst)
+}
+
+func BenchmarkInt8(b *testing.B) {
+	var dst int
+	benchmarkEncodeDecode(b, 2147483648, &dst)
 }
 
 func BenchmarkIntBinary(b *testing.B) {
