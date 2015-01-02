@@ -2,7 +2,6 @@ package msgpack
 
 import (
 	"reflect"
-	"strings"
 	"sync"
 )
 
@@ -61,21 +60,48 @@ var sliceDecoders = []decoderFunc{
 //------------------------------------------------------------------------------
 
 type field struct {
-	Index []int
-	Name  string
+	index     []int
+	omitEmpty bool
+
+	v reflect.Value
 
 	encoder encoderFunc
 	decoder decoderFunc
 }
 
-func (f *field) EncodeValue(e *Encoder, v reflect.Value) error {
-	fv := v.FieldByIndex(f.Index)
-	return f.encoder(e, fv)
+func (f *field) setStruct(strct reflect.Value) {
+	f.v = strct.FieldByIndex(f.index)
 }
 
-func (f *field) DecodeValue(d *Decoder, v reflect.Value) error {
-	fv := v.FieldByIndex(f.Index)
-	return f.decoder(d, fv)
+func (f *field) Omit() bool {
+	return f.omitEmpty && isEmptyValue(f.v)
+}
+
+func (f *field) EncodeValue(e *Encoder) error {
+	return f.encoder(e, f.v)
+}
+
+func (f *field) DecodeValue(d *Decoder) error {
+	return f.decoder(d, f.v)
+}
+
+//------------------------------------------------------------------------------
+
+type fields map[string]*field
+
+func (fs fields) setStruct(strct reflect.Value) {
+	for _, f := range fs {
+		f.setStruct(strct)
+	}
+}
+
+func (fs fields) Len() (length int) {
+	for _, f := range fs {
+		if !f.Omit() {
+			length++
+		}
+	}
+	return length
 }
 
 //------------------------------------------------------------------------------
@@ -162,37 +188,38 @@ func decodeUint64Value(d *Decoder, v reflect.Value) error {
 
 type structCache struct {
 	l sync.RWMutex
-	m map[reflect.Type]map[string]*field
+	m map[reflect.Type]fields
 }
 
 func newStructCache() *structCache {
 	return &structCache{
-		m: make(map[reflect.Type]map[string]*field),
+		m: make(map[reflect.Type]fields),
 	}
 }
 
-func (m *structCache) Fields(typ reflect.Type) map[string]*field {
+func (m *structCache) Fields(strct reflect.Value) fields {
+	typ := strct.Type()
+
 	m.l.RLock()
 	fs, ok := m.m[typ]
 	m.l.RUnlock()
-	if ok {
-		return fs
-	}
-
-	m.l.Lock()
-	fs, ok = m.m[typ]
 	if !ok {
-		fs = fields(typ)
-		m.m[typ] = fs
+		m.l.Lock()
+		fs, ok = m.m[typ]
+		if !ok {
+			fs = getFields(typ)
+			m.m[typ] = fs
+		}
+		m.l.Unlock()
 	}
-	m.l.Unlock()
 
+	fs.setStruct(strct)
 	return fs
 }
 
-func fields(typ reflect.Type) map[string]*field {
+func getFields(typ reflect.Type) fields {
 	numField := typ.NumField()
-	fs := make(map[string]*field, numField)
+	fs := make(fields, numField)
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
 
@@ -201,8 +228,8 @@ func fields(typ reflect.Type) map[string]*field {
 			if typ.Kind() == reflect.Ptr {
 				typ = typ.Elem()
 			}
-			for name, field := range fields(typ) {
-				field.Index = append(f.Index, field.Index...)
+			for name, field := range getFields(typ) {
+				field.index = append(f.Index, field.index...)
 				fs[name] = field
 			}
 			continue
@@ -212,8 +239,7 @@ func fields(typ reflect.Type) map[string]*field {
 			continue
 		}
 
-		tokens := strings.Split(f.Tag.Get("msgpack"), ",")
-		name := tokens[0]
+		name, opts := parseTag(f.Tag.Get("msgpack"))
 		if name == "-" {
 			continue
 		}
@@ -222,8 +248,8 @@ func fields(typ reflect.Type) map[string]*field {
 		}
 
 		field := &field{
-			Index: f.Index,
-			Name:  name,
+			index:     f.Index,
+			omitEmpty: opts.Contains("omitempty"),
 
 			encoder: encodeValue,
 			decoder: decodeValue,
@@ -259,4 +285,22 @@ func fields(typ reflect.Type) map[string]*field {
 		fs[name] = field
 	}
 	return fs
+}
+
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
 }

@@ -82,7 +82,8 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	}
 	if c == nilCode {
 		return -1, nil
-	} else if c >= fixMapLowCode && c <= fixMapHighCode {
+	}
+	if c >= fixMapLowCode && c <= fixMapHighCode {
 		return int(c & fixMapMask), nil
 	}
 	switch c {
@@ -164,18 +165,49 @@ func (d *Decoder) mapValue(v reflect.Value) error {
 	return nil
 }
 
-func (e *Encoder) encodeStruct(v reflect.Value) error {
-	fields := structs.Fields(v.Type())
-	if err := e.encodeMapLen(len(fields)); err != nil {
+func (e *Encoder) encodeStruct(strct reflect.Value) error {
+	fields := structs.Fields(strct)
+	if err := e.encodeMapLen(fields.Len()); err != nil {
 		return err
 	}
-	for _, f := range fields {
-		if err := e.EncodeString(f.Name); err != nil {
+	for name, f := range fields {
+		if f.Omit() {
+			continue
+		}
+		if err := e.EncodeString(name); err != nil {
 			return err
 		}
-		if err := f.EncodeValue(e, v); err != nil {
+		if err := f.EncodeValue(e); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (d *Decoder) structValue(strct reflect.Value) error {
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return err
+	}
+
+	fields := structs.Fields(strct)
+	for i := 0; i < n; i++ {
+		name, err := d.DecodeString()
+		if err != nil {
+			return err
+		}
+
+		if f := fields[name]; f != nil {
+			if err := f.DecodeValue(d); err != nil {
+				return err
+			}
+		} else {
+			_, err := d.DecodeInterface()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

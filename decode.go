@@ -251,52 +251,6 @@ func (d *Decoder) boolValue(value reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) structLen() (int, error) {
-	c, err := d.R.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	if c >= fixMapLowCode && c <= fixMapHighCode {
-		return int(c & fixMapMask), nil
-	}
-	switch c {
-	case map16Code:
-		n, err := d.uint16()
-		return int(n), err
-	case map32Code:
-		n, err := d.uint32()
-		return int(n), err
-	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding struct length", c)
-}
-
-func (d *Decoder) structValue(v reflect.Value) error {
-	n, err := d.structLen()
-	if err != nil {
-		return err
-	}
-
-	fields := structs.Fields(v.Type())
-	for i := 0; i < n; i++ {
-		name, err := d.DecodeString()
-		if err != nil {
-			return err
-		}
-
-		if field := fields[name]; field != nil {
-			if err := field.DecodeValue(d, v); err != nil {
-				return err
-			}
-		} else {
-			_, err := d.DecodeInterface()
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func (d *Decoder) interfaceValue(v reflect.Value) error {
 	iface, err := d.DecodeInterface()
 	if err != nil {
