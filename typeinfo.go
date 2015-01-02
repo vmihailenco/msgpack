@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+var stringsType = reflect.TypeOf(([]string)(nil))
+
 var structs = newStructCache()
 
 var valueEncoders = [...]encoderFunc{
@@ -129,7 +131,7 @@ func decodeBytesValue(d *Decoder, v reflect.Value) error {
 //------------------------------------------------------------------------------
 
 func encodeStringsValue(e *Encoder, v reflect.Value) error {
-	return e.encodeStringSlice(v.Interface().([]string))
+	return e.encodeStringSlice(v.Convert(stringsType).Interface().([]string))
 }
 
 func decodeStringsValue(d *Decoder, v reflect.Value) error {
