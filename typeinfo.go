@@ -1,49 +1,21 @@
 package msgpack
 
 import (
+	"io/ioutil"
 	"reflect"
 	"sync"
 )
 
-var stringsType = reflect.TypeOf(([]string)(nil))
+var (
+	marshalerType   = reflect.TypeOf(new(Marshaler)).Elem()
+	unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
+	stringsType     = reflect.TypeOf(([]string)(nil))
+)
 
 var structs = newStructCache()
 
-var valueEncoders = [...]encoderFunc{
-	reflect.Bool:          encodeBoolValue,
-	reflect.Int:           encodeInt64Value,
-	reflect.Int8:          encodeInt64Value,
-	reflect.Int16:         encodeInt64Value,
-	reflect.Int32:         encodeInt64Value,
-	reflect.Int64:         encodeInt64Value,
-	reflect.Uint:          encodeUint64Value,
-	reflect.Uint8:         encodeUint64Value,
-	reflect.Uint16:        encodeUint64Value,
-	reflect.Uint32:        encodeUint64Value,
-	reflect.Uint64:        encodeUint64Value,
-	reflect.Float32:       encodeFloat64Value,
-	reflect.Float64:       encodeFloat64Value,
-	reflect.String:        encodeStringValue,
-	reflect.UnsafePointer: nil,
-}
-
-var valueDecoders = [...]decoderFunc{
-	reflect.Bool:          decodeBoolValue,
-	reflect.Int:           decodeInt64Value,
-	reflect.Int8:          decodeInt64Value,
-	reflect.Int16:         decodeInt64Value,
-	reflect.Int32:         decodeInt64Value,
-	reflect.Int64:         decodeInt64Value,
-	reflect.Uint:          decodeUint64Value,
-	reflect.Uint8:         decodeUint64Value,
-	reflect.Uint16:        decodeUint64Value,
-	reflect.Uint32:        decodeUint64Value,
-	reflect.Uint64:        decodeUint64Value,
-	reflect.Float32:       decodeFloat64Value,
-	reflect.Float64:       decodeFloat64Value,
-	reflect.String:        decodeStringValue,
-	reflect.UnsafePointer: nil,
-}
+var valueEncoders []encoderFunc
+var valueDecoders []decoderFunc
 
 var sliceEncoders = [...]encoderFunc{
 	reflect.Uint8:         encodeBytesValue,
@@ -55,6 +27,55 @@ var sliceDecoders = []decoderFunc{
 	reflect.Uint8:         decodeBytesValue,
 	reflect.String:        decodeStringsValue,
 	reflect.UnsafePointer: nil,
+}
+
+func init() {
+	valueEncoders = []encoderFunc{
+		reflect.Bool:          encodeBoolValue,
+		reflect.Int:           encodeInt64Value,
+		reflect.Int8:          encodeInt64Value,
+		reflect.Int16:         encodeInt64Value,
+		reflect.Int32:         encodeInt64Value,
+		reflect.Int64:         encodeInt64Value,
+		reflect.Uint:          encodeUint64Value,
+		reflect.Uint8:         encodeUint64Value,
+		reflect.Uint16:        encodeUint64Value,
+		reflect.Uint32:        encodeUint64Value,
+		reflect.Uint64:        encodeUint64Value,
+		reflect.Float32:       encodeFloat64Value,
+		reflect.Float64:       encodeFloat64Value,
+		reflect.Array:         encodeArrayValue,
+		reflect.Interface:     encodeInterfaceValue,
+		reflect.Map:           encodeMapValue,
+		reflect.Ptr:           encodePtrValue,
+		reflect.Slice:         encodeSliceValue,
+		reflect.String:        encodeStringValue,
+		reflect.Struct:        encodeStructValue,
+		reflect.UnsafePointer: nil,
+	}
+	valueDecoders = []decoderFunc{
+		reflect.Bool:          decodeBoolValue,
+		reflect.Int:           decodeInt64Value,
+		reflect.Int8:          decodeInt64Value,
+		reflect.Int16:         decodeInt64Value,
+		reflect.Int32:         decodeInt64Value,
+		reflect.Int64:         decodeInt64Value,
+		reflect.Uint:          decodeUint64Value,
+		reflect.Uint8:         decodeUint64Value,
+		reflect.Uint16:        decodeUint64Value,
+		reflect.Uint32:        decodeUint64Value,
+		reflect.Uint64:        decodeUint64Value,
+		reflect.Float32:       decodeFloat64Value,
+		reflect.Float64:       decodeFloat64Value,
+		reflect.Array:         decodeArrayValue,
+		reflect.Interface:     decodeInterfaceValue,
+		reflect.Map:           decodeMapValue,
+		reflect.Ptr:           decodePtrValue,
+		reflect.Slice:         decodeSliceValue,
+		reflect.String:        decodeStringValue,
+		reflect.Struct:        decodeStructValue,
+		reflect.UnsafePointer: nil,
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -107,11 +128,13 @@ func (fs fields) Len() (length int) {
 //------------------------------------------------------------------------------
 
 func encodeValue(e *Encoder, v reflect.Value) error {
-	return e.EncodeValue(v)
+	encode := getEncoder(v.Type())
+	return encode(e, v)
 }
 
 func decodeValue(d *Decoder, v reflect.Value) error {
-	return d.DecodeValue(v)
+	decode := getDecoder(v.Type())
+	return decode(d, v)
 }
 
 //------------------------------------------------------------------------------
@@ -186,6 +209,104 @@ func decodeUint64Value(d *Decoder, v reflect.Value) error {
 
 //------------------------------------------------------------------------------
 
+func encodeSliceValue(e *Encoder, v reflect.Value) error {
+	return e.encodeSlice(v)
+}
+
+func decodeSliceValue(d *Decoder, v reflect.Value) error {
+	return d.sliceValue(v)
+}
+
+//------------------------------------------------------------------------------
+
+func encodeArrayValue(e *Encoder, v reflect.Value) error {
+	return e.encodeArray(v)
+}
+
+func decodeArrayValue(d *Decoder, v reflect.Value) error {
+	return d.sliceValue(v)
+}
+
+//------------------------------------------------------------------------------
+
+func encodeInterfaceValue(e *Encoder, v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	v = v.Elem()
+	encode := getEncoder(v.Type())
+	return encode(e, v)
+}
+
+func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
+	if v.IsNil() {
+		return d.interfaceValue(v)
+	}
+	v = v.Elem()
+	decode := getDecoder(v.Type())
+	return decode(d, v)
+}
+
+//------------------------------------------------------------------------------
+
+func encodeMapValue(e *Encoder, v reflect.Value) error {
+	return e.encodeMap(v)
+}
+
+func decodeMapValue(d *Decoder, v reflect.Value) error {
+	return d.mapValue(v)
+}
+
+//------------------------------------------------------------------------------
+
+func encodePtrValue(e *Encoder, v reflect.Value) error {
+	return encodeInterfaceValue(e, v)
+}
+
+func decodePtrValue(d *Decoder, v reflect.Value) error {
+	if v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+	return decodeInterfaceValue(d, v)
+}
+
+//------------------------------------------------------------------------------
+
+func encodeStructValue(e *Encoder, v reflect.Value) error {
+	return e.encodeStruct(v)
+}
+
+func decodeStructValue(d *Decoder, v reflect.Value) error {
+	return d.structValue(v)
+}
+
+//------------------------------------------------------------------------------
+
+func marshalValue(e *Encoder, v reflect.Value) error {
+	marshaler := v.Interface().(Marshaler)
+	b, err := marshaler.MarshalMsgpack()
+	if err != nil {
+		return err
+	}
+	_, err = e.W.Write(b)
+	return err
+}
+
+func unmarshalValue(d *Decoder, v reflect.Value) error {
+	if v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+
+	b, err := ioutil.ReadAll(d.R)
+	if err != nil {
+		return err
+	}
+	unmarshaler := v.Interface().(Unmarshaler)
+	return unmarshaler.UnmarshalMsgpack(b)
+}
+
+//------------------------------------------------------------------------------
+
 type structCache struct {
 	l sync.RWMutex
 	m map[reflect.Type]fields
@@ -247,44 +368,58 @@ func getFields(typ reflect.Type) fields {
 			name = f.Name
 		}
 
-		field := &field{
+		fieldTyp := typ.FieldByIndex(f.Index).Type
+		fs[name] = &field{
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
 
-			encoder: encodeValue,
-			decoder: decodeValue,
+			encoder: getEncoder(fieldTyp),
+			decoder: getDecoder(fieldTyp),
 		}
-
-		ft := typ.FieldByIndex(f.Index).Type
-		if encoder, ok := typEncMap[ft]; ok {
-			decoder := typDecMap[ft]
-			field.encoder = encoder
-			field.decoder = decoder
-			fs[name] = field
-			continue
-		}
-
-		kind := ft.Kind()
-		if kind == reflect.Slice {
-			kind = ft.Elem().Kind()
-			if enc := sliceEncoders[kind]; enc != nil {
-				field.encoder = enc
-			}
-			if dec := sliceDecoders[kind]; dec != nil {
-				field.decoder = dec
-			}
-		} else {
-			if enc := valueEncoders[kind]; enc != nil {
-				field.encoder = enc
-			}
-			if dec := valueDecoders[kind]; dec != nil {
-				field.decoder = dec
-			}
-		}
-
-		fs[name] = field
 	}
 	return fs
+}
+
+func getEncoder(typ reflect.Type) encoderFunc {
+	if encoder, ok := typEncMap[typ]; ok {
+		return encoder
+	}
+
+	if typ.Implements(marshalerType) {
+		return marshalValue
+	}
+
+	kind := typ.Kind()
+	switch kind {
+	case reflect.Slice:
+		elemKind := typ.Elem().Kind()
+		if enc := sliceEncoders[elemKind]; enc != nil {
+			return enc
+		}
+	}
+
+	return valueEncoders[kind]
+}
+
+func getDecoder(typ reflect.Type) decoderFunc {
+	if decoder, ok := typDecMap[typ]; ok {
+		return decoder
+	}
+
+	if typ.Implements(unmarshalerType) {
+		return unmarshalValue
+	}
+
+	kind := typ.Kind()
+	switch kind {
+	case reflect.Slice:
+		elemKind := typ.Elem().Kind()
+		if dec := sliceDecoders[elemKind]; dec != nil {
+			return dec
+		}
+	}
+
+	return valueDecoders[kind]
 }
 
 func isEmptyValue(v reflect.Value) bool {

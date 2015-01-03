@@ -2,7 +2,6 @@ package msgpack
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -114,62 +113,7 @@ func (e *Encoder) encode(iv interface{}) error {
 }
 
 func (e *Encoder) EncodeValue(v reflect.Value) error {
-	switch v.Kind() {
-	case reflect.String:
-		return e.EncodeString(v.String())
-	case reflect.Bool:
-		return e.EncodeBool(v.Bool())
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		return e.EncodeUint64(v.Uint())
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return e.EncodeInt64(v.Int())
-	case reflect.Float32:
-		return e.EncodeFloat64(v.Float())
-	case reflect.Float64:
-		return e.EncodeFloat64(v.Float())
-	case reflect.Array:
-		return e.encodeSlice(v)
-	case reflect.Slice:
-		if v.IsNil() {
-			return e.EncodeNil()
-		}
-		return e.encodeSlice(v)
-	case reflect.Map:
-		return e.encodeMap(v)
-	case reflect.Interface, reflect.Ptr:
-		if v.IsNil() {
-			return e.EncodeNil()
-		}
-		if enc, ok := typEncMap[v.Type()]; ok {
-			return enc(e, v)
-		}
-		if marshaler, ok := v.Interface().(Marshaler); ok {
-			b, err := marshaler.MarshalMsgpack()
-			if err != nil {
-				return err
-			}
-			_, err = e.W.Write(b)
-			return err
-		}
-		return e.EncodeValue(v.Elem())
-	case reflect.Struct:
-		typ := v.Type()
-		if enc, ok := typEncMap[typ]; ok {
-			return enc(e, v)
-		}
-		if marshaler, ok := v.Interface().(Marshaler); ok {
-			b, err := marshaler.MarshalMsgpack()
-			if err != nil {
-				return err
-			}
-			_, err = e.W.Write(b)
-			return err
-		}
-		return e.encodeStruct(v)
-	default:
-		return fmt.Errorf("msgpack: unsupported type %v", v.Type().String())
-	}
-	panic("not reached")
+	return encodeValue(e, v)
 }
 
 func (e *Encoder) EncodeNil() error {

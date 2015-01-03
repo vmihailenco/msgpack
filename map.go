@@ -42,12 +42,11 @@ func (e *Encoder) encodeMap(value reflect.Value) error {
 	if err := e.encodeMapLen(value.Len()); err != nil {
 		return err
 	}
-	keys := value.MapKeys()
-	for _, k := range keys {
-		if err := e.EncodeValue(k); err != nil {
+	for _, key := range value.MapKeys() {
+		if err := encodeValue(e, key); err != nil {
 			return err
 		}
-		if err := e.EncodeValue(value.MapIndex(k)); err != nil {
+		if err := encodeValue(e, value.MapIndex(key)); err != nil {
 			return err
 		}
 	}

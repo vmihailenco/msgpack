@@ -99,6 +99,13 @@ func (e *Encoder) encodeStringSlice(s []string) error {
 }
 
 func (e *Encoder) encodeSlice(v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	return e.encodeArray(v)
+}
+
+func (e *Encoder) encodeArray(v reflect.Value) error {
 	switch v.Type().Elem().Kind() {
 	case reflect.Uint8:
 		return e.EncodeBytes(v.Bytes())

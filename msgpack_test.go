@@ -676,18 +676,6 @@ func TestEmbedding(t *testing.T) {
 	}
 }
 
-func (t *MsgpackTest) TestSliceInterface(c *C) {
-	in := []interface{}{1, "hello"}
-	var out []interface{}
-
-	c.Assert(t.enc.Encode(in), IsNil)
-	c.Assert(t.dec.Decode(&out), IsNil)
-
-	c.Assert(out, HasLen, 2)
-	c.Assert(out[0], Equals, int64(1))
-	c.Assert(out[1], Equals, "hello")
-}
-
 func (t *MsgpackTest) TestSliceNil(c *C) {
 	in := [][]*int{nil}
 	var out [][]*int

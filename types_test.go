@@ -18,6 +18,7 @@ type binTest struct {
 }
 
 var binTests = []binTest{
+	{nil, []byte{nilCode}},
 	{omitEmptyTest{}, []byte{fixMapLowCode}},
 }
 
@@ -57,11 +58,15 @@ type structt struct {
 }
 
 var (
-	stringsv  stringst
-	structv   structt
-	typeTests = []typeTest{
+	stringsv       stringst
+	structv        structt
+	interfaceSlice []interface{}
+	unmarshalerPtr *coderStruct
+	typeTests      = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
 		{structt{stringst{"foo", "bar"}, []string{"hello"}}, &structv},
+		{[]interface{}{int64(1), "hello"}, &interfaceSlice},
+		{&coderStruct{name: "hello"}, &unmarshalerPtr},
 	}
 )
 
@@ -77,9 +82,10 @@ func TestTypes(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		in := deref(test.in)
 		out := deref(test.out)
-		if !reflect.DeepEqual(out, test.in) {
-			t.Fatalf("%#v != %#v", out, test.in)
+		if !reflect.DeepEqual(out, in) {
+			t.Fatalf("%#v != %#v", out, in)
 		}
 	}
 }

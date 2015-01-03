@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"reflect"
 	"time"
 
@@ -20,12 +19,12 @@ type bufReader interface {
 }
 
 func Unmarshal(b []byte, v ...interface{}) error {
-	if len(v) == 1 {
-		unmarshaler, ok := v[0].(Unmarshaler)
-		if ok {
-			return unmarshaler.UnmarshalMsgpack(b)
-		}
-	}
+	// if len(v) == 1 {
+	// 	unmarshaler, ok := v[0].(Unmarshaler)
+	// 	if ok {
+	// 		return unmarshaler.UnmarshalMsgpack(b)
+	// 	}
+	// }
 	buf := bufio.NewBuffer(b)
 	return NewDecoder(buf).Decode(v...)
 }
@@ -172,60 +171,7 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		return err
 	}
 
-	switch v.Kind() {
-	case reflect.Bool:
-		return d.boolValue(v)
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		return d.uint64Value(v)
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		return d.int64Value(v)
-	case reflect.Float32:
-		return d.float32Value(v)
-	case reflect.Float64:
-		return d.float64Value(v)
-	case reflect.String:
-		return d.stringValue(v)
-	case reflect.Array, reflect.Slice:
-		return d.sliceValue(v)
-	case reflect.Map:
-		return d.mapValue(v)
-	case reflect.Struct:
-		typ := v.Type()
-		if dec, ok := typDecMap[typ]; ok {
-			return dec(d, v)
-		}
-		if unmarshaler, ok := v.Interface().(Unmarshaler); ok {
-			b, err := ioutil.ReadAll(d.R)
-			if err != nil {
-				return err
-			}
-			return unmarshaler.UnmarshalMsgpack(b)
-		}
-		return d.structValue(v)
-	case reflect.Ptr:
-		typ := v.Type()
-		if v.IsNil() {
-			v.Set(reflect.New(typ.Elem()))
-		}
-		if dec, ok := typDecMap[typ]; ok {
-			return dec(d, v)
-		}
-		if unmarshaler, ok := v.Interface().(Unmarshaler); ok {
-			b, err := ioutil.ReadAll(d.R)
-			if err != nil {
-				return err
-			}
-			return unmarshaler.UnmarshalMsgpack(b)
-		}
-		return d.DecodeValue(v.Elem())
-	case reflect.Interface:
-		if v.IsNil() {
-			return d.interfaceValue(v)
-		} else {
-			return d.DecodeValue(v.Elem())
-		}
-	}
-	return fmt.Errorf("msgpack: unsupported type %v", v.Type().String())
+	return decodeValue(d, v)
 }
 
 func (d *Decoder) DecodeBool() (bool, error) {
