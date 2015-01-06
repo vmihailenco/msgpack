@@ -84,46 +84,29 @@ type field struct {
 	index     []int
 	omitEmpty bool
 
-	v reflect.Value
-
 	encoder encoderFunc
 	decoder decoderFunc
 }
 
-func (f *field) setStruct(strct reflect.Value) {
-	f.v = strct.FieldByIndex(f.index)
+func (f *field) value(strct reflect.Value) reflect.Value {
+	return strct.FieldByIndex(f.index)
 }
 
-func (f *field) Omit() bool {
-	return f.omitEmpty && isEmptyValue(f.v)
+func (f *field) Omit(strct reflect.Value) bool {
+	return f.omitEmpty && isEmptyValue(f.value(strct))
 }
 
-func (f *field) EncodeValue(e *Encoder) error {
-	return f.encoder(e, f.v)
+func (f *field) EncodeValue(e *Encoder, strct reflect.Value) error {
+	return f.encoder(e, f.value(strct))
 }
 
-func (f *field) DecodeValue(d *Decoder) error {
-	return f.decoder(d, f.v)
+func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
+	return f.decoder(d, f.value(strct))
 }
 
 //------------------------------------------------------------------------------
 
 type fields map[string]*field
-
-func (fs fields) setStruct(strct reflect.Value) {
-	for _, f := range fs {
-		f.setStruct(strct)
-	}
-}
-
-func (fs fields) Len() (length int) {
-	for _, f := range fs {
-		if !f.Omit() {
-			length++
-		}
-	}
-	return length
-}
 
 //------------------------------------------------------------------------------
 
@@ -318,9 +301,7 @@ func newStructCache() *structCache {
 	}
 }
 
-func (m *structCache) Fields(strct reflect.Value) fields {
-	typ := strct.Type()
-
+func (m *structCache) Fields(typ reflect.Type) fields {
 	m.l.RLock()
 	fs, ok := m.m[typ]
 	m.l.RUnlock()
@@ -334,7 +315,6 @@ func (m *structCache) Fields(strct reflect.Value) fields {
 		m.l.Unlock()
 	}
 
-	fs.setStruct(strct)
 	return fs
 }
 

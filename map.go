@@ -165,21 +165,31 @@ func (d *Decoder) mapValue(v reflect.Value) error {
 }
 
 func (e *Encoder) encodeStruct(strct reflect.Value) error {
-	fields := structs.Fields(strct)
-	if err := e.encodeMapLen(fields.Len()); err != nil {
+	fields := structs.Fields(strct.Type())
+
+	var length int
+	for _, f := range fields {
+		if !f.Omit(strct) {
+			length++
+		}
+	}
+
+	if err := e.encodeMapLen(length); err != nil {
 		return err
 	}
+
 	for name, f := range fields {
-		if f.Omit() {
+		if f.Omit(strct) {
 			continue
 		}
 		if err := e.EncodeString(name); err != nil {
 			return err
 		}
-		if err := f.EncodeValue(e); err != nil {
+		if err := f.EncodeValue(e, strct); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -189,7 +199,8 @@ func (d *Decoder) structValue(strct reflect.Value) error {
 		return err
 	}
 
-	fields := structs.Fields(strct)
+	fields := structs.Fields(strct.Type())
+
 	for i := 0; i < n; i++ {
 		name, err := d.DecodeString()
 		if err != nil {
@@ -197,7 +208,7 @@ func (d *Decoder) structValue(strct reflect.Value) error {
 		}
 
 		if f := fields[name]; f != nil {
-			if err := f.DecodeValue(d); err != nil {
+			if err := f.DecodeValue(d, strct); err != nil {
 				return err
 			}
 		} else {
