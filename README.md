@@ -6,16 +6,17 @@ Supports:
 - time.Time.
 - Appengine *datastore.Key and datastore.Cursor.
 - Extensions for user defined types.
-- Tags.
+- Struct field renaming, e.g. `msgpack:"my_field_name"`.
+- Omitempty flag, e.g. `msgpack:",omitempty"`.
 
-API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v1
+API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2
 
 Installation
 ------------
 
 Install:
 
-    go get gopkg.in/vmihailenco/msgpack.v1
+    go get gopkg.in/vmihailenco/msgpack.v2
 
 Usage
 -----
