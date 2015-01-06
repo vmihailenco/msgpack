@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-
-	"github.com/vmihailenco/bufio"
 )
 
 func (e *Encoder) encodeBytesLen(l int) error {
@@ -106,11 +104,6 @@ func (e *Encoder) encodeSlice(v reflect.Value) error {
 }
 
 func (e *Encoder) encodeArray(v reflect.Value) error {
-	switch v.Type().Elem().Kind() {
-	case reflect.Uint8:
-		return e.EncodeBytes(v.Bytes())
-	}
-
 	l := v.Len()
 	if err := e.EncodeSliceLen(l); err != nil {
 		return err
@@ -120,7 +113,6 @@ func (e *Encoder) encodeArray(v reflect.Value) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -181,17 +173,8 @@ func (d *Decoder) DecodeString() (string, error) {
 	if n == -1 {
 		return "", nil
 	}
-	b, err := d.R.ReadN(n)
-	if err == bufio.ErrBufferFull {
-		newB := make([]byte, n)
-		n := copy(newB, b)
-		b = newB
-
-		_, err := io.ReadFull(d.R, newB[n:])
-		if err != nil {
-			return "", err
-		}
-	} else if err != nil {
+	b, err := d.readN(n)
+	if err != nil {
 		return "", err
 	}
 	return string(b), nil

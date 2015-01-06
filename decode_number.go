@@ -15,7 +15,7 @@ func (d *Decoder) uint8() (uint8, error) {
 }
 
 func (d *Decoder) uint16() (uint16, error) {
-	b, err := d.R.ReadN(2)
+	b, err := d.readN(2)
 	if err != nil {
 		return 0, err
 	}
@@ -23,7 +23,7 @@ func (d *Decoder) uint16() (uint16, error) {
 }
 
 func (d *Decoder) uint32() (uint32, error) {
-	b, err := d.R.ReadN(4)
+	b, err := d.readN(4)
 	if err != nil {
 		return 0, err
 	}
@@ -35,7 +35,7 @@ func (d *Decoder) uint32() (uint32, error) {
 }
 
 func (d *Decoder) uint64() (uint64, error) {
-	b, err := d.R.ReadN(8)
+	b, err := d.readN(8)
 	if err != nil {
 		return 0, err
 	}

@@ -1,37 +1,36 @@
 package msgpack
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"time"
-
-	"github.com/vmihailenco/bufio"
 )
 
 type bufReader interface {
 	Read([]byte) (int, error)
 	ReadByte() (byte, error)
 	UnreadByte() error
-	Peek(int) ([]byte, error)
-	ReadN(int) ([]byte, error)
 }
 
 func Unmarshal(b []byte, v ...interface{}) error {
-	// if len(v) == 1 {
-	// 	unmarshaler, ok := v[0].(Unmarshaler)
-	// 	if ok {
-	// 		return unmarshaler.UnmarshalMsgpack(b)
-	// 	}
-	// }
-	buf := bufio.NewBuffer(b)
-	return NewDecoder(buf).Decode(v...)
+	if len(v) == 1 && v[0] != nil {
+		unmarshaler, ok := v[0].(Unmarshaler)
+		if ok {
+			return unmarshaler.UnmarshalMsgpack(b)
+		}
+	}
+	return NewDecoder(bytes.NewReader(b)).Decode(v...)
 }
 
 type Decoder struct {
 	R             bufReader
 	DecodeMapFunc func(*Decoder) (interface{}, error)
+
+	buf []byte
 }
 
 func NewDecoder(rd io.Reader) *Decoder {
@@ -42,6 +41,8 @@ func NewDecoder(rd io.Reader) *Decoder {
 	return &Decoder{
 		R:             brd,
 		DecodeMapFunc: decodeMap,
+
+		buf: make([]byte, 64),
 	}
 }
 
@@ -216,11 +217,13 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	b, err := d.R.Peek(1)
+	c, err := d.R.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	c := b[0]
+	if err := d.R.UnreadByte(); err != nil {
+		return nil, err
+	}
 
 	if c <= posFixNumHighCode || c >= negFixNumLowCode {
 		return d.DecodeInt64()
@@ -257,4 +260,15 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)
+}
+
+func (d *Decoder) readN(n int) ([]byte, error) {
+	var b []byte
+	if n <= cap(d.buf) {
+		b = d.buf[:n]
+	} else {
+		b = make([]byte, n)
+	}
+	_, err := io.ReadFull(d.R, b)
+	return b, err
 }
