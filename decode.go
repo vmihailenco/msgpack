@@ -161,17 +161,6 @@ func (d *Decoder) decode(iv interface{}) error {
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
-	c, err := d.r.ReadByte()
-	if err != nil {
-		return err
-	}
-	if c == nilCode {
-		return nil
-	}
-	if err := d.r.UnreadByte(); err != nil {
-		return err
-	}
-
 	decode := getDecoder(v.Type())
 	return decode(d, v)
 }

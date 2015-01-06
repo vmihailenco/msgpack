@@ -266,37 +266,6 @@ func (t *MsgpackTest) TestBool(c *C) {
 	}
 }
 
-func (t *MsgpackTest) TestNil(c *C) {
-	table := []interface{}{
-		(*string)(nil),
-		(*[]byte)(nil),
-		(*int)(nil),
-		(*int8)(nil),
-		(*int16)(nil),
-		(*int32)(nil),
-		(*int64)(nil),
-		(*uint)(nil),
-		(*uint8)(nil),
-		(*uint16)(nil),
-		(*uint32)(nil),
-		(*uint64)(nil),
-		(*bool)(nil),
-		(*float32)(nil),
-		(*float64)(nil),
-		(*[]string)(nil),
-		(*map[string]string)(nil),
-		(*time.Duration)(nil),
-		(*time.Time)(nil),
-		(*struct{})(nil),
-	}
-	for _, dst := range table {
-		c.Assert(t.enc.Encode(nil), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, []byte{0xC0})
-		c.Assert(t.dec.Decode(dst), IsNil)
-		c.Assert(dst, IsNil)
-	}
-}
-
 func (t *MsgpackTest) TestDecodeNil(c *C) {
 	c.Assert(t.dec.Decode(nil), NotNil)
 }

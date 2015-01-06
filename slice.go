@@ -238,9 +238,11 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if n == -1 {
 		return nil, nil
 	}
+
 	s := make([]interface{}, n)
 	for i := 0; i < n; i++ {
 		v, err := d.DecodeInterface()
@@ -249,6 +251,7 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 		}
 		s[i] = v
 	}
+
 	return s, nil
 }
 
@@ -256,6 +259,11 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err
+	}
+
+	if n == -1 {
+		v.Set(reflect.Zero(v.Type()))
+		return nil
 	}
 
 	if v.Len() < n || (v.Kind() == reflect.Slice && v.IsNil()) {
@@ -276,6 +284,10 @@ func (d *Decoder) strings() ([]string, error) {
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return nil, err
+	}
+
+	if n == -1 {
+		return nil, nil
 	}
 
 	ss := make([]string, n)
