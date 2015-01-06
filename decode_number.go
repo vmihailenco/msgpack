@@ -7,7 +7,7 @@ import (
 )
 
 func (d *Decoder) uint8() (uint8, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}
@@ -51,7 +51,7 @@ func (d *Decoder) uint64() (uint64, error) {
 }
 
 func (d *Decoder) DecodeUint64() (uint64, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}
@@ -93,7 +93,7 @@ func (d *Decoder) uint64Value(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeInt64() (int64, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}
@@ -136,7 +136,7 @@ func (d *Decoder) int64Value(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeFloat32() (float32, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}
@@ -160,7 +160,7 @@ func (d *Decoder) float32Value(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeFloat64() (float64, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}

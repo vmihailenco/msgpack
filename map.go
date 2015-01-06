@@ -8,7 +8,7 @@ import (
 func (e *Encoder) encodeMapLen(l int) error {
 	switch {
 	case l < 16:
-		if err := e.W.WriteByte(fixMapLowCode | byte(l)); err != nil {
+		if err := e.w.WriteByte(fixMapLowCode | byte(l)); err != nil {
 			return err
 		}
 	case l < 65536:
@@ -75,7 +75,7 @@ func decodeMap(d *Decoder) (interface{}, error) {
 }
 
 func (d *Decoder) DecodeMapLen() (int, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}

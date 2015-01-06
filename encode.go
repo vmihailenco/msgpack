@@ -13,11 +13,11 @@ type writer interface {
 	WriteString(string) (int, error)
 }
 
-type writeByte struct {
+type byteWriter struct {
 	io.Writer
 }
 
-func (w *writeByte) WriteByte(b byte) error {
+func (w *byteWriter) WriteByte(b byte) error {
 	n, err := w.Write([]byte{b})
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (w *writeByte) WriteByte(b byte) error {
 	return nil
 }
 
-func (w *writeByte) WriteString(s string) (int, error) {
+func (w *byteWriter) WriteString(s string) (int, error) {
 	return w.Write([]byte(s))
 }
 
@@ -45,17 +45,17 @@ func Marshal(v ...interface{}) ([]byte, error) {
 }
 
 type Encoder struct {
-	W   writer
+	w   writer
 	buf []byte
 }
 
 func NewEncoder(w io.Writer) *Encoder {
 	ww, ok := w.(writer)
 	if !ok {
-		ww = &writeByte{Writer: w}
+		ww = &byteWriter{Writer: w}
 	}
 	return &Encoder{
-		W:   ww,
+		w:   ww,
 		buf: make([]byte, 9),
 	}
 }
@@ -106,7 +106,7 @@ func (e *Encoder) encode(iv interface{}) error {
 		if err != nil {
 			return err
 		}
-		_, err = e.W.Write(b)
+		_, err = e.w.Write(b)
 		return err
 	}
 	return e.EncodeValue(reflect.ValueOf(iv))
@@ -117,18 +117,18 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 }
 
 func (e *Encoder) EncodeNil() error {
-	return e.W.WriteByte(nilCode)
+	return e.w.WriteByte(nilCode)
 }
 
 func (e *Encoder) EncodeBool(value bool) error {
 	if value {
-		return e.W.WriteByte(trueCode)
+		return e.w.WriteByte(trueCode)
 	}
-	return e.W.WriteByte(falseCode)
+	return e.w.WriteByte(falseCode)
 }
 
 func (e *Encoder) write(b []byte) error {
-	n, err := e.W.Write(b)
+	n, err := e.w.Write(b)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (e *Encoder) write(b []byte) error {
 }
 
 func (e *Encoder) writeString(s string) error {
-	n, err := e.W.WriteString(s)
+	n, err := e.w.WriteString(s)
 	if err != nil {
 		return err
 	}

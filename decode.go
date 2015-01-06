@@ -27,21 +27,21 @@ func Unmarshal(b []byte, v ...interface{}) error {
 }
 
 type Decoder struct {
-	R             bufReader
 	DecodeMapFunc func(*Decoder) (interface{}, error)
 
+	r   bufReader
 	buf []byte
 }
 
-func NewDecoder(rd io.Reader) *Decoder {
-	brd, ok := rd.(bufReader)
+func NewDecoder(r io.Reader) *Decoder {
+	br, ok := r.(bufReader)
 	if !ok {
-		brd = bufio.NewReader(rd)
+		br = bufio.NewReader(r)
 	}
 	return &Decoder{
-		R:             brd,
 		DecodeMapFunc: decodeMap,
 
+		r:   br,
 		buf: make([]byte, 64),
 	}
 }
@@ -161,14 +161,14 @@ func (d *Decoder) decode(iv interface{}) error {
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return err
 	}
 	if c == nilCode {
 		return nil
 	}
-	if err := d.R.UnreadByte(); err != nil {
+	if err := d.r.UnreadByte(); err != nil {
 		return err
 	}
 
@@ -176,7 +176,7 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeBool() (bool, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return false, err
 	}
@@ -217,11 +217,11 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	if err := d.R.UnreadByte(); err != nil {
+	if err := d.r.UnreadByte(); err != nil {
 		return nil, err
 	}
 
@@ -237,7 +237,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 
 	switch c {
 	case nilCode:
-		_, err := d.R.ReadByte()
+		_, err := d.r.ReadByte()
 		return nil, err
 	case falseCode, trueCode:
 		return d.DecodeBool()
@@ -269,6 +269,6 @@ func (d *Decoder) readN(n int) ([]byte, error) {
 	} else {
 		b = make([]byte, n)
 	}
-	_, err := io.ReadFull(d.R, b)
+	_, err := io.ReadFull(d.r, b)
 	return b, err
 }

@@ -27,7 +27,7 @@ func (e *Encoder) encodeBytesLen(l int) error {
 func (e *Encoder) encodeStrLen(l int) error {
 	switch {
 	case l < 32:
-		if err := e.W.WriteByte(fixStrLowCode | uint8(l)); err != nil {
+		if err := e.w.WriteByte(fixStrLowCode | uint8(l)); err != nil {
 			return err
 		}
 	case l < 256:
@@ -66,7 +66,7 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 func (e *Encoder) EncodeSliceLen(l int) error {
 	switch {
 	case l < 16:
-		if err := e.W.WriteByte(fixArrayLowCode | byte(l)); err != nil {
+		if err := e.w.WriteByte(fixArrayLowCode | byte(l)); err != nil {
 			return err
 		}
 	case l < 65536:
@@ -117,7 +117,7 @@ func (e *Encoder) encodeArray(v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeBytesLen() (int, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}
@@ -149,7 +149,7 @@ func (d *Decoder) DecodeBytes() ([]byte, error) {
 		return nil, nil
 	}
 	b := make([]byte, n)
-	_, err = io.ReadFull(d.R, b)
+	_, err = io.ReadFull(d.r, b)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (d *Decoder) stringValue(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeSliceLen() (int, error) {
-	c, err := d.R.ReadByte()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}

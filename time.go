@@ -15,7 +15,7 @@ func init() {
 }
 
 func (e *Encoder) EncodeTime(tm time.Time) error {
-	if err := e.W.WriteByte(0x92); err != nil {
+	if err := e.w.WriteByte(0x92); err != nil {
 		return err
 	}
 	if err := e.EncodeInt64(tm.Unix()); err != nil {
@@ -25,7 +25,7 @@ func (e *Encoder) EncodeTime(tm time.Time) error {
 }
 
 func (d *Decoder) DecodeTime() (time.Time, error) {
-	b, err := d.R.ReadByte()
+	b, err := d.r.ReadByte()
 	if err != nil {
 		return time.Time{}, err
 	}

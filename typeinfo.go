@@ -288,7 +288,7 @@ func marshalValue(e *Encoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	_, err = e.W.Write(b)
+	_, err = e.w.Write(b)
 	return err
 }
 
@@ -297,7 +297,7 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
 
-	b, err := ioutil.ReadAll(d.R)
+	b, err := ioutil.ReadAll(d.r)
 	if err != nil {
 		return err
 	}

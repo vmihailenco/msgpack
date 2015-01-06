@@ -21,7 +21,7 @@ func (e *Encoder) EncodeUint32(v uint32) error {
 func (e *Encoder) EncodeUint64(v uint64) error {
 	switch {
 	case v < 128:
-		return e.W.WriteByte(byte(v))
+		return e.w.WriteByte(byte(v))
 	case v < 256:
 		return e.write1(uint8Code, v)
 	case v < 65536:
@@ -61,7 +61,7 @@ func (e *Encoder) EncodeInt64(v int64) error {
 	case v < -32:
 		return e.write1(int8Code, uint64(v))
 	default:
-		return e.W.WriteByte(byte(v))
+		return e.w.WriteByte(byte(v))
 	}
 	panic("not reached")
 }
