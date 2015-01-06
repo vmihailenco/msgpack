@@ -110,18 +110,6 @@ type fields map[string]*field
 
 //------------------------------------------------------------------------------
 
-func encodeValue(e *Encoder, v reflect.Value) error {
-	encode := getEncoder(v.Type())
-	return encode(e, v)
-}
-
-func decodeValue(d *Decoder, v reflect.Value) error {
-	decode := getDecoder(v.Type())
-	return decode(d, v)
-}
-
-//------------------------------------------------------------------------------
-
 func encodeBoolValue(e *Encoder, v reflect.Value) error {
 	return e.EncodeBool(v.Bool())
 }

@@ -172,7 +172,8 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 		return err
 	}
 
-	return decodeValue(d, v)
+	decode := getDecoder(v.Type())
+	return decode(d, v)
 }
 
 func (d *Decoder) DecodeBool() (bool, error) {

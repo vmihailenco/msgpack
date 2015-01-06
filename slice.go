@@ -253,17 +253,6 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 }
 
 func (d *Decoder) sliceValue(v reflect.Value) error {
-	elemType := v.Type().Elem()
-	switch elemType.Kind() {
-	case reflect.Uint8:
-		b, err := d.DecodeBytes()
-		if err != nil {
-			return err
-		}
-		v.SetBytes(b)
-		return nil
-	}
-
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err

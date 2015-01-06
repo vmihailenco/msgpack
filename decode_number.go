@@ -126,12 +126,12 @@ func (d *Decoder) DecodeInt64() (int64, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int64", c)
 }
 
-func (d *Decoder) int64Value(value reflect.Value) error {
-	v, err := d.DecodeInt64()
+func (d *Decoder) int64Value(v reflect.Value) error {
+	n, err := d.DecodeInt64()
 	if err != nil {
 		return err
 	}
-	value.SetInt(v)
+	v.SetInt(n)
 	return nil
 }
 

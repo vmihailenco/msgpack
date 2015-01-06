@@ -43,10 +43,10 @@ func (e *Encoder) encodeMap(value reflect.Value) error {
 		return err
 	}
 	for _, key := range value.MapKeys() {
-		if err := encodeValue(e, key); err != nil {
+		if err := e.EncodeValue(key); err != nil {
 			return err
 		}
-		if err := encodeValue(e, value.MapIndex(key)); err != nil {
+		if err := e.EncodeValue(value.MapIndex(key)); err != nil {
 			return err
 		}
 	}
