@@ -193,7 +193,9 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	v.Set(reflect.ValueOf(iface))
+	if iface != nil {
+		v.Set(reflect.ValueOf(iface))
+	}
 	return nil
 }
 

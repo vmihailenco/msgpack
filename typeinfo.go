@@ -213,9 +213,7 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		return d.interfaceValue(v)
 	}
-	v = v.Elem()
-	decode := getDecoder(v.Type())
-	return decode(d, v)
+	return d.DecodeValue(v.Elem())
 }
 
 //------------------------------------------------------------------------------
@@ -238,7 +236,7 @@ func decodePtrValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
-	return decodeInterfaceValue(d, v)
+	return d.DecodeValue(v.Elem())
 }
 
 //------------------------------------------------------------------------------

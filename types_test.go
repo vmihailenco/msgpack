@@ -58,19 +58,21 @@ type structt struct {
 }
 
 var (
-	stringsv       stringst
-	structv        structt
-	ints           []int
-	interfaces     []interface{}
-	unmarshalerPtr *coderStruct
-	coders         []coderStruct
-	typeTests      = []typeTest{
+	stringsv           stringst
+	structv            structt
+	ints               []int
+	interfaces         []interface{}
+	unmarshalerPtr     *coderStruct
+	coders             []coderStruct
+	stringInterfaceMap map[string]interface{}
+	typeTests          = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
 		{structt{stringst{"foo", "bar"}, []string{"hello"}}, &structv},
 		{([]int)(nil), &ints},
 		{make([]int, 0), &ints},
 		{make([]int, 1000), &ints},
 		{[]interface{}{int64(1), "hello"}, &interfaces},
+		{map[string]interface{}{"foo": nil}, &stringInterfaceMap},
 		{&coderStruct{name: "hello"}, &unmarshalerPtr},
 	}
 )
