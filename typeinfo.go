@@ -204,9 +204,7 @@ func encodeInterfaceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
 		return e.EncodeNil()
 	}
-	v = v.Elem()
-	encode := getEncoder(v.Type())
-	return encode(e, v)
+	return e.EncodeValue(v.Elem())
 }
 
 func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
@@ -229,7 +227,10 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 //------------------------------------------------------------------------------
 
 func encodePtrValue(e *Encoder, v reflect.Value) error {
-	return encodeInterfaceValue(e, v)
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	return e.EncodeValue(v.Elem())
 }
 
 func decodePtrValue(d *Decoder, v reflect.Value) error {
