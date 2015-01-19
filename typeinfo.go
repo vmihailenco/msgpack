@@ -311,18 +311,6 @@ func getFields(typ reflect.Type) fields {
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
 
-		if f.Anonymous {
-			typ := f.Type
-			if typ.Kind() == reflect.Ptr {
-				typ = typ.Elem()
-			}
-			for name, field := range getFields(typ) {
-				field.index = append(f.Index, field.index...)
-				fs[name] = field
-			}
-			continue
-		}
-
 		if f.PkgPath != "" {
 			continue
 		}
