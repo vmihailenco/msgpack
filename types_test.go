@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -57,6 +58,10 @@ type structt struct {
 	F2 []string
 }
 
+type embededTime struct {
+	time.Time
+}
+
 var (
 	stringsv           stringst
 	structv            structt
@@ -65,6 +70,7 @@ var (
 	unmarshalerPtr     *coderStruct
 	coders             []coderStruct
 	stringInterfaceMap map[string]interface{}
+	embededTimeValue   *embededTime
 	typeTests          = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
 		{structt{stringst{"foo", "bar"}, []string{"hello"}}, &structv},
@@ -74,6 +80,7 @@ var (
 		{[]interface{}{int64(1), "hello"}, &interfaces},
 		{map[string]interface{}{"foo": nil}, &stringInterfaceMap},
 		{&coderStruct{name: "hello"}, &unmarshalerPtr},
+		{&embededTime{Time: time.Now()}, &embededTimeValue},
 	}
 )
 
