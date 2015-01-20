@@ -31,6 +31,7 @@ type Decoder struct {
 
 	r   bufReader
 	buf []byte
+	m   *structCache
 }
 
 func NewDecoder(r io.Reader) *Decoder {
@@ -41,6 +42,7 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		DecodeMapFunc: decodeMap,
 
+		m:   newStructCache(),
 		r:   br,
 		buf: make([]byte, 64),
 	}
@@ -161,7 +163,7 @@ func (d *Decoder) decode(iv interface{}) error {
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
-	decode := getDecoder(v.Type())
+	decode := d.m.getDecoder(v.Type())
 	return decode(d, v)
 }
 
@@ -249,6 +251,8 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeSlice()
 	case map16Code, map32Code:
 		return d.DecodeMap()
+	case fixExt1Code, fixExt2Code, fixExt4Code, fixExt8Code, fixExt16Code, ext8Code, ext16Code, ext32Code:
+		return d.DecodeExtended()
 	}
 
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)
