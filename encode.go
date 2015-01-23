@@ -47,6 +47,7 @@ func Marshal(v ...interface{}) ([]byte, error) {
 type Encoder struct {
 	w   writer
 	buf []byte
+	m   *structCache
 }
 
 func NewEncoder(w io.Writer) *Encoder {
@@ -57,6 +58,7 @@ func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
 		w:   ww,
 		buf: make([]byte, 9),
+		m:   newStructCache(),
 	}
 }
 
@@ -113,7 +115,7 @@ func (e *Encoder) encode(iv interface{}) error {
 }
 
 func (e *Encoder) EncodeValue(v reflect.Value) error {
-	encode := getEncoder(v.Type())
+	encode := e.m.getEncoder(v.Type())
 	return encode(e, v)
 }
 

@@ -278,8 +278,9 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 //------------------------------------------------------------------------------
 
 type structCache struct {
-	l sync.RWMutex
-	m map[reflect.Type]fields
+	l   sync.RWMutex
+	m   map[reflect.Type]fields
+	ext *Extensions
 }
 
 func newStructCache() *structCache {
@@ -296,7 +297,7 @@ func (m *structCache) Fields(typ reflect.Type) fields {
 		m.l.Lock()
 		fs, ok = m.m[typ]
 		if !ok {
-			fs = getFields(typ)
+			fs = m.getFields(typ)
 			m.m[typ] = fs
 		}
 		m.l.Unlock()
@@ -305,7 +306,7 @@ func (m *structCache) Fields(typ reflect.Type) fields {
 	return fs
 }
 
-func getFields(typ reflect.Type) fields {
+func (m *structCache) getFields(typ reflect.Type) fields {
 	numField := typ.NumField()
 	fs := make(fields, numField)
 	for i := 0; i < numField; i++ {
@@ -328,16 +329,26 @@ func getFields(typ reflect.Type) fields {
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
 
-			encoder: getEncoder(fieldTyp),
-			decoder: getDecoder(fieldTyp),
+			encoder: m.getEncoder(fieldTyp),
+			decoder: m.getDecoder(fieldTyp),
 		}
 	}
 	return fs
 }
 
-func getEncoder(typ reflect.Type) encoderFunc {
+func (m *structCache) getEncoder(typ reflect.Type) encoderFunc {
 	if encoder, ok := typEncMap[typ]; ok {
 		return encoder
+	}
+	if m.ext != nil {
+		if encoder, ok := m.ext.encTypeMap[typ]; ok {
+			return encoder
+		}
+		for iType, encoder := range m.ext.encIntMap {
+			if typ.Implements(iType) {
+				return encoder
+			}
+		}
 	}
 
 	if typ.Implements(marshalerType) {
@@ -356,7 +367,7 @@ func getEncoder(typ reflect.Type) encoderFunc {
 	return valueEncoders[kind]
 }
 
-func getDecoder(typ reflect.Type) decoderFunc {
+func (m *structCache) getDecoder(typ reflect.Type) decoderFunc {
 	if decoder, ok := typDecMap[typ]; ok {
 		return decoder
 	}
@@ -371,6 +382,14 @@ func getDecoder(typ reflect.Type) decoderFunc {
 		elemKind := typ.Elem().Kind()
 		if dec := sliceDecoders[elemKind]; dec != nil {
 			return dec
+		}
+	case reflect.Ptr:
+		fallthrough
+	case reflect.Struct:
+		if m.ext != nil {
+			if decoder, ok := m.ext.decTypeMap[typ]; ok {
+				return decoder
+			}
 		}
 	}
 
