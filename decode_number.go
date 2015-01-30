@@ -51,33 +51,33 @@ func (d *Decoder) uint64() (uint64, error) {
 }
 
 func (d *Decoder) DecodeUint64() (uint64, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.ReadCode()
 	if err != nil {
 		return 0, err
 	}
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if c.IsFixNum() {
 		return uint64(int8(c)), nil
 	}
 	switch c {
-	case uint8Code:
+	case Uint8Code:
 		n, err := d.uint8()
 		return uint64(n), err
-	case int8Code:
+	case Int8Code:
 		n, err := d.uint8()
 		return uint64(int8(n)), err
-	case uint16Code:
+	case Uint16Code:
 		n, err := d.uint16()
 		return uint64(n), err
-	case int16Code:
+	case Int16Code:
 		n, err := d.uint16()
 		return uint64(int16(n)), err
-	case uint32Code:
+	case Uint32Code:
 		n, err := d.uint32()
 		return uint64(n), err
-	case int32Code:
+	case Int32Code:
 		n, err := d.uint32()
 		return uint64(int32(n)), err
-	case uint64Code, int64Code:
+	case Uint64Code, Int64Code:
 		return d.uint64()
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
@@ -93,33 +93,33 @@ func (d *Decoder) uint64Value(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeInt64() (int64, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.ReadCode()
 	if err != nil {
 		return 0, err
 	}
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if c.IsFixNum() {
 		return int64(int8(c)), nil
 	}
 	switch c {
-	case uint8Code:
+	case Uint8Code:
 		n, err := d.uint8()
 		return int64(n), err
-	case int8Code:
+	case Int8Code:
 		n, err := d.uint8()
 		return int64(int8(n)), err
-	case uint16Code:
+	case Uint16Code:
 		n, err := d.uint16()
 		return int64(n), err
-	case int16Code:
+	case Int16Code:
 		n, err := d.uint16()
 		return int64(int16(n)), err
-	case uint32Code:
+	case Uint32Code:
 		n, err := d.uint32()
 		return int64(n), err
-	case int32Code:
+	case Int32Code:
 		n, err := d.uint32()
 		return int64(int32(n)), err
-	case uint64Code, int64Code:
+	case Uint64Code, Int64Code:
 		n, err := d.uint64()
 		return int64(n), err
 	}
@@ -136,11 +136,11 @@ func (d *Decoder) int64Value(v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeFloat32() (float32, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.ReadCode()
 	if err != nil {
 		return 0, err
 	}
-	if c != floatCode {
+	if c != FloatCode {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float32", c)
 	}
 	b, err := d.uint32()
@@ -160,11 +160,11 @@ func (d *Decoder) float32Value(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeFloat64() (float64, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.ReadCode()
 	if err != nil {
 		return 0, err
 	}
-	if c != doubleCode {
+	if c != DoubleCode {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float64", c)
 	}
 	b, err := d.uint64()

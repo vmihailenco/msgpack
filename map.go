@@ -8,15 +8,15 @@ import (
 func (e *Encoder) encodeMapLen(l int) error {
 	switch {
 	case l < 16:
-		if err := e.w.WriteByte(fixMapLowCode | byte(l)); err != nil {
+		if err := e.w.WriteByte(FixMapLowCode | byte(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write2(map16Code, uint64(l)); err != nil {
+		if err := e.write2(Map16Code, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write4(map32Code, uint64(l)); err != nil {
+		if err := e.write4(Map32Code, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -75,21 +75,20 @@ func decodeMap(d *Decoder) (interface{}, error) {
 }
 
 func (d *Decoder) DecodeMapLen() (int, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.ReadCode()
 	if err != nil {
 		return 0, err
 	}
-	if c == nilCode {
+	if c == NilCode {
 		return -1, nil
-	}
-	if c >= fixMapLowCode && c <= fixMapHighCode {
-		return int(c & fixMapMask), nil
+	} else if c.IsFixMap() {
+		return int(c & FixMapMask), nil
 	}
 	switch c {
-	case map16Code:
+	case Map16Code:
 		n, err := d.uint16()
 		return int(n), err
-	case map32Code:
+	case Map32Code:
 		n, err := d.uint32()
 		return int(n), err
 	}

@@ -166,14 +166,14 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeBool() (bool, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.ReadCode()
 	if err != nil {
 		return false, err
 	}
 	switch c {
-	case falseCode:
+	case FalseCode:
 		return false, nil
-	case trueCode:
+	case TrueCode:
 		return true, nil
 	}
 	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
@@ -199,6 +199,24 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 	return nil
 }
 
+// ReadCode returns the next byte as code
+func (d *Decoder) ReadCode() (Code, error) {
+	b, err := d.r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	return Code(b), err
+}
+
+// PeekCode returns the next byte
+func (d *Decoder) PeekCode() (c Code, err error) {
+	if c, err = d.ReadCode(); err != nil {
+		return
+	}
+	err = d.r.UnreadByte()
+	return
+}
+
 // Decodes value into interface. Possible value types are:
 //   - nil,
 //   - int64,
@@ -209,45 +227,42 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.PeekCode()
 	if err != nil {
 		return nil, err
 	}
-	if err := d.r.UnreadByte(); err != nil {
-		return nil, err
-	}
 
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if c.IsFixNum() {
 		return d.DecodeInt64()
-	} else if c >= fixMapLowCode && c <= fixMapHighCode {
+	} else if c.IsFixMap() {
 		return d.DecodeMap()
-	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
+	} else if c.IsFixSlice() {
 		return d.DecodeSlice()
-	} else if c >= fixStrLowCode && c <= fixStrHighCode {
+	} else if c.IsFixString() {
 		return d.DecodeString()
 	}
 
 	switch c {
-	case nilCode:
+	case NilCode:
 		_, err := d.r.ReadByte()
 		return nil, err
-	case falseCode, trueCode:
+	case FalseCode, TrueCode:
 		return d.DecodeBool()
-	case floatCode:
+	case FloatCode:
 		return d.DecodeFloat32()
-	case doubleCode:
+	case DoubleCode:
 		return d.DecodeFloat64()
-	case uint8Code, uint16Code, uint32Code, uint64Code:
+	case Uint8Code, Uint16Code, Uint32Code, Uint64Code:
 		return d.DecodeUint64()
-	case int8Code, int16Code, int32Code, int64Code:
+	case Int8Code, Int16Code, Int32Code, Int64Code:
 		return d.DecodeInt64()
-	case bin8Code, bin16Code, bin32Code:
+	case Bin8Code, Bin16Code, Bin32Code:
 		return d.DecodeBytes()
-	case str8Code, str16Code, str32Code:
+	case Str8Code, Str16Code, Str32Code:
 		return d.DecodeString()
-	case array16Code, array32Code:
+	case Array16Code, Array32Code:
 		return d.DecodeSlice()
-	case map16Code, map32Code:
+	case Map16Code, Map32Code:
 		return d.DecodeMap()
 	}
 
