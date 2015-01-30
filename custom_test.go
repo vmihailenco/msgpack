@@ -30,7 +30,10 @@ func encodeCustomTestSet(e *msgpack.Encoder, v reflect.Value) error {
 }
 
 func decodeCustomTestSet(d *msgpack.Decoder, v reflect.Value) error {
-	if code, err := d.PeekCode(); err != nil || code == msgpack.NilCode {
+	if code, err := d.PeekCode(); err != nil {
+		return err
+	} else if code == msgpack.NilCode {
+		_, err = d.DecodeInterface()
 		return err
 	}
 
