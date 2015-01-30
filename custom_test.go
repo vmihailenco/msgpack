@@ -59,8 +59,8 @@ func TestCustom_NilOrBlank(t *testing.T) {
 	}{
 		{customTestSet{},
 			[]byte{0x90}},
-		{customTestSet{1: struct{}{}, 3: struct{}{}},
-			[]byte{0x92, 0x1, 0x3}},
+		{customTestSet{8: struct{}{}},
+			[]byte{0x91, 0x8}},
 		{nil,
 			[]byte{0xc0}},
 	}
