@@ -1,47 +1,54 @@
 package msgpack
 
 const (
-	posFixNumHighCode = 0x7f
-	negFixNumLowCode  = 0xe0
+	PosFixNumHighCode = 0x7f
+	NegFixNumLowCode  = 0xe0
 
-	nilCode = 0xc0
+	NilCode = 0xc0
 
-	falseCode = 0xc2
-	trueCode  = 0xc3
+	FalseCode = 0xc2
+	TrueCode  = 0xc3
 
-	floatCode  = 0xca
-	doubleCode = 0xcb
+	FloatCode  = 0xca
+	DoubleCode = 0xcb
 
-	uint8Code  = 0xcc
-	uint16Code = 0xcd
-	uint32Code = 0xce
-	uint64Code = 0xcf
+	Uint8Code  = 0xcc
+	Uint16Code = 0xcd
+	Uint32Code = 0xce
+	Uint64Code = 0xcf
 
-	int8Code  = 0xd0
-	int16Code = 0xd1
-	int32Code = 0xd2
-	int64Code = 0xd3
+	Int8Code  = 0xd0
+	Int16Code = 0xd1
+	Int32Code = 0xd2
+	Int64Code = 0xd3
 
-	fixStrLowCode  = 0xa0
-	fixStrHighCode = 0xbf
-	fixStrMask     = 0x1f
-	str8Code       = 0xd9
-	str16Code      = 0xda
-	str32Code      = 0xdb
+	FixStrLowCode  = 0xa0
+	FixStrHighCode = 0xbf
+	FixStrMask     = 0x1f
+	Str8Code       = 0xd9
+	Str16Code      = 0xda
+	Str32Code      = 0xdb
 
-	bin8Code  = 0xc4
-	bin16Code = 0xc5
-	bin32Code = 0xc6
+	Bin8Code  = 0xc4
+	Bin16Code = 0xc5
+	Bin32Code = 0xc6
 
-	fixArrayLowCode  = 0x90
-	fixArrayHighCode = 0x9f
-	fixArrayMask     = 0xf
-	array16Code      = 0xdc
-	array32Code      = 0xdd
+	FixArrayLowCode  = 0x90
+	FixArrayHighCode = 0x9f
+	FixArrayMask     = 0xf
+	Array16Code      = 0xdc
+	Array32Code      = 0xdd
 
-	fixMapLowCode  = 0x80
-	fixMapHighCode = 0x8f
-	fixMapMask     = 0xf
-	map16Code      = 0xde
-	map32Code      = 0xdf
+	FixMapLowCode  = 0x80
+	FixMapHighCode = 0x8f
+	FixMapMask     = 0xf
+	Map16Code      = 0xde
+	Map32Code      = 0xdf
 )
+
+type Code byte
+
+func (c Code) IsFixNum() bool    { return c <= PosFixNumHighCode || c >= NegFixNumLowCode }
+func (c Code) IsFixMap() bool    { return c >= FixMapLowCode && c <= FixMapHighCode }
+func (c Code) IsFixSlice() bool  { return c >= FixArrayLowCode && c <= FixArrayHighCode }
+func (c Code) IsFixString() bool { return c >= FixStrLowCode && c <= FixStrHighCode }

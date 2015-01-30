@@ -19,16 +19,16 @@ type binTest struct {
 }
 
 var binTests = []binTest{
-	{nil, []byte{nilCode}},
-	{omitEmptyTest{}, []byte{fixMapLowCode}},
+	{nil, []byte{msgpack.NilCode}},
+	{omitEmptyTest{}, []byte{msgpack.FixMapLowCode}},
 }
 
 func init() {
 	test := binTest{in: &omitEmptyTest{Foo: "hello"}}
-	test.wanted = append(test.wanted, fixMapLowCode|0x01)
-	test.wanted = append(test.wanted, fixStrLowCode|byte(len("Foo")))
+	test.wanted = append(test.wanted, msgpack.FixMapLowCode|0x01)
+	test.wanted = append(test.wanted, msgpack.FixStrLowCode|byte(len("Foo")))
 	test.wanted = append(test.wanted, "Foo"...)
-	test.wanted = append(test.wanted, fixStrLowCode|byte(len("hello")))
+	test.wanted = append(test.wanted, msgpack.FixStrLowCode|byte(len("hello")))
 	test.wanted = append(test.wanted, "hello"...)
 	binTests = append(binTests, test)
 }
