@@ -14,20 +14,23 @@ var (
 
 var structs = newStructCache()
 
-var valueEncoders []encoderFunc
-var valueDecoders []decoderFunc
+var (
+	valueEncoders []encoderFunc
+	valueDecoders []decoderFunc
+)
 
-var sliceEncoders = [...]encoderFunc{
-	reflect.Uint8:         encodeBytesValue,
-	reflect.String:        encodeStringsValue,
-	reflect.UnsafePointer: nil,
-}
-
-var sliceDecoders = []decoderFunc{
-	reflect.Uint8:         decodeBytesValue,
-	reflect.String:        decodeStringsValue,
-	reflect.UnsafePointer: nil,
-}
+var (
+	sliceEncoders = [...]encoderFunc{
+		reflect.Uint8:         encodeBytesValue,
+		reflect.String:        encodeStringsValue,
+		reflect.UnsafePointer: nil,
+	}
+	sliceDecoders = []decoderFunc{
+		reflect.Uint8:         decodeBytesValue,
+		reflect.String:        decodeStringsValue,
+		reflect.UnsafePointer: nil,
+	}
+)
 
 func init() {
 	valueEncoders = []encoderFunc{
@@ -336,6 +339,14 @@ func getFields(typ reflect.Type) fields {
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {
+	enc := _getEncoder(typ)
+	if id := extTypeId(typ); id != -1 {
+		return makeExtEncoder(id, enc)
+	}
+	return enc
+}
+
+func _getEncoder(typ reflect.Type) encoderFunc {
 	if encoder, ok := typEncMap[typ]; ok {
 		return encoder
 	}
