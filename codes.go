@@ -44,4 +44,13 @@ const (
 	fixMapMask     = 0xf
 	map16Code      = 0xde
 	map32Code      = 0xdf
+
+	fixExt1Code  = 0xd4
+	fixExt2Code  = 0xd5
+	fixExt4Code  = 0xd6
+	fixExt8Code  = 0xd7
+	fixExt16Code = 0xd8
+	ext8Code     = 0xc7
+	ext16Code    = 0xc8
+	ext32Code    = 0xc9
 )
