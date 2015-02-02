@@ -59,6 +59,8 @@ func (d *Decoder) DecodeUint64() (uint64, error) {
 		return uint64(int8(c)), nil
 	}
 	switch c {
+	case nilCode:
+		return 0, nil
 	case uint8Code:
 		n, err := d.uint8()
 		return uint64(n), err
