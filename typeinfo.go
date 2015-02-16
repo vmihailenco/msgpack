@@ -9,7 +9,6 @@ import (
 var (
 	marshalerType   = reflect.TypeOf(new(Marshaler)).Elem()
 	unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
-	stringsType     = reflect.TypeOf(([]string)(nil))
 )
 
 var structs = newStructCache()
