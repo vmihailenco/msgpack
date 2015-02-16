@@ -62,6 +62,11 @@ type embededTime struct {
 	time.Time
 }
 
+type (
+	stringAlias string
+	uint8Alias  uint8
+)
+
 var (
 	stringsv           stringst
 	structv            structt
@@ -71,7 +76,11 @@ var (
 	coders             []coderStruct
 	stringInterfaceMap map[string]interface{}
 	embededTimeValue   *embededTime
-	typeTests          = []typeTest{
+
+	stringAliasSliceValue []stringAlias
+	uint8AliasSliceValue  []uint8Alias
+
+	typeTests = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
 		{structt{stringst{"foo", "bar"}, []string{"hello"}}, &structv},
 		{([]int)(nil), &ints},
@@ -81,6 +90,9 @@ var (
 		{map[string]interface{}{"foo": nil}, &stringInterfaceMap},
 		{&coderStruct{name: "hello"}, &unmarshalerPtr},
 		{&embededTime{Time: time.Now()}, &embededTimeValue},
+
+		{[]stringAlias{"hello"}, &stringAliasSliceValue},
+		{[]uint8Alias{1}, &uint8AliasSliceValue},
 	}
 )
 

@@ -17,18 +17,6 @@ var structs = newStructCache()
 var valueEncoders []encoderFunc
 var valueDecoders []decoderFunc
 
-var sliceEncoders = [...]encoderFunc{
-	reflect.Uint8:         encodeBytesValue,
-	reflect.String:        encodeStringsValue,
-	reflect.UnsafePointer: nil,
-}
-
-var sliceDecoders = []decoderFunc{
-	reflect.Uint8:         decodeBytesValue,
-	reflect.String:        decodeStringsValue,
-	reflect.UnsafePointer: nil,
-}
-
 func init() {
 	valueEncoders = []encoderFunc{
 		reflect.Bool:          encodeBoolValue,
@@ -146,16 +134,6 @@ func encodeBytesValue(e *Encoder, v reflect.Value) error {
 
 func decodeBytesValue(d *Decoder, v reflect.Value) error {
 	return d.bytesValue(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeStringsValue(e *Encoder, v reflect.Value) error {
-	return e.encodeStringSlice(v.Convert(stringsType).Interface().([]string))
-}
-
-func decodeStringsValue(d *Decoder, v reflect.Value) error {
-	return d.stringsValue(v)
 }
 
 //------------------------------------------------------------------------------
@@ -345,12 +323,8 @@ func getEncoder(typ reflect.Type) encoderFunc {
 	}
 
 	kind := typ.Kind()
-	switch kind {
-	case reflect.Slice:
-		elemKind := typ.Elem().Kind()
-		if enc := sliceEncoders[elemKind]; enc != nil {
-			return enc
-		}
+	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
+		return encodeBytesValue
 	}
 
 	return valueEncoders[kind]
@@ -366,12 +340,8 @@ func getDecoder(typ reflect.Type) decoderFunc {
 	}
 
 	kind := typ.Kind()
-	switch kind {
-	case reflect.Slice:
-		elemKind := typ.Elem().Kind()
-		if dec := sliceDecoders[elemKind]; dec != nil {
-			return dec
-		}
+	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
+		return decodeBytesValue
 	}
 
 	return valueDecoders[kind]
