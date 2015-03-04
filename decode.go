@@ -165,6 +165,16 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 	return decode(d, v)
 }
 
+func (d *Decoder) DecodeNil() (bool, error) {
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return false, err
+	} else if c == nilCode {
+		return true, nil
+	}
+	return false, d.r.UnreadByte()
+}
+
 func (d *Decoder) DecodeBool() (bool, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
