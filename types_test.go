@@ -1,17 +1,85 @@
 package msgpack_test
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/vmihailenco/msgpack/codes"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
+
+//------------------------------------------------------------------------------
+
+type intSet map[int]struct{}
+
+func (set intSet) MarshalMsgpack() ([]byte, error) {
+	var slice []int
+
+	if set == nil {
+		return msgpack.Marshal(slice)
+	}
+
+	slice = make([]int, 0, len(set))
+	for n, _ := range set {
+		slice = append(slice, n)
+	}
+	return msgpack.Marshal(slice)
+}
+
+func (setptr *intSet) UnmarshalMsgpack(b []byte) error {
+	d := msgpack.NewDecoder(bytes.NewReader(b))
+
+	n, err := d.DecodeSliceLen()
+	if err != nil {
+		return err
+	}
+	if n == -1 {
+		return nil
+	}
+
+	set := make(intSet, n)
+	for i := 0; i < n; i++ {
+		n, err := d.DecodeInt()
+		if err != nil {
+			return err
+		}
+		set[n] = struct{}{}
+	}
+	*setptr = set
+
+	return nil
+}
+
+type compactEncoding struct {
+	str     string
+	struct_ *compactEncoding
+	num     int
+}
+
+func (s *compactEncoding) MarshalMsgpack() ([]byte, error) {
+	if s == nil {
+		return []byte{codes.Nil}, nil
+	}
+	return msgpack.Marshal(s.str, s.struct_, s.num)
+}
+
+func (s *compactEncoding) UnmarshalMsgpack(b []byte) error {
+	if len(b) == 1 && b[0] == codes.Nil {
+		return nil
+	}
+	return msgpack.Unmarshal(b, &s.str, &s.struct_, &s.num)
+}
+
+//------------------------------------------------------------------------------
 
 type omitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`
 }
+
+//------------------------------------------------------------------------------
 
 type binTest struct {
 	in     interface{}
@@ -19,16 +87,25 @@ type binTest struct {
 }
 
 var binTests = []binTest{
-	{nil, []byte{nilCode}},
-	{omitEmptyTest{}, []byte{fixMapLowCode}},
+	{nil, []byte{codes.Nil}},
+	{omitEmptyTest{}, []byte{codes.FixedMapLow}},
+
+	{intSet{}, []byte{codes.FixedArrayLow}},
+	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
+
+	{&compactEncoding{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
+	{
+		&compactEncoding{"n", &compactEncoding{"o", nil, 7}, 6},
+		[]byte{codes.FixedStrLow | 1, 'n', codes.FixedStrLow | 1, 'o', codes.Nil, 0x7, 0x6},
+	},
 }
 
 func init() {
 	test := binTest{in: &omitEmptyTest{Foo: "hello"}}
-	test.wanted = append(test.wanted, fixMapLowCode|0x01)
-	test.wanted = append(test.wanted, fixStrLowCode|byte(len("Foo")))
+	test.wanted = append(test.wanted, codes.FixedMapLow|0x01)
+	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Foo")))
 	test.wanted = append(test.wanted, "Foo"...)
-	test.wanted = append(test.wanted, fixStrLowCode|byte(len("hello")))
+	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("hello")))
 	test.wanted = append(test.wanted, "hello"...)
 	binTests = append(binTests, test)
 }
@@ -80,6 +157,9 @@ var (
 	stringAliasSliceValue []stringAlias
 	uint8AliasSliceValue  []uint8Alias
 
+	intSetValue          intSet
+	compactEncodingValue *compactEncoding
+
 	typeTests = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
 		{structt{stringst{"foo", "bar"}, []string{"hello"}}, &structv},
@@ -93,6 +173,12 @@ var (
 
 		{[]stringAlias{"hello"}, &stringAliasSliceValue},
 		{[]uint8Alias{1}, &uint8AliasSliceValue},
+
+		{intSet{}, &intSetValue},
+		{intSet{8: struct{}{}}, &intSetValue},
+
+		{&compactEncoding{}, &compactEncodingValue},
+		{&compactEncoding{"n", &compactEncoding{"o", nil, 7}, 6}, &compactEncodingValue},
 	}
 )
 

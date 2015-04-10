@@ -8,6 +8,8 @@ import (
 	"io"
 	"reflect"
 	"time"
+
+	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 type bufReader interface {
@@ -171,9 +173,9 @@ func (d *Decoder) DecodeBool() (bool, error) {
 		return false, err
 	}
 	switch c {
-	case falseCode:
+	case codes.False:
 		return false, nil
-	case trueCode:
+	case codes.True:
 		return true, nil
 	}
 	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
@@ -217,37 +219,37 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return nil, err
 	}
 
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if codes.IsFixedNum(c) {
 		return d.DecodeInt64()
-	} else if c >= fixMapLowCode && c <= fixMapHighCode {
+	} else if codes.IsFixedMap(c) {
 		return d.DecodeMap()
-	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
+	} else if codes.IsFixedArray(c) {
 		return d.DecodeSlice()
-	} else if c >= fixStrLowCode && c <= fixStrHighCode {
+	} else if codes.IsFixedString(c) {
 		return d.DecodeString()
 	}
 
 	switch c {
-	case nilCode:
+	case codes.Nil:
 		_, err := d.r.ReadByte()
 		return nil, err
-	case falseCode, trueCode:
+	case codes.False, codes.True:
 		return d.DecodeBool()
-	case floatCode:
+	case codes.Float:
 		return d.DecodeFloat32()
-	case doubleCode:
+	case codes.Double:
 		return d.DecodeFloat64()
-	case uint8Code, uint16Code, uint32Code, uint64Code:
+	case codes.Uint8, codes.Uint16, codes.Uint32, codes.Uint64:
 		return d.DecodeUint64()
-	case int8Code, int16Code, int32Code, int64Code:
+	case codes.Int8, codes.Int16, codes.Int32, codes.Int64:
 		return d.DecodeInt64()
-	case bin8Code, bin16Code, bin32Code:
+	case codes.Bin8, codes.Bin16, codes.Bin32:
 		return d.DecodeBytes()
-	case str8Code, str16Code, str32Code:
+	case codes.Str8, codes.Str16, codes.Str32:
 		return d.DecodeString()
-	case array16Code, array32Code:
+	case codes.Array16, codes.Array32:
 		return d.DecodeSlice()
-	case map16Code, map32Code:
+	case codes.Map16, codes.Map32:
 		return d.DecodeMap()
 	}
 

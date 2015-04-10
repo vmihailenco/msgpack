@@ -3,20 +3,22 @@ package msgpack
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 func (e *Encoder) encodeMapLen(l int) error {
 	switch {
 	case l < 16:
-		if err := e.w.WriteByte(fixMapLowCode | byte(l)); err != nil {
+		if err := e.w.WriteByte(codes.FixedMapLow | byte(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write2(map16Code, uint64(l)); err != nil {
+		if err := e.write2(codes.Map16, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write4(map32Code, uint64(l)); err != nil {
+		if err := e.write4(codes.Map32, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -79,17 +81,17 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c == nilCode {
+	if c == codes.Nil {
 		return -1, nil
 	}
-	if c >= fixMapLowCode && c <= fixMapHighCode {
-		return int(c & fixMapMask), nil
+	if c >= codes.FixedMapLow && c <= codes.FixedMapHigh {
+		return int(c & codes.FixedMapMask), nil
 	}
 	switch c {
-	case map16Code:
+	case codes.Map16:
 		n, err := d.uint16()
 		return int(n), err
-	case map32Code:
+	case codes.Map32:
 		n, err := d.uint32()
 		return int(n), err
 	}
