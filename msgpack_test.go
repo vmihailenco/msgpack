@@ -541,20 +541,22 @@ type coderStruct struct {
 	name string
 }
 
+var (
+	_ msgpack.CustomEncoder = &coderStruct{}
+	_ msgpack.CustomDecoder = &coderStruct{}
+)
+
 func (s *coderStruct) Name() string {
 	return s.name
 }
 
-func (s *coderStruct) MarshalMsgpack() ([]byte, error) {
-	return msgpack.Marshal(s.name)
+func (s *coderStruct) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.Encode(s.name)
 }
 
-func (s *coderStruct) UnmarshalMsgpack(b []byte) error {
-	return msgpack.Unmarshal(b, &s.name)
+func (s *coderStruct) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.Decode(&s.name)
 }
-
-var _ msgpack.Marshaler = &coderStruct{}
-var _ msgpack.Unmarshaler = &coderStruct{}
 
 func (t *MsgpackTest) TestCoder(c *C) {
 	in := &coderStruct{name: "hello"}
@@ -884,8 +886,13 @@ type benchmarkStruct2 struct {
 	UpdatedAt time.Time
 }
 
-func (s *benchmarkStruct2) MarshalMsgpack() ([]byte, error) {
-	return msgpack.Marshal(
+var (
+	_ msgpack.CustomEncoder = &benchmarkStruct2{}
+	_ msgpack.CustomDecoder = &benchmarkStruct2{}
+)
+
+func (s *benchmarkStruct2) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.Encode(
 		s.Name,
 		s.Colors,
 		s.Age,
@@ -895,9 +902,8 @@ func (s *benchmarkStruct2) MarshalMsgpack() ([]byte, error) {
 	)
 }
 
-func (s *benchmarkStruct2) UnmarshalMsgpack(b []byte) error {
-	return msgpack.Unmarshal(
-		b,
+func (s *benchmarkStruct2) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.Decode(
 		&s.Name,
 		&s.Colors,
 		&s.Age,
@@ -906,9 +912,6 @@ func (s *benchmarkStruct2) UnmarshalMsgpack(b []byte) error {
 		&s.UpdatedAt,
 	)
 }
-
-var _ msgpack.Marshaler = &benchmarkStruct2{}
-var _ msgpack.Unmarshaler = &benchmarkStruct2{}
 
 func structForBenchmark() *benchmarkStruct {
 	return &benchmarkStruct{

@@ -167,6 +167,17 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 	return decode(d, v)
 }
 
+func (d *Decoder) DecodeNil() error {
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c != codes.Nil {
+		return fmt.Errorf("msgpack: invalid code %x decoding nil", c)
+	}
+	return nil
+}
+
 func (d *Decoder) DecodeBool() (bool, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -211,11 +222,8 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.peekCode()
 	if err != nil {
-		return nil, err
-	}
-	if err := d.r.UnreadByte(); err != nil {
 		return nil, err
 	}
 
@@ -254,6 +262,21 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)
+}
+
+// PeekCode returns the next Msgpack code. See
+// https://github.com/msgpack/msgpack/blob/master/spec.md#formats for details.
+func (d *Decoder) peekCode() (code byte, err error) {
+	code, err = d.r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	return code, d.r.UnreadByte()
+}
+
+func (d *Decoder) hasNilCode() bool {
+	code, err := d.peekCode()
+	return err == nil && code == codes.Nil
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {

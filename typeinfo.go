@@ -9,6 +9,9 @@ import (
 var (
 	marshalerType   = reflect.TypeOf(new(Marshaler)).Elem()
 	unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
+
+	encoderType = reflect.TypeOf(new(CustomEncoder)).Elem()
+	decoderType = reflect.TypeOf(new(CustomDecoder)).Elem()
 )
 
 var structs = newStructCache()
@@ -211,8 +214,12 @@ func encodePtrValue(e *Encoder, v reflect.Value) error {
 }
 
 func decodePtrValue(d *Decoder, v reflect.Value) error {
+	if v.Type().Implements(decoderType) {
+		return decodeCustomValue(d, v)
+	}
 	if v.IsNil() {
-		v.Set(reflect.New(v.Type().Elem()))
+		vv := reflect.New(v.Type().Elem())
+		v.Set(vv)
 	}
 	return d.DecodeValue(v.Elem())
 }
@@ -228,6 +235,25 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 }
 
 //------------------------------------------------------------------------------
+
+func encodeCustomValue(e *Encoder, v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	encoder := v.Interface().(CustomEncoder)
+	return encoder.EncodeMsgpack(e)
+}
+
+func decodeCustomValue(d *Decoder, v reflect.Value) error {
+	if d.hasNilCode() {
+		return d.DecodeNil()
+	}
+	if v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+	decoder := v.Interface().(CustomDecoder)
+	return decoder.DecodeMsgpack(d)
+}
 
 func marshalValue(e *Encoder, v reflect.Value) error {
 	marshaler := v.Interface().(Marshaler)
@@ -317,6 +343,9 @@ func getEncoder(typ reflect.Type) encoderFunc {
 		return encoder
 	}
 
+	if typ.Implements(encoderType) {
+		return encodeCustomValue
+	}
 	if typ.Implements(marshalerType) {
 		return marshalValue
 	}

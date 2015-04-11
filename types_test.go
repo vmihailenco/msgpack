@@ -1,7 +1,6 @@
 package msgpack_test
 
 import (
-	"bytes"
 	"reflect"
 	"testing"
 	"time"
@@ -14,34 +13,28 @@ import (
 
 type intSet map[int]struct{}
 
-func (set intSet) MarshalMsgpack() ([]byte, error) {
-	var slice []int
+var (
+	_ msgpack.CustomEncoder = &intSet{}
+	_ msgpack.CustomDecoder = &intSet{}
+)
 
-	if set == nil {
-		return msgpack.Marshal(slice)
-	}
-
-	slice = make([]int, 0, len(set))
+func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
+	slice := make([]int, 0, len(set))
 	for n, _ := range set {
 		slice = append(slice, n)
 	}
-	return msgpack.Marshal(slice)
+	return enc.Encode(slice)
 }
 
-func (setptr *intSet) UnmarshalMsgpack(b []byte) error {
-	d := msgpack.NewDecoder(bytes.NewReader(b))
-
-	n, err := d.DecodeSliceLen()
+func (setptr *intSet) DecodeMsgpack(dec *msgpack.Decoder) error {
+	n, err := dec.DecodeSliceLen()
 	if err != nil {
 		return err
-	}
-	if n == -1 {
-		return nil
 	}
 
 	set := make(intSet, n)
 	for i := 0; i < n; i++ {
-		n, err := d.DecodeInt()
+		n, err := dec.DecodeInt()
 		if err != nil {
 			return err
 		}
@@ -52,24 +45,25 @@ func (setptr *intSet) UnmarshalMsgpack(b []byte) error {
 	return nil
 }
 
+//------------------------------------------------------------------------------
+
 type compactEncoding struct {
 	str     string
 	struct_ *compactEncoding
 	num     int
 }
 
-func (s *compactEncoding) MarshalMsgpack() ([]byte, error) {
-	if s == nil {
-		return []byte{codes.Nil}, nil
-	}
-	return msgpack.Marshal(s.str, s.struct_, s.num)
+var (
+	_ msgpack.CustomEncoder = &compactEncoding{}
+	_ msgpack.CustomDecoder = &compactEncoding{}
+)
+
+func (s *compactEncoding) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.Encode(s.str, s.struct_, s.num)
 }
 
-func (s *compactEncoding) UnmarshalMsgpack(b []byte) error {
-	if len(b) == 1 && b[0] == codes.Nil {
-		return nil
-	}
-	return msgpack.Unmarshal(b, &s.str, &s.struct_, &s.num)
+func (s *compactEncoding) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.Decode(&s.str, &s.struct_, &s.num)
 }
 
 //------------------------------------------------------------------------------
@@ -158,7 +152,7 @@ var (
 	uint8AliasSliceValue  []uint8Alias
 
 	intSetValue          intSet
-	compactEncodingValue *compactEncoding
+	compactEncodingValue compactEncoding
 
 	typeTests = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
