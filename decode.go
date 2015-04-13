@@ -8,6 +8,8 @@ import (
 	"io"
 	"reflect"
 	"time"
+
+	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 type bufReader interface {
@@ -165,15 +167,26 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 	return decode(d, v)
 }
 
+func (d *Decoder) DecodeNil() error {
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return err
+	}
+	if c != codes.Nil {
+		return fmt.Errorf("msgpack: invalid code %x decoding nil", c)
+	}
+	return nil
+}
+
 func (d *Decoder) DecodeBool() (bool, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
 		return false, err
 	}
 	switch c {
-	case falseCode:
+	case codes.False:
 		return false, nil
-	case trueCode:
+	case codes.True:
 		return true, nil
 	}
 	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
@@ -209,49 +222,61 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.peekCode()
 	if err != nil {
 		return nil, err
 	}
-	if err := d.r.UnreadByte(); err != nil {
-		return nil, err
-	}
 
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if codes.IsFixedNum(c) {
 		return d.DecodeInt64()
-	} else if c >= fixMapLowCode && c <= fixMapHighCode {
+	} else if codes.IsFixedMap(c) {
 		return d.DecodeMap()
-	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
+	} else if codes.IsFixedArray(c) {
 		return d.DecodeSlice()
-	} else if c >= fixStrLowCode && c <= fixStrHighCode {
+	} else if codes.IsFixedString(c) {
 		return d.DecodeString()
 	}
 
 	switch c {
-	case nilCode:
+	case codes.Nil:
 		_, err := d.r.ReadByte()
 		return nil, err
-	case falseCode, trueCode:
+	case codes.False, codes.True:
 		return d.DecodeBool()
-	case floatCode:
+	case codes.Float:
 		return d.DecodeFloat32()
-	case doubleCode:
+	case codes.Double:
 		return d.DecodeFloat64()
-	case uint8Code, uint16Code, uint32Code, uint64Code:
+	case codes.Uint8, codes.Uint16, codes.Uint32, codes.Uint64:
 		return d.DecodeUint64()
-	case int8Code, int16Code, int32Code, int64Code:
+	case codes.Int8, codes.Int16, codes.Int32, codes.Int64:
 		return d.DecodeInt64()
-	case bin8Code, bin16Code, bin32Code:
+	case codes.Bin8, codes.Bin16, codes.Bin32:
 		return d.DecodeBytes()
-	case str8Code, str16Code, str32Code:
+	case codes.Str8, codes.Str16, codes.Str32:
 		return d.DecodeString()
-	case array16Code, array32Code:
+	case codes.Array16, codes.Array32:
 		return d.DecodeSlice()
-	case map16Code, map32Code:
+	case codes.Map16, codes.Map32:
 		return d.DecodeMap()
 	}
 
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)
+}
+
+// PeekCode returns the next Msgpack code. See
+// https://github.com/msgpack/msgpack/blob/master/spec.md#formats for details.
+func (d *Decoder) peekCode() (code byte, err error) {
+	code, err = d.r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	return code, d.r.UnreadByte()
+}
+
+func (d *Decoder) hasNilCode() bool {
+	code, err := d.peekCode()
+	return err == nil && code == codes.Nil
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {

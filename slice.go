@@ -4,20 +4,22 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 func (e *Encoder) encodeBytesLen(l int) error {
 	switch {
 	case l < 256:
-		if err := e.write1(bin8Code, uint64(l)); err != nil {
+		if err := e.write1(codes.Bin8, uint64(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write2(bin16Code, uint64(l)); err != nil {
+		if err := e.write2(codes.Bin16, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write4(bin32Code, uint64(l)); err != nil {
+		if err := e.write4(codes.Bin32, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -27,19 +29,19 @@ func (e *Encoder) encodeBytesLen(l int) error {
 func (e *Encoder) encodeStrLen(l int) error {
 	switch {
 	case l < 32:
-		if err := e.w.WriteByte(fixStrLowCode | uint8(l)); err != nil {
+		if err := e.w.WriteByte(codes.FixedStrLow | uint8(l)); err != nil {
 			return err
 		}
 	case l < 256:
-		if err := e.write1(str8Code, uint64(l)); err != nil {
+		if err := e.write1(codes.Str8, uint64(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write2(str16Code, uint64(l)); err != nil {
+		if err := e.write2(codes.Str16, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write4(str32Code, uint64(l)); err != nil {
+		if err := e.write4(codes.Str32, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -66,15 +68,15 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 func (e *Encoder) EncodeSliceLen(l int) error {
 	switch {
 	case l < 16:
-		if err := e.w.WriteByte(fixArrayLowCode | byte(l)); err != nil {
+		if err := e.w.WriteByte(codes.FixedArrayLow | byte(l)); err != nil {
 			return err
 		}
 	case l < 65536:
-		if err := e.write2(array16Code, uint64(l)); err != nil {
+		if err := e.write2(codes.Array16, uint64(l)); err != nil {
 			return err
 		}
 	default:
-		if err := e.write4(array32Code, uint64(l)); err != nil {
+		if err := e.write4(codes.Array32, uint64(l)); err != nil {
 			return err
 		}
 	}
@@ -121,19 +123,19 @@ func (d *Decoder) DecodeBytesLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c == nilCode {
+	if c == codes.Nil {
 		return -1, nil
-	} else if c >= fixStrLowCode && c <= fixStrHighCode {
-		return int(c & fixStrMask), nil
+	} else if c >= codes.FixedStrLow && c <= codes.FixedStrHigh {
+		return int(c & codes.FixedStrMask), nil
 	}
 	switch c {
-	case str8Code, bin8Code:
+	case codes.Str8, codes.Bin8:
 		n, err := d.uint8()
 		return int(n), err
-	case str16Code, bin16Code:
+	case codes.Str16, codes.Bin16:
 		n, err := d.uint16()
 		return int(n), err
-	case str32Code, bin32Code:
+	case codes.Str32, codes.Bin32:
 		n, err := d.uint32()
 		return int(n), err
 	}
@@ -194,16 +196,16 @@ func (d *Decoder) DecodeSliceLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c == nilCode {
+	if c == codes.Nil {
 		return -1, nil
-	} else if c >= fixArrayLowCode && c <= fixArrayHighCode {
-		return int(c & fixArrayMask), nil
+	} else if c >= codes.FixedArrayLow && c <= codes.FixedArrayHigh {
+		return int(c & codes.FixedArrayMask), nil
 	}
 	switch c {
-	case array16Code:
+	case codes.Array16:
 		n, err := d.uint16()
 		return int(n), err
-	case array32Code:
+	case codes.Array32:
 		n, err := d.uint32()
 		return int(n), err
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+
+	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 func (d *Decoder) uint8() (uint8, error) {
@@ -55,29 +57,29 @@ func (d *Decoder) DecodeUint64() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if codes.IsFixedNum(c) {
 		return uint64(int8(c)), nil
 	}
 	switch c {
-	case uint8Code:
+	case codes.Uint8:
 		n, err := d.uint8()
 		return uint64(n), err
-	case int8Code:
+	case codes.Int8:
 		n, err := d.uint8()
 		return uint64(int8(n)), err
-	case uint16Code:
+	case codes.Uint16:
 		n, err := d.uint16()
 		return uint64(n), err
-	case int16Code:
+	case codes.Int16:
 		n, err := d.uint16()
 		return uint64(int16(n)), err
-	case uint32Code:
+	case codes.Uint32:
 		n, err := d.uint32()
 		return uint64(n), err
-	case int32Code:
+	case codes.Int32:
 		n, err := d.uint32()
 		return uint64(int32(n)), err
-	case uint64Code, int64Code:
+	case codes.Uint64, codes.Int64:
 		return d.uint64()
 	}
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
@@ -97,29 +99,29 @@ func (d *Decoder) DecodeInt64() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c <= posFixNumHighCode || c >= negFixNumLowCode {
+	if codes.IsFixedNum(c) {
 		return int64(int8(c)), nil
 	}
 	switch c {
-	case uint8Code:
+	case codes.Uint8:
 		n, err := d.uint8()
 		return int64(n), err
-	case int8Code:
+	case codes.Int8:
 		n, err := d.uint8()
 		return int64(int8(n)), err
-	case uint16Code:
+	case codes.Uint16:
 		n, err := d.uint16()
 		return int64(n), err
-	case int16Code:
+	case codes.Int16:
 		n, err := d.uint16()
 		return int64(int16(n)), err
-	case uint32Code:
+	case codes.Uint32:
 		n, err := d.uint32()
 		return int64(n), err
-	case int32Code:
+	case codes.Int32:
 		n, err := d.uint32()
 		return int64(int32(n)), err
-	case uint64Code, int64Code:
+	case codes.Uint64, codes.Int64:
 		n, err := d.uint64()
 		return int64(n), err
 	}
@@ -140,7 +142,7 @@ func (d *Decoder) DecodeFloat32() (float32, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c != floatCode {
+	if c != codes.Float {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float32", c)
 	}
 	b, err := d.uint32()
@@ -164,7 +166,7 @@ func (d *Decoder) DecodeFloat64() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if c != doubleCode {
+	if c != codes.Double {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float64", c)
 	}
 	b, err := d.uint64()
