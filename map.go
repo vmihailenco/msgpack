@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/codes"
+	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 func (e *Encoder) encodeMapLen(l int) error {
