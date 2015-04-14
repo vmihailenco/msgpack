@@ -68,6 +68,25 @@ func (s *compactEncoding) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 //------------------------------------------------------------------------------
 
+type customTime struct {
+	sec, usec int64
+}
+
+var (
+	_ msgpack.CustomEncoder = customTime{}
+	_ msgpack.CustomDecoder = &customTime{}
+)
+
+func (s customTime) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.Encode(s.sec, s.usec)
+}
+
+func (s *customTime) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.Decode(&s.sec, &s.usec)
+}
+
+//------------------------------------------------------------------------------
+
 type omitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`
@@ -92,6 +111,10 @@ var binTests = []binTest{
 		&compactEncoding{"n", &compactEncoding{"o", nil, 7}, 6},
 		[]byte{codes.FixedStrLow | 1, 'n', codes.FixedStrLow | 1, 'o', codes.Nil, 0x7, 0x6},
 	},
+
+	{&customTime{}, []byte{0x0, 0x0}},
+	{&customTime{1414141414, 1234567890}, []byte{codes.Int32, 0x54, 0x4a, 0x15, 0xe6, codes.Int32, 0x49, 0x96, 0x02, 0xd2}},
+	{[]customTime{{1414141414, 1234567890}}, []byte{codes.FixedArrayLow | 1, codes.Int32, 0x54, 0x4a, 0x15, 0xe6, codes.Int32, 0x49, 0x96, 0x02, 0xd2}},
 }
 
 func init() {
@@ -153,6 +176,7 @@ var (
 
 	intSetValue          intSet
 	compactEncodingValue compactEncoding
+	customTimeValue      customTime
 
 	typeTests = []typeTest{
 		{stringst{"foo", "bar"}, &stringsv},
@@ -173,6 +197,9 @@ var (
 
 		{&compactEncoding{}, &compactEncodingValue},
 		{&compactEncoding{"n", &compactEncoding{"o", nil, 7}, 6}, &compactEncodingValue},
+
+		{&customTime{}, &customTimeValue},
+		{&customTime{1414141414, 1234567890}, &customTimeValue},
 	}
 )
 

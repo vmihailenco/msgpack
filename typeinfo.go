@@ -237,7 +237,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 //------------------------------------------------------------------------------
 
 func encodeCustomValue(e *Encoder, v reflect.Value) error {
-	if v.IsNil() {
+	if v.Kind() == reflect.Ptr && v.IsNil() {
 		return e.EncodeNil()
 	}
 	encoder := v.Interface().(CustomEncoder)
