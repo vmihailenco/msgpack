@@ -5,7 +5,7 @@ Supports:
 - Primitives, arrays, maps, structs and interface{}.
 - time.Time.
 - Appengine *datastore.Key and datastore.Cursor.
-- Extensions for user defined types.
+- Marshaler/Unmarshaler interfaces for custom encoding.
 - Struct field renaming, e.g. `msgpack:"my_field_name"`.
 - Omitempty flag, e.g. `msgpack:",omitempty"`.
 
@@ -81,8 +81,3 @@ Examples:
         fmt.Printf("%v %#v\n", err, out)
         // Output: <nil> map[string]interface {}{"foo":map[string]interface {}{"hello":"world"}}
     }
-
-Extensions
-----------
-
-Look at [appengine.go](https://github.com/vmihailenco/msgpack/blob/master/appengine.go) for example.
