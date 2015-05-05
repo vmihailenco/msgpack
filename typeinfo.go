@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"fmt"
 	"io/ioutil"
 	"reflect"
 	"sync"
@@ -214,9 +215,6 @@ func encodePtrValue(e *Encoder, v reflect.Value) error {
 }
 
 func decodePtrValue(d *Decoder, v reflect.Value) error {
-	if v.Type().Implements(decoderType) {
-		return decodeCustomValue(d, v)
-	}
 	if v.IsNil() {
 		vv := reflect.New(v.Type().Elem())
 		v.Set(vv)
@@ -236,6 +234,20 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 //------------------------------------------------------------------------------
 
+func encodeCustomValuePtr(e *Encoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: encoding unaddressable value: %v", v)
+	}
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		if v.IsNil() {
+			return e.EncodeNil()
+		}
+	}
+	encoder := v.Addr().Interface().(CustomEncoder)
+	return encoder.EncodeMsgpack(e)
+}
+
 func encodeCustomValue(e *Encoder, v reflect.Value) error {
 	switch v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
@@ -245,6 +257,17 @@ func encodeCustomValue(e *Encoder, v reflect.Value) error {
 	}
 	encoder := v.Interface().(CustomEncoder)
 	return encoder.EncodeMsgpack(e)
+}
+
+func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: decoding unaddressable value: %v", v)
+	}
+	if d.hasNilCode() {
+		return d.DecodeNil()
+	}
+	decoder := v.Addr().Interface().(CustomDecoder)
+	return decoder.DecodeMsgpack(d)
 }
 
 func decodeCustomValue(d *Decoder, v reflect.Value) error {
@@ -342,18 +365,24 @@ func getFields(typ reflect.Type) fields {
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {
-	if encoder, ok := typEncMap[typ]; ok {
-		return encoder
-	}
+	kind := typ.Kind()
 
 	if typ.Implements(encoderType) {
 		return encodeCustomValue
 	}
+
+	// Addressable struct field value.
+	if reflect.PtrTo(typ).Implements(decoderType) {
+		return encodeCustomValuePtr
+	}
+
 	if typ.Implements(marshalerType) {
 		return marshalValue
 	}
+	if encoder, ok := typEncMap[typ]; ok {
+		return encoder
+	}
 
-	kind := typ.Kind()
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
 		return encodeBytesValue
 	}
@@ -362,15 +391,25 @@ func getEncoder(typ reflect.Type) encoderFunc {
 }
 
 func getDecoder(typ reflect.Type) decoderFunc {
-	if decoder, ok := typDecMap[typ]; ok {
-		return decoder
+	kind := typ.Kind()
+
+	// Addressable struct field value.
+	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(decoderType) {
+		return decodeCustomValuePtr
+	}
+
+	if typ.Implements(decoderType) {
+		return decodeCustomValue
 	}
 
 	if typ.Implements(unmarshalerType) {
 		return unmarshalValue
 	}
 
-	kind := typ.Kind()
+	if decoder, ok := typDecMap[typ]; ok {
+		return decoder
+	}
+
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
 		return decodeBytesValue
 	}
