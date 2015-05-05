@@ -96,8 +96,6 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 
 //------------------------------------------------------------------------------
 
-type fields map[string]*field
-
 //------------------------------------------------------------------------------
 
 func encodeBoolValue(e *Encoder, v reflect.Value) error {
@@ -272,7 +270,6 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
-
 	b, err := ioutil.ReadAll(d.r)
 	if err != nil {
 		return err
@@ -285,16 +282,16 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 
 type structCache struct {
 	l sync.RWMutex
-	m map[reflect.Type]fields
+	m map[reflect.Type]*fields
 }
 
 func newStructCache() *structCache {
 	return &structCache{
-		m: make(map[reflect.Type]fields),
+		m: make(map[reflect.Type]*fields),
 	}
 }
 
-func (m *structCache) Fields(typ reflect.Type) fields {
+func (m *structCache) Fields(typ reflect.Type) *fields {
 	m.l.RLock()
 	fs, ok := m.m[typ]
 	m.l.RUnlock()
@@ -311,16 +308,28 @@ func (m *structCache) Fields(typ reflect.Type) fields {
 	return fs
 }
 
-func getFields(typ reflect.Type) fields {
+type fields struct {
+	Names  []string
+	Fields map[string]*field
+}
+
+func newFields(numField int) *fields {
+	return &fields{
+		Names:  make([]string, numField),
+		Fields: make(map[string]*field, numField),
+	}
+}
+
+func getFields(typ reflect.Type) *fields {
 	numField := typ.NumField()
-	fs := make(fields, numField)
+	fs := newFields(numField)
+
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
 
 		if f.PkgPath != "" {
 			continue
 		}
-
 		name, opts := parseTag(f.Tag.Get("msgpack"))
 		if name == "-" {
 			continue
@@ -330,13 +339,14 @@ func getFields(typ reflect.Type) fields {
 		}
 
 		fieldTyp := typ.FieldByIndex(f.Index).Type
-		fs[name] = &field{
+		fs.Fields[name] = &field{
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
 
 			encoder: getEncoder(fieldTyp),
 			decoder: getDecoder(fieldTyp),
 		}
+		fs.Names[i] = name
 	}
 	return fs
 }
