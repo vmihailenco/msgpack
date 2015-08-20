@@ -490,6 +490,10 @@ type testStruct struct {
 	Tm     time.Time
 	Data   []byte
 	Colors []string
+	Inline struct {
+		Value string
+		Num   int64
+	} `msgpack:",inline"`
 }
 
 func TestStruct(t *testing.T) {
@@ -499,6 +503,8 @@ func TestStruct(t *testing.T) {
 		Data:   []byte{1, 2, 3},
 		Colors: []string{"red", "orange", "yellow", "green", "blue", "violet"},
 	}
+	in.Inline.Value = "hello"
+	in.Inline.Num = 8868
 	var out testStruct
 
 	b, err := msgpack.Marshal(in)

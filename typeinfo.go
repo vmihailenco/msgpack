@@ -357,17 +357,30 @@ func getFields(typ reflect.Type) *fields {
 		if name == "-" {
 			continue
 		}
+		ftyp := f.Type
+		if ftyp.Kind() == reflect.Ptr {
+			ftyp = ftyp.Elem()
+		}
+		if opts.Contains("inline") && ftyp.Kind() == reflect.Struct {
+			for name, field := range getFields(ftyp) {
+				if _, ok := fs[name]; ok {
+					// Don't overwrite shadowed fields.
+					continue
+				}
+				field.index = append(f.Index, field.index...)
+				fs[name] = field
+			}
+			continue
+		}
 		if name == "" {
 			name = f.Name
 		}
-
 		fieldTyp := typ.FieldByIndex(f.Index).Type
 		fs.Fields[name] = &field{
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
-
-			encoder: getEncoder(fieldTyp),
-			decoder: getDecoder(fieldTyp),
+			encoder:   getEncoder(fieldTyp),
+			decoder:   getDecoder(fieldTyp),
 		}
 		fs.Names[i] = name
 	}
