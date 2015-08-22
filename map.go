@@ -170,7 +170,7 @@ func (e *Encoder) encodeStruct(strct reflect.Value) error {
 	fields := structs.Fields(strct.Type())
 
 	var length int
-	for _, f := range fields {
+	for _, f := range fields.Fields {
 		if !f.Omit(strct) {
 			length++
 		}
@@ -180,7 +180,11 @@ func (e *Encoder) encodeStruct(strct reflect.Value) error {
 		return err
 	}
 
-	for name, f := range fields {
+	for _, name := range fields.Names {
+		f, ok := fields.Fields[name]
+		if !ok {
+			continue
+		}
 		if f.Omit(strct) {
 			continue
 		}
@@ -208,8 +212,7 @@ func (d *Decoder) structValue(strct reflect.Value) error {
 		if err != nil {
 			return err
 		}
-
-		if f := fields[name]; f != nil {
+		if f := fields.Fields[name]; f != nil {
 			if err := f.DecodeValue(d, strct); err != nil {
 				return err
 			}
