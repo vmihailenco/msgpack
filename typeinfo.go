@@ -338,9 +338,14 @@ type fields struct {
 
 func newFields(numField int) *fields {
 	return &fields{
-		Names:  make([]string, numField),
+		Names:  make([]string, 0, numField),
 		Fields: make(map[string]*field, numField),
 	}
+}
+
+func (f *fields) add(name string, field *field) {
+	f.Names = append(f.Names, name)
+	f.Fields[name] = field
 }
 
 func getFields(typ reflect.Type) *fields {
@@ -362,27 +367,32 @@ func getFields(typ reflect.Type) *fields {
 			ftyp = ftyp.Elem()
 		}
 		if opts.Contains("inline") && ftyp.Kind() == reflect.Struct {
-			for name, field := range getFields(ftyp) {
-				if _, ok := fs[name]; ok {
+			flds := getFields(ftyp)
+			for name, field := range flds.Fields {
+				if _, ok := fs.Fields[name]; ok {
 					// Don't overwrite shadowed fields.
 					continue
 				}
 				field.index = append(f.Index, field.index...)
-				fs[name] = field
+				fs.add(name, field)
 			}
-			continue
+			// If the struct has no (exported) fields try to encode/decode it as
+			// a whole later.
+			if len(flds.Fields) != 0 {
+				continue
+			}
 		}
 		if name == "" {
 			name = f.Name
 		}
 		fieldTyp := typ.FieldByIndex(f.Index).Type
-		fs.Fields[name] = &field{
+		field := &field{
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
 			encoder:   getEncoder(fieldTyp),
 			decoder:   getDecoder(fieldTyp),
 		}
-		fs.Names[i] = name
+		fs.add(name, field)
 	}
 	return fs
 }
