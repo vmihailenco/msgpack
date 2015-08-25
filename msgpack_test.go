@@ -578,6 +578,10 @@ type coderStruct struct {
 	name string
 }
 
+type wrapperStruct struct {
+	coderStruct `msgpack:",inline"`
+}
+
 var (
 	_ msgpack.CustomEncoder = &coderStruct{}
 	_ msgpack.CustomDecoder = &coderStruct{}
@@ -626,6 +630,14 @@ func (t *MsgpackTest) TestPtrToCoder(c *C) {
 	out2 := &out
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out2), IsNil)
+	c.Assert(out.Name(), Equals, "hello")
+}
+
+func (t *MsgpackTest) TestWrappedCoder(c *C) {
+	in := &wrapperStruct{coderStruct: coderStruct{name: "hello"}}
+	var out wrapperStruct
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(out.Name(), Equals, "hello")
 }
 
