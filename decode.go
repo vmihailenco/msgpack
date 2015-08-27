@@ -163,7 +163,7 @@ func (d *Decoder) decode(iv interface{}) error {
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
-	decode := getDecoder(v.Type())
+	decode, _ := getDecoder(v.Type())
 	return decode(d, v)
 }
 

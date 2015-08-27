@@ -490,6 +490,10 @@ type testStruct struct {
 	Tm     time.Time
 	Data   []byte
 	Colors []string
+	Inline struct {
+		Value string
+		Num   int64
+	} `msgpack:",inline"`
 }
 
 func TestStruct(t *testing.T) {
@@ -499,6 +503,8 @@ func TestStruct(t *testing.T) {
 		Data:   []byte{1, 2, 3},
 		Colors: []string{"red", "orange", "yellow", "green", "blue", "violet"},
 	}
+	in.Inline.Value = "hello"
+	in.Inline.Num = 8868
 	var out testStruct
 
 	b, err := msgpack.Marshal(in)
@@ -513,6 +519,37 @@ func TestStruct(t *testing.T) {
 
 	if !reflect.DeepEqual(out, in) {
 		t.Fatal("%#v != %#v", out, in)
+	}
+}
+
+type CustomTime struct {
+	time.Time
+}
+
+type CustomTimeInline struct {
+	time.Time `msgpack:",inline"`
+}
+
+func TestCustomTime(t *testing.T) {
+	cases := []struct {
+		in, out interface{}
+	}{
+		{&CustomTime{Time: time.Now()}, &CustomTime{}},
+		{&CustomTimeInline{Time: time.Now()}, &CustomTimeInline{}},
+	}
+	for i, cas := range cases {
+		p, err := msgpack.Marshal(cas.in)
+		if err != nil {
+			t.Errorf("msgpack.Marshal(%# v)=%s (i=%d)", t, err, i)
+			continue
+		}
+		if err = msgpack.Unmarshal(p, cas.out); err != nil {
+			t.Errorf("msgpack.Unmarshal(%v)=%s (i=%d)", p, err, i)
+			continue
+		}
+		if !reflect.DeepEqual(cas.out, cas.in) {
+			t.Errorf("want cas.out=%v; got %v (i=%d)", cas.in, cas.out, i)
+		}
 	}
 }
 
@@ -539,6 +576,10 @@ func (t *MsgpackTest) TestStructUnknownField(c *C) {
 
 type coderStruct struct {
 	name string
+}
+
+type wrapperStruct struct {
+	coderStruct `msgpack:",inline"`
 }
 
 var (
@@ -589,6 +630,14 @@ func (t *MsgpackTest) TestPtrToCoder(c *C) {
 	out2 := &out
 	c.Assert(t.enc.Encode(in), IsNil)
 	c.Assert(t.dec.Decode(&out2), IsNil)
+	c.Assert(out.Name(), Equals, "hello")
+}
+
+func (t *MsgpackTest) TestWrappedCoder(c *C) {
+	in := &wrapperStruct{coderStruct: coderStruct{name: "hello"}}
+	var out wrapperStruct
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(out.Name(), Equals, "hello")
 }
 

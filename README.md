@@ -7,6 +7,7 @@ Supports:
 - Appengine *datastore.Key and datastore.Cursor.
 - Marshaler/Unmarshaler interfaces for custom encoding.
 - Struct field renaming, e.g. `msgpack:"my_field_name"`.
+- Struct field inlining, e.g. `msgpack:",inline"`.
 - Omitempty flag, e.g. `msgpack:",omitempty"`.
 
 API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2

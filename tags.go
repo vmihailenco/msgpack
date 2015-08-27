@@ -31,7 +31,7 @@ func (o tagOptions) Contains(optionName string) bool {
 	s := string(o)
 	for s != "" {
 		var next string
-		i := strings.Index(s, ",")
+		i := strings.IndexRune(s, ',')
 		if i >= 0 {
 			s, next = s[:i], s[i+1:]
 		}

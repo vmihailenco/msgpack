@@ -72,9 +72,13 @@ type compactEncodingStructField struct {
 
 //------------------------------------------------------------------------------
 
-type omitEmptyTest struct {
+type OmitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`
+}
+
+type InlineTest struct {
+	OmitEmptyTest `msgpack:",inline"`
 }
 
 //------------------------------------------------------------------------------
@@ -86,7 +90,7 @@ type binTest struct {
 
 var binTests = []binTest{
 	{nil, []byte{codes.Nil}},
-	{omitEmptyTest{}, []byte{codes.FixedMapLow}},
+	{OmitEmptyTest{}, []byte{codes.FixedMapLow}},
 
 	{intSet{}, []byte{codes.FixedArrayLow}},
 	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
@@ -99,12 +103,19 @@ var binTests = []binTest{
 }
 
 func init() {
-	test := binTest{in: &omitEmptyTest{Foo: "hello"}}
+	test := binTest{in: &OmitEmptyTest{Foo: "hello"}}
 	test.wanted = append(test.wanted, codes.FixedMapLow|0x01)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Foo")))
 	test.wanted = append(test.wanted, "Foo"...)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("hello")))
 	test.wanted = append(test.wanted, "hello"...)
+	binTests = append(binTests, test)
+	test = binTest{in: &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}}
+	test.wanted = append(test.wanted, codes.FixedMapLow|0x01)
+	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Bar")))
+	test.wanted = append(test.wanted, "Bar"...)
+	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("world")))
+	test.wanted = append(test.wanted, "world"...)
 	binTests = append(binTests, test)
 }
 
