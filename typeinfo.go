@@ -354,108 +354,104 @@ func getFields(typ reflect.Type) *fields {
 
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
-
 		if f.PkgPath != "" {
 			continue
 		}
+
 		name, opts := parseTag(f.Tag.Get("msgpack"))
 		if name == "-" {
 			continue
 		}
-		enc, encCustom := getEncoder(f.Type)
-		dec, decCustom := getDecoder(f.Type)
-		// Don't inline fields for a type, which either implements custom
-		// encoder and/or decoder or have one globally registered.
-		if !encCustom && !decCustom && opts.Contains("inline") && inlineFields(fs, f) {
+
+		if opts.Contains("inline") {
+			inlineFields(fs, f)
 			continue
 		}
+
 		if name == "" {
 			name = f.Name
 		}
 		field := &field{
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
-			encoder:   enc,
-			decoder:   dec,
+			encoder:   getEncoder(f.Type),
+			decoder:   getDecoder(f.Type),
 		}
 		fs.add(name, field)
 	}
 	return fs
 }
 
-func inlineFields(fs *fields, f reflect.StructField) bool {
+func inlineFields(fs *fields, f reflect.StructField) {
 	typ := f.Type
-	if typ.Kind() == reflect.Ptr {
+	for typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
-	if typ.Kind() != reflect.Struct {
-		return false
+	inlinedFields := getFields(typ).Fields
+	if len(inlinedFields) == 0 {
+		panic("no fields to inline")
 	}
-	if flds := getFields(typ); len(flds.Fields) != 0 {
-		for name, field := range flds.Fields {
-			if _, ok := fs.Fields[name]; ok {
-				// Don't overwrite shadowed fields.
-				continue
-			}
-			field.index = append(f.Index, field.index...)
-			fs.add(name, field)
+	for name, field := range inlinedFields {
+		if _, ok := fs.Fields[name]; ok {
+			// Don't overwrite shadowed fields.
+			continue
 		}
-		return true
+		field.index = append(f.Index, field.index...)
+		fs.add(name, field)
 	}
-	return false
 }
 
-func getEncoder(typ reflect.Type) (enc encoderFunc, custom bool) {
+func getEncoder(typ reflect.Type) encoderFunc {
 	kind := typ.Kind()
 
 	if typ.Implements(encoderType) {
-		return encodeCustomValue, true
+		return encodeCustomValue
 	}
 
 	// Addressable struct field value.
 	if reflect.PtrTo(typ).Implements(decoderType) {
-		return encodeCustomValuePtr, true
+		return encodeCustomValuePtr
 	}
 
 	if typ.Implements(marshalerType) {
-		return marshalValue, true
+		return marshalValue
 	}
 	if encoder, ok := typEncMap[typ]; ok {
-		return encoder, true
+		return encoder
 	}
 
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-		return encodeBytesValue, false
+		return encodeBytesValue
 	}
 
-	return valueEncoders[kind], false
+	return valueEncoders[kind]
 }
 
-func getDecoder(typ reflect.Type) (dec decoderFunc, custom bool) {
+func getDecoder(typ reflect.Type) decoderFunc {
 	kind := typ.Kind()
 
 	// Addressable struct field value.
 	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(decoderType) {
-		return decodeCustomValuePtr, true
+		return decodeCustomValuePtr
 	}
 
 	if typ.Implements(decoderType) {
-		return decodeCustomValue, true
+		return decodeCustomValue
 	}
 
 	if typ.Implements(unmarshalerType) {
-		return unmarshalValue, true
+		return unmarshalValue
 	}
 
 	if decoder, ok := typDecMap[typ]; ok {
-		return decoder, true
+		return decoder
 	}
 
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-		return decodeBytesValue, false
+		return decodeBytesValue
 	}
 
-	return valueDecoders[kind], false
+	return valueDecoders[kind]
 }
 
 func isEmptyValue(v reflect.Value) bool {
