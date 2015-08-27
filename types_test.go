@@ -110,6 +110,7 @@ func init() {
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("hello")))
 	test.wanted = append(test.wanted, "hello"...)
 	binTests = append(binTests, test)
+
 	test = binTest{in: &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}}
 	test.wanted = append(test.wanted, codes.FixedMapLow|0x01)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Bar")))
@@ -144,7 +145,7 @@ type structt struct {
 	F2 []string
 }
 
-type embededTime struct {
+type embeddedTime struct {
 	time.Time
 }
 
@@ -161,7 +162,7 @@ var (
 	unmarshalerPtr     *coderStruct
 	coders             []coderStruct
 	stringInterfaceMap map[string]interface{}
-	embededTimeValue   *embededTime
+	embeddedTimeValue  *embeddedTime
 
 	stringAliasSliceValue []stringAlias
 	uint8AliasSliceValue  []uint8Alias
@@ -179,7 +180,7 @@ var (
 		{[]interface{}{int64(1), "hello"}, &interfaces},
 		{map[string]interface{}{"foo": nil}, &stringInterfaceMap},
 		{&coderStruct{name: "hello"}, &unmarshalerPtr},
-		{&embededTime{Time: time.Now()}, &embededTimeValue},
+		{&embeddedTime{Time: time.Now()}, &embeddedTimeValue},
 
 		{[]stringAlias{"hello"}, &stringAliasSliceValue},
 		{[]uint8Alias{1}, &uint8AliasSliceValue},

@@ -522,37 +522,6 @@ func TestStruct(t *testing.T) {
 	}
 }
 
-type CustomTime struct {
-	time.Time
-}
-
-type CustomTimeInline struct {
-	time.Time `msgpack:",inline"`
-}
-
-func TestCustomTime(t *testing.T) {
-	cases := []struct {
-		in, out interface{}
-	}{
-		{&CustomTime{Time: time.Now()}, &CustomTime{}},
-		{&CustomTimeInline{Time: time.Now()}, &CustomTimeInline{}},
-	}
-	for i, cas := range cases {
-		p, err := msgpack.Marshal(cas.in)
-		if err != nil {
-			t.Errorf("msgpack.Marshal(%# v)=%s (i=%d)", t, err, i)
-			continue
-		}
-		if err = msgpack.Unmarshal(p, cas.out); err != nil {
-			t.Errorf("msgpack.Unmarshal(%v)=%s (i=%d)", p, err, i)
-			continue
-		}
-		if !reflect.DeepEqual(cas.out, cas.in) {
-			t.Errorf("want cas.out=%v; got %v (i=%d)", cas.in, cas.out, i)
-		}
-	}
-}
-
 func (t *MsgpackTest) TestStructUnknownField(c *C) {
 	in := struct {
 		Field1 string

@@ -115,7 +115,7 @@ func (e *Encoder) encode(iv interface{}) error {
 }
 
 func (e *Encoder) EncodeValue(v reflect.Value) error {
-	encode, _ := getEncoder(v.Type())
+	encode := getEncoder(v.Type())
 	return encode(e, v)
 }
 
