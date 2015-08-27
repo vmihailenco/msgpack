@@ -48,9 +48,9 @@ func (setptr *intSet) DecodeMsgpack(dec *msgpack.Decoder) error {
 //------------------------------------------------------------------------------
 
 type compactEncoding struct {
-	str     string
-	struct_ *compactEncoding
-	num     int
+	str string
+	ref *compactEncoding
+	num int
 }
 
 var (
@@ -59,14 +59,14 @@ var (
 )
 
 func (s *compactEncoding) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.Encode(s.str, s.struct_, s.num)
+	return enc.Encode(s.str, s.ref, s.num)
 }
 
 func (s *compactEncoding) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.Decode(&s.str, &s.struct_, &s.num)
+	return dec.Decode(&s.str, &s.ref, &s.num)
 }
 
-type compactEncodingStructField struct {
+type compactEncodingFieldValue struct {
 	Field compactEncoding
 }
 
@@ -104,7 +104,7 @@ var binTests = []binTest{
 
 func init() {
 	test := binTest{in: &OmitEmptyTest{Foo: "hello"}}
-	test.wanted = append(test.wanted, codes.FixedMapLow|0x01)
+	test.wanted = append(test.wanted, codes.FixedMapLow|1)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Foo")))
 	test.wanted = append(test.wanted, "Foo"...)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("hello")))
@@ -112,7 +112,7 @@ func init() {
 	binTests = append(binTests, test)
 
 	test = binTest{in: &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}}
-	test.wanted = append(test.wanted, codes.FixedMapLow|0x01)
+	test.wanted = append(test.wanted, codes.FixedMapLow|1)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Bar")))
 	test.wanted = append(test.wanted, "Bar"...)
 	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("world")))
@@ -133,17 +133,7 @@ func TestBin(t *testing.T) {
 	}
 }
 
-type typeTest struct {
-	in  interface{}
-	out interface{}
-}
-
-type stringst []string
-
-type structt struct {
-	F1 stringst
-	F2 []string
-}
+//------------------------------------------------------------------------------
 
 type embeddedTime struct {
 	time.Time
@@ -152,45 +142,41 @@ type embeddedTime struct {
 type (
 	stringAlias string
 	uint8Alias  uint8
+	stringSlice []string
 )
 
+type myStruct struct {
+	F1 stringSlice
+	F2 []string
+}
+
+type typeTest struct {
+	in  interface{}
+	out interface{}
+}
+
 var (
-	stringsv           stringst
-	structv            structt
-	ints               []int
-	interfaces         []interface{}
-	unmarshalerPtr     *coderStruct
-	coders             []coderStruct
-	stringInterfaceMap map[string]interface{}
-	embeddedTimeValue  *embeddedTime
-
-	stringAliasSliceValue []stringAlias
-	uint8AliasSliceValue  []uint8Alias
-
-	intSetValue                     intSet
-	compactEncodingValue            compactEncoding
-	compactEncodingStructFieldValue compactEncodingStructField
-
 	typeTests = []typeTest{
-		{stringst{"foo", "bar"}, &stringsv},
-		{structt{stringst{"foo", "bar"}, []string{"hello"}}, &structv},
-		{([]int)(nil), &ints},
-		{make([]int, 0), &ints},
-		{make([]int, 1000), &ints},
-		{[]interface{}{int64(1), "hello"}, &interfaces},
-		{map[string]interface{}{"foo": nil}, &stringInterfaceMap},
-		{&coderStruct{name: "hello"}, &unmarshalerPtr},
-		{&embeddedTime{Time: time.Now()}, &embeddedTimeValue},
+		{stringSlice{"foo", "bar"}, new(stringSlice)},
+		{([]int)(nil), new([]int)},
+		{make([]int, 0), new([]int)},
+		{make([]int, 1000), new([]int)},
+		{[]interface{}{int64(1), "hello"}, new([]interface{})},
+		{map[string]interface{}{"foo": nil}, new(map[string]interface{})},
 
-		{[]stringAlias{"hello"}, &stringAliasSliceValue},
-		{[]uint8Alias{1}, &uint8AliasSliceValue},
+		{[]stringAlias{"hello"}, new([]stringAlias)},
+		{[]uint8Alias{1}, new([]uint8Alias)},
 
-		{intSet{}, &intSetValue},
-		{intSet{8: struct{}{}}, &intSetValue},
+		{intSet{}, new(intSet)},
+		{intSet{8: struct{}{}}, new(intSet)},
 
-		{&compactEncoding{}, &compactEncodingValue},
-		{&compactEncoding{"n", &compactEncoding{"o", nil, 7}, 6}, &compactEncodingValue},
-		{&compactEncodingStructField{Field: compactEncoding{"a", nil, 1}}, &compactEncodingStructFieldValue},
+		{myStruct{stringSlice{"foo", "bar"}, []string{"hello"}}, new(myStruct)},
+		{&coderStruct{name: "hello"}, new(*coderStruct)},
+		{&embeddedTime{Time: time.Now()}, new(*embeddedTime)},
+
+		{&compactEncoding{}, new(compactEncoding)},
+		{&compactEncoding{"a", &compactEncoding{"b", nil, 1}, 2}, new(compactEncoding)},
+		{&compactEncodingFieldValue{Field: compactEncoding{"a", nil, 1}}, new(compactEncodingFieldValue)},
 	}
 )
 
