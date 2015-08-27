@@ -72,6 +72,7 @@ func init() {
 //------------------------------------------------------------------------------
 
 type field struct {
+	name      string
 	index     []int
 	omitEmpty bool
 
@@ -96,6 +97,62 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 }
 
 //------------------------------------------------------------------------------
+
+type fields struct {
+	List  []*field
+	Table map[string]*field
+}
+
+func newFields(numField int) *fields {
+	return &fields{
+		List:  make([]*field, 0, numField),
+		Table: make(map[string]*field, numField),
+	}
+}
+
+func (fs *fields) Len() int {
+	return len(fs.List)
+}
+
+func (fs *fields) Add(field *field) {
+	fs.List = append(fs.List, field)
+	fs.Table[field.name] = field
+}
+
+func getFields(typ reflect.Type) *fields {
+	numField := typ.NumField()
+	fs := newFields(numField)
+
+	for i := 0; i < numField; i++ {
+		f := typ.Field(i)
+		if f.PkgPath != "" {
+			continue
+		}
+
+		name, opts := parseTag(f.Tag.Get("msgpack"))
+		if name == "-" {
+			continue
+		}
+
+		if opts.Contains("inline") {
+			inlineFields(fs, f)
+			continue
+		}
+
+		if name == "" {
+			name = f.Name
+		}
+		field := &field{
+			name:      name,
+			index:     f.Index,
+			omitEmpty: opts.Contains("omitempty"),
+			encoder:   getEncoder(f.Type),
+			decoder:   getDecoder(f.Type),
+		}
+		fs.Add(field)
+	}
+	return fs
+}
 
 //------------------------------------------------------------------------------
 
@@ -331,73 +388,22 @@ func (m *structCache) Fields(typ reflect.Type) *fields {
 	return fs
 }
 
-type fields struct {
-	Names  []string
-	Fields map[string]*field
-}
-
-func newFields(numField int) *fields {
-	return &fields{
-		Names:  make([]string, 0, numField),
-		Fields: make(map[string]*field, numField),
-	}
-}
-
-func (f *fields) add(name string, field *field) {
-	f.Names = append(f.Names, name)
-	f.Fields[name] = field
-}
-
-func getFields(typ reflect.Type) *fields {
-	numField := typ.NumField()
-	fs := newFields(numField)
-
-	for i := 0; i < numField; i++ {
-		f := typ.Field(i)
-		if f.PkgPath != "" {
-			continue
-		}
-
-		name, opts := parseTag(f.Tag.Get("msgpack"))
-		if name == "-" {
-			continue
-		}
-
-		if opts.Contains("inline") {
-			inlineFields(fs, f)
-			continue
-		}
-
-		if name == "" {
-			name = f.Name
-		}
-		field := &field{
-			index:     f.Index,
-			omitEmpty: opts.Contains("omitempty"),
-			encoder:   getEncoder(f.Type),
-			decoder:   getDecoder(f.Type),
-		}
-		fs.add(name, field)
-	}
-	return fs
-}
-
 func inlineFields(fs *fields, f reflect.StructField) {
 	typ := f.Type
 	for typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
-	inlinedFields := getFields(typ).Fields
+	inlinedFields := getFields(typ).List
 	if len(inlinedFields) == 0 {
 		panic("no fields to inline")
 	}
-	for name, field := range inlinedFields {
-		if _, ok := fs.Fields[name]; ok {
+	for _, field := range inlinedFields {
+		if _, ok := fs.Table[field.name]; ok {
 			// Don't overwrite shadowed fields.
 			continue
 		}
 		field.index = append(f.Index, field.index...)
-		fs.add(name, field)
+		fs.Add(field)
 	}
 }
 
