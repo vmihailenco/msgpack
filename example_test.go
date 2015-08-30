@@ -13,15 +13,17 @@ func ExampleMarshal() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%#v", b)
-	// Output: []byte{0xc3}
-}
+	fmt.Printf("%#v\n", b)
+	// Output:
 
-func ExampleUnmarshal() {
 	var out bool
-	err := msgpack.Unmarshal([]byte{0xc3}, &out)
-	fmt.Println(err, out)
-	// Output: <nil> true
+	err = msgpack.Unmarshal([]byte{0xc3}, &out)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(out)
+	// Output: []byte{0xc3}
+	// true
 }
 
 type myStruct struct {
