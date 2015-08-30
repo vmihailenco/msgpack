@@ -259,6 +259,8 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeSlice()
 	case codes.Map16, codes.Map32:
 		return d.DecodeMap()
+	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16, codes.Ext8, codes.Ext16, codes.Ext32:
+		return d.decodeExt()
 	}
 
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)

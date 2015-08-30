@@ -8,7 +8,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"math"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -483,43 +482,6 @@ func (t *MsgpackTest) TestStructNil(c *C) {
 	c.Assert(t.dec.Decode(&dst), IsNil)
 	c.Assert(dst, Not(IsNil))
 	c.Assert(dst.Name, Equals, "foo")
-}
-
-type testStruct struct {
-	Name   string
-	Tm     time.Time
-	Data   []byte
-	Colors []string
-	Inline struct {
-		Value string
-		Num   int64
-	} `msgpack:",inline"`
-}
-
-func TestStruct(t *testing.T) {
-	in := testStruct{
-		Name:   "hello world",
-		Tm:     time.Now(),
-		Data:   []byte{1, 2, 3},
-		Colors: []string{"red", "orange", "yellow", "green", "blue", "violet"},
-	}
-	in.Inline.Value = "hello"
-	in.Inline.Num = 8868
-	var out testStruct
-
-	b, err := msgpack.Marshal(in)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = msgpack.Unmarshal(b, &out)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !reflect.DeepEqual(out, in) {
-		t.Fatal("%#v != %#v", out, in)
-	}
 }
 
 func (t *MsgpackTest) TestStructUnknownField(c *C) {
