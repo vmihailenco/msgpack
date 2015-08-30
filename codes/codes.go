@@ -44,6 +44,15 @@ const (
 	FixedMapMask = 0xf
 	Map16        = 0xde
 	Map32        = 0xdf
+
+	FixExt1  = 0xd4
+	FixExt2  = 0xd5
+	FixExt4  = 0xd6
+	FixExt8  = 0xd7
+	FixExt16 = 0xd8
+	Ext8     = 0xc7
+	Ext16    = 0xc8
+	Ext32    = 0xc9
 )
 
 func IsFixedNum(c byte) bool    { return c <= PosFixedNumHigh || c >= NegFixedNumLow }

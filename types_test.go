@@ -145,7 +145,7 @@ type (
 	stringSlice []string
 )
 
-type myStruct struct {
+type testStruct struct {
 	F1 stringSlice
 	F2 []string
 }
@@ -170,7 +170,7 @@ var (
 		{intSet{}, new(intSet)},
 		{intSet{8: struct{}{}}, new(intSet)},
 
-		{myStruct{stringSlice{"foo", "bar"}, []string{"hello"}}, new(myStruct)},
+		{testStruct{stringSlice{"foo", "bar"}, []string{"hello"}}, new(testStruct)},
 		{&coderStruct{name: "hello"}, new(*coderStruct)},
 		{&embeddedTime{Time: time.Now()}, new(*embeddedTime)},
 

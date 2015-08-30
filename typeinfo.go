@@ -408,6 +408,14 @@ func inlineFields(fs *fields, f reflect.StructField) {
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {
+	enc := getTypeEncoder(typ)
+	if id := extTypeId(typ); id != -1 {
+		return makeExtEncoder(id, enc)
+	}
+	return enc
+}
+
+func getTypeEncoder(typ reflect.Type) encoderFunc {
 	kind := typ.Kind()
 
 	if typ.Implements(encoderType) {
