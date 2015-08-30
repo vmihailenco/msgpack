@@ -1,4 +1,4 @@
-# Msgpack implementation for Golang [![Build Status](https://travis-ci.org/vmihailenco/msgpack.svg)](https://travis-ci.org/vmihailenco/msgpack)
+# MessagePack encoding for Golang [![Build Status](https://travis-ci.org/vmihailenco/msgpack.svg)](https://travis-ci.org/vmihailenco/msgpack)
 
 Supports:
 - Primitives, arrays, maps, structs, time.Time and interface{}.
