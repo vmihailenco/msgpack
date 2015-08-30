@@ -39,6 +39,7 @@ func makeExtEncoder(id int8, enc encoderFunc) encoderFunc {
 	return func(e *Encoder, v reflect.Value) error {
 		buf := bufferPool.Get().(*bytes.Buffer)
 		defer bufferPool.Put(buf)
+		buf.Reset()
 
 		oldw := e.w
 		e.w = buf
