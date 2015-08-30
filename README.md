@@ -3,7 +3,7 @@
 Supports:
 - Primitives, arrays, maps, structs, time.Time and interface{}.
 - Appengine *datastore.Key and datastore.Cursor.
-- CustomEncoder/CustomDecoder interfaces for custom encoding.
+- [CustomEncoder](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
 - [Extensions](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-RegisterExt) to encode type information.
 - Fields renaming, e.g. `msgpack:"my_field_name"`.
 - Fields inlining, e.g. `msgpack:",inline"`.
