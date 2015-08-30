@@ -423,7 +423,7 @@ func getTypeEncoder(typ reflect.Type) encoderFunc {
 	}
 
 	// Addressable struct field value.
-	if reflect.PtrTo(typ).Implements(decoderType) {
+	if reflect.PtrTo(typ).Implements(encoderType) {
 		return encodeCustomValuePtr
 	}
 
