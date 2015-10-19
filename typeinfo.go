@@ -35,14 +35,18 @@ func init() {
 		reflect.Uint64:        encodeUint64Value,
 		reflect.Float32:       encodeFloat64Value,
 		reflect.Float64:       encodeFloat64Value,
+		reflect.Complex64:     encodeUnsupportedValue,
+		reflect.Complex128:    encodeUnsupportedValue,
 		reflect.Array:         encodeArrayValue,
+		reflect.Chan:          encodeUnsupportedValue,
+		reflect.Func:          encodeUnsupportedValue,
 		reflect.Interface:     encodeInterfaceValue,
 		reflect.Map:           encodeMapValue,
 		reflect.Ptr:           encodePtrValue,
 		reflect.Slice:         encodeSliceValue,
 		reflect.String:        encodeStringValue,
 		reflect.Struct:        encodeStructValue,
-		reflect.UnsafePointer: nil,
+		reflect.UnsafePointer: encodeUnsupportedValue,
 	}
 	valueDecoders = []decoderFunc{
 		reflect.Bool:          decodeBoolValue,
@@ -58,14 +62,18 @@ func init() {
 		reflect.Uint64:        decodeUint64Value,
 		reflect.Float32:       decodeFloat64Value,
 		reflect.Float64:       decodeFloat64Value,
+		reflect.Complex64:     decodeUnsupportedValue,
+		reflect.Complex128:    decodeUnsupportedValue,
 		reflect.Array:         decodeArrayValue,
+		reflect.Chan:          decodeUnsupportedValue,
+		reflect.Func:          decodeUnsupportedValue,
 		reflect.Interface:     decodeInterfaceValue,
 		reflect.Map:           decodeMapValue,
 		reflect.Ptr:           decodePtrValue,
 		reflect.Slice:         decodeSliceValue,
 		reflect.String:        decodeStringValue,
 		reflect.Struct:        decodeStructValue,
-		reflect.UnsafePointer: nil,
+		reflect.UnsafePointer: decodeUnsupportedValue,
 	}
 }
 
@@ -152,6 +160,16 @@ func getFields(typ reflect.Type) *fields {
 		fs.Add(field)
 	}
 	return fs
+}
+
+//------------------------------------------------------------------------------
+
+func encodeUnsupportedValue(e *Encoder, v reflect.Value) error {
+	return fmt.Errorf("msgpack: Encode(unsupported %T)", v.Interface())
+}
+
+func decodeUnsupportedValue(d *Decoder, v reflect.Value) error {
+	return fmt.Errorf("msgpack: Decode(unsupported %T)", v.Interface())
 }
 
 //------------------------------------------------------------------------------
@@ -291,7 +309,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 func encodeCustomValuePtr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: encoding unaddressable value: %v", v)
+		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
 	}
 	switch v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
@@ -316,7 +334,7 @@ func encodeCustomValue(e *Encoder, v reflect.Value) error {
 
 func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: decoding unaddressable value: %v", v)
+		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
 	}
 	if d.hasNilCode() {
 		return d.DecodeNil()

@@ -57,9 +57,9 @@ func (d *Decoder) Decode(v ...interface{}) error {
 	return nil
 }
 
-func (d *Decoder) decode(iv interface{}) error {
+func (d *Decoder) decode(dst interface{}) error {
 	var err error
-	switch v := iv.(type) {
+	switch v := dst.(type) {
 	case *string:
 		if v != nil {
 			*v, err = d.DecodeString()
@@ -152,14 +152,14 @@ func (d *Decoder) decode(iv interface{}) error {
 		}
 	}
 
-	v := reflect.ValueOf(iv)
+	v := reflect.ValueOf(dst)
 	if !v.IsValid() {
-		return errors.New("msgpack: Decode(" + v.String() + ")")
+		return errors.New("msgpack: Decode(nil)")
 	}
 	if v.Kind() != reflect.Ptr {
-		return errors.New("msgpack: pointer expected")
+		return fmt.Errorf("msgpack: Decode(nonsettable %T)", dst)
 	}
-	return d.DecodeValue(v)
+	return d.DecodeValue(v.Elem())
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
