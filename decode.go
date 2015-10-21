@@ -159,7 +159,7 @@ func (d *Decoder) decode(dst interface{}) error {
 	if v.Kind() != reflect.Ptr {
 		return fmt.Errorf("msgpack: Decode(nonsettable %T)", dst)
 	}
-	return d.DecodeValue(v.Elem())
+	return d.DecodeValue(v)
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {

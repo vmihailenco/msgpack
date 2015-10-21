@@ -174,6 +174,7 @@ var (
 
 		{in: nil, out: nil, decErr: "msgpack: Decode(nil)"},
 		{in: nil, out: 0, decErr: "msgpack: Decode(nonsettable int)"},
+		{in: nil, out: (*int)(nil), decErr: "msgpack: Decode(nonsettable *int)"},
 		{in: nil, out: new(chan bool), decErr: "msgpack: Decode(unsupported chan bool)"},
 
 		{in: []int(nil), out: new([]int)},
@@ -201,6 +202,17 @@ var (
 		},
 	}
 )
+
+func deref(viface interface{}) interface{} {
+	v := reflect.ValueOf(viface)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.IsValid() {
+		return v.Interface()
+	}
+	return nil
+}
 
 func TestTypes(t *testing.T) {
 	for _, test := range typeTests {
@@ -230,15 +242,4 @@ func TestTypes(t *testing.T) {
 			t.Fatalf("%#v != %#v", out, in)
 		}
 	}
-}
-
-func deref(viface interface{}) interface{} {
-	v := reflect.ValueOf(viface)
-	for v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	if v.IsValid() {
-		return v.Interface()
-	}
-	return nil
 }
