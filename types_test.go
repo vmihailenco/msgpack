@@ -14,8 +14,8 @@ import (
 type intSet map[int]struct{}
 
 var (
-	_ msgpack.CustomEncoder = &intSet{}
-	_ msgpack.CustomDecoder = &intSet{}
+	_ msgpack.CustomEncoder = (*intSet)(nil)
+	_ msgpack.CustomDecoder = (*intSet)(nil)
 )
 
 func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -151,43 +151,75 @@ type testStruct struct {
 }
 
 type typeTest struct {
-	in  interface{}
-	out interface{}
+	*testing.T
+
+	in     interface{}
+	out    interface{}
+	encErr string
+	decErr string
+}
+
+func (t *typeTest) assertErr(err error, s string) {
+	if err == nil {
+		t.Fatalf("got %v, wanted %q", err, s)
+	}
+	if err.Error() != s {
+		t.Fatalf("got %q, wanted %q", err, s)
+	}
 }
 
 var (
 	typeTests = []typeTest{
-		{stringSlice{"foo", "bar"}, new(stringSlice)},
-		{([]int)(nil), new([]int)},
-		{make([]int, 0), new([]int)},
-		{make([]int, 1000), new([]int)},
-		{[]interface{}{int64(1), "hello"}, new([]interface{})},
-		{map[string]interface{}{"foo": nil}, new(map[string]interface{})},
+		{in: make(chan bool), encErr: "msgpack: Encode(unsupported chan bool)"},
 
-		{[]stringAlias{"hello"}, new([]stringAlias)},
-		{[]uint8Alias{1}, new([]uint8Alias)},
+		{in: nil, out: nil, decErr: "msgpack: Decode(nil)"},
+		{in: nil, out: 0, decErr: "msgpack: Decode(nonsettable int)"},
+		{in: nil, out: new(chan bool), decErr: "msgpack: Decode(unsupported chan bool)"},
 
-		{intSet{}, new(intSet)},
-		{intSet{8: struct{}{}}, new(intSet)},
+		{in: []int(nil), out: new([]int)},
+		{in: make([]int, 0), out: new([]int)},
+		{in: make([]int, 1000), out: new([]int)},
+		{in: []interface{}{int64(1), "hello"}, out: new([]interface{})},
+		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
 
-		{testStruct{stringSlice{"foo", "bar"}, []string{"hello"}}, new(testStruct)},
-		{&coderStruct{name: "hello"}, new(*coderStruct)},
-		{&embeddedTime{Time: time.Now()}, new(*embeddedTime)},
+		{in: stringSlice{"foo", "bar"}, out: new(stringSlice)},
+		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
+		{in: []uint8Alias{1}, out: new([]uint8Alias)},
 
-		{&compactEncoding{}, new(compactEncoding)},
-		{&compactEncoding{"a", &compactEncoding{"b", nil, 1}, 2}, new(compactEncoding)},
-		{&compactEncodingFieldValue{Field: compactEncoding{"a", nil, 1}}, new(compactEncodingFieldValue)},
+		{in: intSet{}, out: new(intSet)},
+		{in: intSet{8: struct{}{}}, out: new(intSet)},
+
+		{in: testStruct{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(testStruct)},
+		{in: &coderStruct{name: "hello"}, out: new(*coderStruct)},
+		{in: &embeddedTime{Time: time.Now()}, out: new(*embeddedTime)},
+
+		{in: &compactEncoding{}, out: new(compactEncoding)},
+		{in: &compactEncoding{"a", &compactEncoding{"b", nil, 1}, 2}, out: new(compactEncoding)},
+		{
+			in:  &compactEncodingFieldValue{Field: compactEncoding{"a", nil, 1}},
+			out: new(compactEncodingFieldValue),
+		},
 	}
 )
 
 func TestTypes(t *testing.T) {
 	for _, test := range typeTests {
+		test.T = t
+
 		b, err := msgpack.Marshal(test.in)
+		if test.encErr != "" {
+			test.assertErr(err, test.encErr)
+			continue
+		}
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		err = msgpack.Unmarshal(b, test.out)
+		if test.decErr != "" {
+			test.assertErr(err, test.decErr)
+			continue
+		}
 		if err != nil {
 			t.Fatal(err)
 		}
