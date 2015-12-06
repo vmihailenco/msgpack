@@ -39,9 +39,9 @@ func (t *MsgpackTest) SetUpTest(c *C) {
 	t.dec = msgpack.NewDecoder(bufio.NewReader(t.buf))
 }
 
-func (t *MsgpackTest) TestUint(c *C) {
+func (t *MsgpackTest) TestUint64(c *C) {
 	table := []struct {
-		v uint
+		v uint64
 		b []byte
 	}{
 		{0, []byte{0x00}},
@@ -94,9 +94,9 @@ func (t *MsgpackTest) TestUint(c *C) {
 	}
 }
 
-func (t *MsgpackTest) TestInt(c *C) {
+func (t *MsgpackTest) TestInt64(c *C) {
 	table := []struct {
-		v int
+		v int64
 		b []byte
 	}{
 		{-9223372036854775808, []byte{0xd3, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
