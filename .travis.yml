@@ -1,3 +1,4 @@
+sudo: false
 language: go
 
 go:
@@ -9,8 +10,6 @@ go:
 matrix:
   allow_failures:
     - go: tip
-
-sudo: false
 
 install:
   - go get gopkg.in/check.v1
