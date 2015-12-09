@@ -5,7 +5,7 @@ package msgpack
 import (
 	"reflect"
 
-	ds "appengine/datastore"
+	ds "google.golang.org/appengine/datastore"
 )
 
 var (
