@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	msgpack2 "github.com/ugorji/go-msgpack"
-	"github.com/ugorji/go/codec"
+	gomsgpack "github.com/ugorji/go-msgpack"
+	gocodec "github.com/ugorji/go/codec"
 	. "gopkg.in/check.v1"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -759,10 +759,10 @@ func BenchmarkIntBinary(b *testing.B) {
 	}
 }
 
-func BenchmarkIntMsgpack2(b *testing.B) {
+func BenchmarkIntUgorjiGoMsgpack(b *testing.B) {
 	buf := &bytes.Buffer{}
-	dec := msgpack2.NewDecoder(buf, nil)
-	enc := msgpack2.NewEncoder(buf)
+	dec := gomsgpack.NewDecoder(buf, nil)
+	enc := gomsgpack.NewEncoder(buf)
 
 	var out int
 	for i := 0; i < b.N; i++ {
@@ -775,10 +775,10 @@ func BenchmarkIntMsgpack2(b *testing.B) {
 	}
 }
 
-func BenchmarkIntMsgpack3(b *testing.B) {
+func BenchmarkIntUgorjiGoCodec(b *testing.B) {
 	buf := &bytes.Buffer{}
-	enc := codec.NewEncoder(buf, &codec.MsgpackHandle{})
-	dec := codec.NewDecoder(buf, &codec.MsgpackHandle{})
+	enc := gocodec.NewEncoder(buf, &gocodec.MsgpackHandle{})
+	dec := gocodec.NewDecoder(buf, &gocodec.MsgpackHandle{})
 
 	var out int
 	for i := 0; i < b.N; i++ {
@@ -850,8 +850,8 @@ func BenchmarkStringSlicePtr(b *testing.B) {
 
 type benchmarkStruct struct {
 	Name      string
-	Colors    []string
 	Age       int
+	Colors    []string
 	Data      []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -859,8 +859,8 @@ type benchmarkStruct struct {
 
 type benchmarkStruct2 struct {
 	Name      string
-	Colors    []string
 	Age       int
+	Colors    []string
 	Data      []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -931,47 +931,6 @@ func BenchmarkStruct(b *testing.B) {
 	}
 }
 
-func BenchmarkStructDecode(b *testing.B) {
-	in := structForBenchmark()
-	buf, err := msgpack.Marshal(in)
-	if err != nil {
-		b.Fatal(err)
-	}
-	out := &benchmarkStruct{}
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		err = msgpack.Unmarshal(buf, out)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-type benchmarkSubStruct struct {
-	Name string
-	Age  int
-}
-
-func BenchmarkStructDecodePartially(b *testing.B) {
-	in := structForBenchmark()
-	buf, err := msgpack.Marshal(in)
-	if err != nil {
-		b.Fatal(err)
-	}
-	out := &benchmarkSubStruct{}
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		err = msgpack.Unmarshal(buf, out)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
 func BenchmarkStructManual(b *testing.B) {
 	in := structForBenchmark2()
 	out := &benchmarkStruct2{}
@@ -988,29 +947,29 @@ func BenchmarkStructManual(b *testing.B) {
 	}
 }
 
-func BenchmarkStructMsgpack2(b *testing.B) {
+func BenchmarkStructUgorjiGoMsgpack(b *testing.B) {
 	in := structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < b.N; i++ {
-		buf, err := msgpack2.Marshal(in)
+		buf, err := gomsgpack.Marshal(in)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		err = msgpack2.Unmarshal(buf, out, nil)
+		err = gomsgpack.Unmarshal(buf, out, nil)
 		if err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
-func BenchmarkStructMsgpack3(b *testing.B) {
+func BenchmarkStructUgorjiGoCodec(b *testing.B) {
 	in := structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < b.N; i++ {
 		buf := &bytes.Buffer{}
-		enc := codec.NewEncoder(buf, &codec.MsgpackHandle{})
-		dec := codec.NewDecoder(buf, &codec.MsgpackHandle{})
+		enc := gocodec.NewEncoder(buf, &gocodec.MsgpackHandle{})
+		dec := gocodec.NewDecoder(buf, &gocodec.MsgpackHandle{})
 
 		if err := enc.Encode(in); err != nil {
 			b.Fatal(err)
@@ -1050,6 +1009,47 @@ func BenchmarkStructGOB(b *testing.B) {
 		}
 
 		if err := dec.Decode(out); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkStructDecode(b *testing.B) {
+	in := structForBenchmark()
+	buf, err := msgpack.Marshal(in)
+	if err != nil {
+		b.Fatal(err)
+	}
+	out := &benchmarkStruct{}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err = msgpack.Unmarshal(buf, out)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+type benchmarkSubStruct struct {
+	Name string
+	Age  int
+}
+
+func BenchmarkStructDecodePartially(b *testing.B) {
+	in := structForBenchmark()
+	buf, err := msgpack.Marshal(in)
+	if err != nil {
+		b.Fatal(err)
+	}
+	out := &benchmarkSubStruct{}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err = msgpack.Unmarshal(buf, out)
+		if err != nil {
 			b.Fatal(err)
 		}
 	}
