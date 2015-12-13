@@ -60,6 +60,9 @@ func decodeMap(d *Decoder) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	if n == -1 {
+		return nil, nil
+	}
 
 	m := make(map[interface{}]interface{}, n)
 	for i := 0; i < n; i++ {
@@ -81,6 +84,10 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.mapLen(c)
+}
+
+func (d *Decoder) mapLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	}
@@ -131,6 +138,22 @@ func (d *Decoder) decodeIntoMapStringString(mp *map[string]string) error {
 
 func (d *Decoder) DecodeMap() (interface{}, error) {
 	return d.DecodeMapFunc(d)
+}
+
+func (d *Decoder) skipMap(c byte) error {
+	n, err := d.mapLen(c)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < n; i++ {
+		if err := d.Skip(); err != nil {
+			return err
+		}
+		if err := d.Skip(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *Decoder) mapValue(v reflect.Value) error {
@@ -209,8 +232,7 @@ func (d *Decoder) structValue(strct reflect.Value) error {
 				return err
 			}
 		} else {
-			_, err := d.DecodeInterface()
-			if err != nil {
+			if err := d.Skip(); err != nil {
 				return err
 			}
 		}

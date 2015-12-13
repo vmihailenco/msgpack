@@ -931,6 +931,47 @@ func BenchmarkStruct(b *testing.B) {
 	}
 }
 
+func BenchmarkStructDecode(b *testing.B) {
+	in := structForBenchmark()
+	buf, err := msgpack.Marshal(in)
+	if err != nil {
+		b.Fatal(err)
+	}
+	out := &benchmarkStruct{}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err = msgpack.Unmarshal(buf, out)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+type benchmarkSubStruct struct {
+	Name string
+	Age  int
+}
+
+func BenchmarkStructDecodePartially(b *testing.B) {
+	in := structForBenchmark()
+	buf, err := msgpack.Marshal(in)
+	if err != nil {
+		b.Fatal(err)
+	}
+	out := &benchmarkSubStruct{}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err = msgpack.Unmarshal(buf, out)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func BenchmarkStructManual(b *testing.B) {
 	in := structForBenchmark2()
 	out := &benchmarkStruct2{}

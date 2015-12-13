@@ -183,10 +183,10 @@ func (d *Decoder) DecodeBool() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch c {
-	case codes.False:
+	if c == codes.False {
 		return false, nil
-	case codes.True:
+	}
+	if c == codes.True {
 		return true, nil
 	}
 	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
@@ -263,10 +263,53 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.decodeExt()
 	}
 
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding interface{}", c)
+	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
 }
 
-// PeekCode returns the next Msgpack code. See
+// Skip skips next value.
+func (d *Decoder) Skip() error {
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return err
+	}
+
+	if codes.IsFixedNum(c) {
+		return nil
+	} else if codes.IsFixedMap(c) {
+		return d.skipMap(c)
+	} else if codes.IsFixedArray(c) {
+		return d.skipSlice(c)
+	} else if codes.IsFixedString(c) {
+		return d.skipBytes(c)
+	}
+
+	switch c {
+	case codes.Nil, codes.False, codes.True:
+		return nil
+	case codes.Uint8, codes.Int8:
+		return d.skipN(1)
+	case codes.Uint16, codes.Int16:
+		return d.skipN(2)
+	case codes.Uint32, codes.Int32, codes.Float:
+		return d.skipN(4)
+	case codes.Uint64, codes.Int64, codes.Double:
+		return d.skipN(8)
+	case codes.Bin8, codes.Bin16, codes.Bin32:
+		return d.skipBytes(c)
+	case codes.Str8, codes.Str16, codes.Str32:
+		return d.skipBytes(c)
+	case codes.Array16, codes.Array32:
+		return d.skipSlice(c)
+	case codes.Map16, codes.Map32:
+		return d.skipMap(c)
+	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16, codes.Ext8, codes.Ext16, codes.Ext32:
+		return d.skipExt(c)
+	}
+
+	return fmt.Errorf("msgpack: unknown code %x", c)
+}
+
+// peekCode returns the next Msgpack code. See
 // https://github.com/msgpack/msgpack/blob/master/spec.md#formats for details.
 func (d *Decoder) peekCode() (code byte, err error) {
 	code, err = d.r.ReadByte()
@@ -276,7 +319,7 @@ func (d *Decoder) peekCode() (code byte, err error) {
 	return code, d.r.UnreadByte()
 }
 
-func (d *Decoder) hasNilCode() bool {
+func (d *Decoder) gotNilCode() bool {
 	code, err := d.peekCode()
 	return err == nil && code == codes.Nil
 }
