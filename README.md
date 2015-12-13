@@ -6,7 +6,7 @@ Supports:
 - [CustomEncoder](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
 - [Extensions](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-RegisterExt) to encode type information.
 - Fields renaming, e.g. `msgpack:"my_field_name"`.
-- Fields inlining, e.g. `msgpack:",inline"`.
+- Structs inlining, e.g. `msgpack:",inline"`.
 - Omitempty flag, e.g. `msgpack:",omitempty"`.
 
 API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2.
