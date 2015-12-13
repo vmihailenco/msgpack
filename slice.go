@@ -9,43 +9,26 @@ import (
 )
 
 func (e *Encoder) encodeBytesLen(l int) error {
-	switch {
-	case l < 256:
-		if err := e.write1(codes.Bin8, uint64(l)); err != nil {
-			return err
-		}
-	case l < 65536:
-		if err := e.write2(codes.Bin16, uint64(l)); err != nil {
-			return err
-		}
-	default:
-		if err := e.write4(codes.Bin32, uint64(l)); err != nil {
-			return err
-		}
+	if l < 256 {
+		return e.write1(codes.Bin8, uint64(l))
 	}
-	return nil
+	if l < 65536 {
+		return e.write2(codes.Bin16, uint64(l))
+	}
+	return e.write4(codes.Bin32, uint64(l))
 }
 
 func (e *Encoder) encodeStrLen(l int) error {
-	switch {
-	case l < 32:
-		if err := e.w.WriteByte(codes.FixedStrLow | uint8(l)); err != nil {
-			return err
-		}
-	case l < 256:
-		if err := e.write1(codes.Str8, uint64(l)); err != nil {
-			return err
-		}
-	case l < 65536:
-		if err := e.write2(codes.Str16, uint64(l)); err != nil {
-			return err
-		}
-	default:
-		if err := e.write4(codes.Str32, uint64(l)); err != nil {
-			return err
-		}
+	if l < 32 {
+		return e.w.WriteByte(codes.FixedStrLow | uint8(l))
 	}
-	return nil
+	if l < 256 {
+		return e.write1(codes.Str8, uint64(l))
+	}
+	if l < 65536 {
+		return e.write2(codes.Str16, uint64(l))
+	}
+	return e.write4(codes.Str32, uint64(l))
 }
 
 func (e *Encoder) EncodeString(v string) error {
@@ -66,21 +49,13 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 }
 
 func (e *Encoder) EncodeSliceLen(l int) error {
-	switch {
-	case l < 16:
-		if err := e.w.WriteByte(codes.FixedArrayLow | byte(l)); err != nil {
-			return err
-		}
-	case l < 65536:
-		if err := e.write2(codes.Array16, uint64(l)); err != nil {
-			return err
-		}
-	default:
-		if err := e.write4(codes.Array32, uint64(l)); err != nil {
-			return err
-		}
+	if l < 16 {
+		return e.w.WriteByte(codes.FixedArrayLow | byte(l))
 	}
-	return nil
+	if l < 65536 {
+		return e.write2(codes.Array16, uint64(l))
+	}
+	return e.write4(codes.Array32, uint64(l))
 }
 
 func (e *Encoder) encodeStringSlice(s []string) error {
@@ -147,7 +122,15 @@ func (d *Decoder) bytesLen(c byte) (int, error) {
 }
 
 func (d *Decoder) DecodeBytes() ([]byte, error) {
-	n, err := d.DecodeBytesLen()
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	return d.bytes(c)
+}
+
+func (d *Decoder) bytes(c byte) ([]byte, error) {
+	n, err := d.bytesLen(c)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +166,15 @@ func (d *Decoder) bytesValue(value reflect.Value) error {
 }
 
 func (d *Decoder) DecodeString() (string, error) {
-	n, err := d.DecodeBytesLen()
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return "", err
+	}
+	return d.string(c)
+}
+
+func (d *Decoder) string(c byte) (string, error) {
+	n, err := d.bytesLen(c)
 	if err != nil {
 		return "", err
 	}

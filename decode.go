@@ -29,6 +29,7 @@ func Unmarshal(b []byte, v ...interface{}) error {
 }
 
 type Decoder struct {
+	// TODO: add map len arg
 	DecodeMapFunc func(*Decoder) (interface{}, error)
 
 	r   bufReader
@@ -183,6 +184,10 @@ func (d *Decoder) DecodeBool() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	return d.bool(c)
+}
+
+func (d *Decoder) bool(c byte) (bool, error) {
 	if c == codes.False {
 		return false, nil
 	}
@@ -222,45 +227,48 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	c, err := d.peekCode()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return nil, err
 	}
 
 	if codes.IsFixedNum(c) {
-		return d.DecodeInt64()
+		return d.int(c)
 	} else if codes.IsFixedMap(c) {
+		d.r.UnreadByte()
 		return d.DecodeMap()
 	} else if codes.IsFixedArray(c) {
+		d.r.UnreadByte()
 		return d.DecodeSlice()
 	} else if codes.IsFixedString(c) {
-		return d.DecodeString()
+		return d.string(c)
 	}
 
 	switch c {
 	case codes.Nil:
-		_, err := d.r.ReadByte()
-		return nil, err
+		return nil, nil
 	case codes.False, codes.True:
-		return d.DecodeBool()
+		return d.bool(c)
 	case codes.Float:
-		return d.DecodeFloat32()
+		return d.float32(c)
 	case codes.Double:
-		return d.DecodeFloat64()
+		return d.float64(c)
 	case codes.Uint8, codes.Uint16, codes.Uint32, codes.Uint64:
-		return d.DecodeUint64()
+		return d.uint(c)
 	case codes.Int8, codes.Int16, codes.Int32, codes.Int64:
-		return d.DecodeInt64()
+		return d.int(c)
 	case codes.Bin8, codes.Bin16, codes.Bin32:
-		return d.DecodeBytes()
+		return d.bytes(c)
 	case codes.Str8, codes.Str16, codes.Str32:
-		return d.DecodeString()
+		return d.string(c)
 	case codes.Array16, codes.Array32:
+		d.r.UnreadByte()
 		return d.DecodeSlice()
 	case codes.Map16, codes.Map32:
+		d.r.UnreadByte()
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16, codes.Ext8, codes.Ext16, codes.Ext32:
-		return d.decodeExt()
+		return d.ext(c)
 	}
 
 	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
