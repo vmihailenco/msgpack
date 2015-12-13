@@ -61,24 +61,28 @@ func makeExtEncoder(id int8, enc encoderFunc) encoderFunc {
 }
 
 func (e *Encoder) encodeExtLen(l int) error {
-	switch {
-	case l == 1:
+	if l == 1 {
 		return e.w.WriteByte(codes.FixExt1)
-	case l == 2:
-		return e.w.WriteByte(codes.FixExt2)
-	case l == 4:
-		return e.w.WriteByte(codes.FixExt4)
-	case l == 8:
-		return e.w.WriteByte(codes.FixExt8)
-	case l == 16:
-		return e.w.WriteByte(codes.FixExt16)
-	case l < 256:
-		return e.write1(codes.Ext8, uint64(l))
-	case l < 65536:
-		return e.write2(codes.Ext16, uint64(l))
-	default:
-		return e.write4(codes.Ext32, uint64(l))
 	}
+	if l == 2 {
+		return e.w.WriteByte(codes.FixExt2)
+	}
+	if l == 4 {
+		return e.w.WriteByte(codes.FixExt4)
+	}
+	if l == 8 {
+		return e.w.WriteByte(codes.FixExt8)
+	}
+	if l == 16 {
+		return e.w.WriteByte(codes.FixExt16)
+	}
+	if l < 256 {
+		return e.write1(codes.Ext8, uint64(l))
+	}
+	if l < 65536 {
+		return e.write2(codes.Ext16, uint64(l))
+	}
+	return e.write4(codes.Ext32, uint64(l))
 }
 
 func (d *Decoder) decodeExtLen() (int, error) {
@@ -116,8 +120,16 @@ func (d *Decoder) extLen(c byte) (int, error) {
 }
 
 func (d *Decoder) decodeExt() (interface{}, error) {
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	return d.ext(c)
+}
+
+func (d *Decoder) ext(c byte) (interface{}, error) {
 	// TODO: use decoded length.
-	_, err := d.decodeExtLen()
+	_, err := d.extLen(c)
 	if err != nil {
 		return nil, err
 	}

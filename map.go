@@ -8,21 +8,13 @@ import (
 )
 
 func (e *Encoder) encodeMapLen(l int) error {
-	switch {
-	case l < 16:
-		if err := e.w.WriteByte(codes.FixedMapLow | byte(l)); err != nil {
-			return err
-		}
-	case l < 65536:
-		if err := e.write2(codes.Map16, uint64(l)); err != nil {
-			return err
-		}
-	default:
-		if err := e.write4(codes.Map32, uint64(l)); err != nil {
-			return err
-		}
+	if l < 16 {
+		return e.w.WriteByte(codes.FixedMapLow | byte(l))
 	}
-	return nil
+	if l < 65536 {
+		return e.write2(codes.Map16, uint64(l))
+	}
+	return e.write4(codes.Map32, uint64(l))
 }
 
 func (e *Encoder) encodeMapStringString(m map[string]string) error {
@@ -94,11 +86,11 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 	if c >= codes.FixedMapLow && c <= codes.FixedMapHigh {
 		return int(c & codes.FixedMapMask), nil
 	}
-	switch c {
-	case codes.Map16:
+	if c == codes.Map16 {
 		n, err := d.uint16()
 		return int(n), err
-	case codes.Map32:
+	}
+	if c == codes.Map32 {
 		n, err := d.uint32()
 		return int(n), err
 	}

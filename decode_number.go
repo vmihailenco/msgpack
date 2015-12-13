@@ -62,6 +62,10 @@ func (d *Decoder) DecodeUint64() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.uint(c)
+}
+
+func (d *Decoder) uint(c byte) (uint64, error) {
 	if codes.IsFixedNum(c) {
 		return uint64(int8(c)), nil
 	}
@@ -104,6 +108,10 @@ func (d *Decoder) DecodeInt64() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.int(c)
+}
+
+func (d *Decoder) int(c byte) (int64, error) {
 	if codes.IsFixedNum(c) {
 		return int64(int8(c)), nil
 	}
@@ -147,6 +155,10 @@ func (d *Decoder) DecodeFloat32() (float32, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.float32(c)
+}
+
+func (d *Decoder) float32(c byte) (float32, error) {
 	if c != codes.Float {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float32", c)
 	}
@@ -171,6 +183,10 @@ func (d *Decoder) DecodeFloat64() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.float64(c)
+}
+
+func (d *Decoder) float64(c byte) (float64, error) {
 	if c != codes.Double {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float64", c)
 	}
