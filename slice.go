@@ -123,6 +123,10 @@ func (d *Decoder) DecodeBytesLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.bytesLen(c)
+}
+
+func (d *Decoder) bytesLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	} else if c >= codes.FixedStrLow && c <= codes.FixedStrHigh {
@@ -156,6 +160,17 @@ func (d *Decoder) DecodeBytes() ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+func (d *Decoder) skipBytes(c byte) error {
+	n, err := d.bytesLen(c)
+	if err != nil {
+		return err
+	}
+	if n == -1 {
+		return nil
+	}
+	return d.skipN(n)
 }
 
 func (d *Decoder) bytesValue(value reflect.Value) error {
@@ -196,6 +211,10 @@ func (d *Decoder) DecodeSliceLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.sliceLen(c)
+}
+
+func (d *Decoder) sliceLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	} else if c >= codes.FixedArrayLow && c <= codes.FixedArrayHigh {
@@ -255,6 +274,21 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 	}
 
 	return s, nil
+}
+
+func (d *Decoder) skipSlice(c byte) error {
+	n, err := d.sliceLen(c)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < n; i++ {
+		if err := d.Skip(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (d *Decoder) sliceValue(v reflect.Value) error {

@@ -86,6 +86,10 @@ func (d *Decoder) decodeExtLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	return d.extLen(c)
+}
+
+func (d *Decoder) extLen(c byte) (int, error) {
 	switch c {
 	case codes.FixExt1:
 		return 1, nil
@@ -130,4 +134,12 @@ func (d *Decoder) decodeExt() (interface{}, error) {
 		return nil, err
 	}
 	return v.Interface(), nil
+}
+
+func (d *Decoder) skipExt(c byte) error {
+	n, err := d.extLen(c)
+	if err != nil {
+		return err
+	}
+	return d.skipN(n)
 }

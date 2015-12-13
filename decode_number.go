@@ -8,6 +8,11 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+func (d *Decoder) skipN(n int) error {
+	_, err := d.readN(n)
+	return err
+}
+
 func (d *Decoder) uint8() (uint8, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
