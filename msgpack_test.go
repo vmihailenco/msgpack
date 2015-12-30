@@ -17,6 +17,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
+	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 type nameStruct struct {
@@ -177,22 +178,30 @@ func (t *MsgpackTest) TestFloat32(c *C) {
 		v float32
 		b []byte
 	}{
-		{.1, []byte{0xca, 0x3d, 0xcc, 0xcc, 0xcd}},
-		{.2, []byte{0xca, 0x3e, 0x4c, 0xcc, 0xcd}},
-		{-.1, []byte{0xca, 0xbd, 0xcc, 0xcc, 0xcd}},
-		{-.2, []byte{0xca, 0xbe, 0x4c, 0xcc, 0xcd}},
-		{float32(math.Inf(1)), []byte{0xca, 0x7f, 0x80, 0x00, 0x00}},
-		{float32(math.Inf(-1)), []byte{0xca, 0xff, 0x80, 0x00, 0x00}},
-		{math.MaxFloat32, []byte{0xca, 0x7f, 0x7f, 0xff, 0xff}},
-		{math.SmallestNonzeroFloat32, []byte{0xca, 0x0, 0x0, 0x0, 0x1}},
+		{0.1, []byte{codes.Float, 0x3d, 0xcc, 0xcc, 0xcd}},
+		{0.2, []byte{codes.Float, 0x3e, 0x4c, 0xcc, 0xcd}},
+		{-0.1, []byte{codes.Float, 0xbd, 0xcc, 0xcc, 0xcd}},
+		{-0.2, []byte{codes.Float, 0xbe, 0x4c, 0xcc, 0xcd}},
+		{float32(math.Inf(1)), []byte{codes.Float, 0x7f, 0x80, 0x00, 0x00}},
+		{float32(math.Inf(-1)), []byte{codes.Float, 0xff, 0x80, 0x00, 0x00}},
+		{math.MaxFloat32, []byte{codes.Float, 0x7f, 0x7f, 0xff, 0xff}},
+		{math.SmallestNonzeroFloat32, []byte{codes.Float, 0x0, 0x0, 0x0, 0x1}},
 	}
 	for _, r := range table {
 		c.Assert(t.enc.Encode(r.v), IsNil)
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
 
-		var v float32
-		c.Assert(t.dec.Decode(&v), IsNil)
-		c.Assert(v, Equals, r.v)
+		var f32 float32
+		c.Assert(t.dec.Decode(&f32), IsNil)
+		c.Assert(f32, Equals, r.v)
+
+		// Pass pointer to skip fast-path and trigger reflect.
+		c.Assert(t.enc.Encode(&r.v), IsNil)
+		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
+
+		var f64 float64
+		c.Assert(t.dec.Decode(&f64), IsNil)
+		c.Assert(float32(f64), Equals, r.v)
 
 		c.Assert(t.enc.Encode(r.v), IsNil)
 		iface, err := t.dec.DecodeInterface()

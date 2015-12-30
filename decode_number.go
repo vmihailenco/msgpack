@@ -187,6 +187,10 @@ func (d *Decoder) DecodeFloat64() (float64, error) {
 }
 
 func (d *Decoder) float64(c byte) (float64, error) {
+	if c == codes.Float {
+		n, err := d.float32(c)
+		return float64(n), err
+	}
 	if c != codes.Double {
 		return 0, fmt.Errorf("msgpack: invalid code %x decoding float64", c)
 	}

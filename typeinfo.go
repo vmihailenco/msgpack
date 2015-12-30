@@ -53,7 +53,7 @@ func init() {
 		reflect.Uint16:        encodeUint64Value,
 		reflect.Uint32:        encodeUint64Value,
 		reflect.Uint64:        encodeUint64Value,
-		reflect.Float32:       encodeFloat64Value,
+		reflect.Float32:       encodeFloat32Value,
 		reflect.Float64:       encodeFloat64Value,
 		reflect.Complex64:     encodeUnsupportedValue,
 		reflect.Complex128:    encodeUnsupportedValue,
@@ -203,6 +203,10 @@ func decodeBoolValue(d *Decoder, v reflect.Value) error {
 }
 
 //------------------------------------------------------------------------------
+
+func encodeFloat32Value(e *Encoder, v reflect.Value) error {
+	return e.EncodeFloat32(float32(v.Float()))
+}
 
 func encodeFloat64Value(e *Encoder, v reflect.Value) error {
 	return e.EncodeFloat64(v.Float())
