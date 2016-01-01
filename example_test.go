@@ -3,7 +3,6 @@ package msgpack_test
 import (
 	"bytes"
 	"fmt"
-	"sort"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -50,26 +49,22 @@ func ExampleRegisterExt() {
 func Example_mapStringInterface() {
 	in := map[string]interface{}{"foo": 1, "hello": "world"}
 	b, err := msgpack.Marshal(in)
-	_ = err
+	if err != nil {
+		panic(err)
+	}
 
 	var out map[string]interface{}
 	err = msgpack.Unmarshal(b, &out)
-
-	var outKeys []string
-	for k := range out {
-		outKeys = append(outKeys, k)
-	}
-	sort.Strings(outKeys)
-
-	fmt.Printf("err: %v\n", err)
-
-	for _, k := range outKeys {
-		fmt.Printf("out[\"%v\"]: %#v\n", k, out[k])
+	if err != nil {
+		panic(err)
 	}
 
-	// Output: err: <nil>
-	// out["foo"]: 1
-	// out["hello"]: "world"
+	fmt.Println("foo =", out["foo"])
+	fmt.Println("hello =", out["hello"])
+
+	// Output:
+	// foo = 1
+	// hello = world
 }
 
 func Example_recursiveMapStringInterface() {

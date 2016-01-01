@@ -233,14 +233,20 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	if codes.IsFixedNum(c) {
+		if c >= 0 {
+			return d.uint(c)
+		}
 		return d.int(c)
-	} else if codes.IsFixedMap(c) {
+	}
+	if codes.IsFixedMap(c) {
 		d.r.UnreadByte()
 		return d.DecodeMap()
-	} else if codes.IsFixedArray(c) {
+	}
+	if codes.IsFixedArray(c) {
 		d.r.UnreadByte()
 		return d.DecodeSlice()
-	} else if codes.IsFixedString(c) {
+	}
+	if codes.IsFixedString(c) {
 		return d.string(c)
 	}
 

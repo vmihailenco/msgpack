@@ -23,16 +23,16 @@ func (e *Encoder) EncodeUint32(v uint32) error {
 }
 
 func (e *Encoder) EncodeUint64(v uint64) error {
-	if v < 128 {
+	if v <= math.MaxInt8 {
 		return e.w.WriteByte(byte(v))
 	}
-	if v < 256 {
+	if v <= math.MaxUint8 {
 		return e.write1(codes.Uint8, v)
 	}
-	if v < 65536 {
+	if v <= math.MaxUint16 {
 		return e.write2(codes.Uint16, v)
 	}
-	if v < 4294967296 {
+	if v <= math.MaxUint32 {
 		return e.write4(codes.Uint32, v)
 	}
 	return e.write8(codes.Uint64, v)
@@ -55,19 +55,22 @@ func (e *Encoder) EncodeInt32(v int32) error {
 }
 
 func (e *Encoder) EncodeInt64(v int64) error {
-	if v < -2147483648 || v >= 2147483648 {
-		return e.write8(codes.Int64, uint64(v))
+	if v >= 0 {
+		return e.EncodeUint64(uint64(v))
 	}
-	if v < -32768 || v >= 32768 {
-		return e.write4(codes.Int32, uint64(v))
+	if v >= -32 {
+		return e.w.WriteByte(byte(v))
 	}
-	if v < -128 || v >= 128 {
-		return e.write2(codes.Int16, uint64(v))
-	}
-	if v < -32 {
+	if v >= math.MinInt8 {
 		return e.write1(codes.Int8, uint64(v))
 	}
-	return e.w.WriteByte(byte(v))
+	if v >= math.MinInt16 {
+		return e.write2(codes.Int16, uint64(v))
+	}
+	if v >= math.MinInt32 {
+		return e.write4(codes.Int32, uint64(v))
+	}
+	return e.write8(codes.Int64, uint64(v))
 }
 
 func (e *Encoder) EncodeFloat32(n float32) error {

@@ -180,7 +180,7 @@ var (
 		{in: []int(nil), out: new([]int)},
 		{in: make([]int, 0), out: new([]int)},
 		{in: make([]int, 1000), out: new([]int)},
-		{in: []interface{}{int64(1), "hello"}, out: new([]interface{})},
+		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
 
 		{in: stringSlice{"foo", "bar"}, out: new(stringSlice)},
