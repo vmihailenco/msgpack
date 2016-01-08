@@ -7,7 +7,7 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
-func (e *Encoder) encodeMapLen(l int) error {
+func (e *Encoder) EncodeMapLen(l int) error {
 	if l < 16 {
 		return e.w.WriteByte(codes.FixedMapLow | byte(l))
 	}
@@ -18,7 +18,7 @@ func (e *Encoder) encodeMapLen(l int) error {
 }
 
 func (e *Encoder) encodeMapStringString(m map[string]string) error {
-	if err := e.encodeMapLen(len(m)); err != nil {
+	if err := e.EncodeMapLen(len(m)); err != nil {
 		return err
 	}
 	for mk, mv := range m {
@@ -33,7 +33,7 @@ func (e *Encoder) encodeMapStringString(m map[string]string) error {
 }
 
 func (e *Encoder) encodeMap(value reflect.Value) error {
-	if err := e.encodeMapLen(value.Len()); err != nil {
+	if err := e.EncodeMapLen(value.Len()); err != nil {
 		return err
 	}
 	for _, key := range value.MapKeys() {
@@ -190,7 +190,7 @@ func (e *Encoder) encodeStruct(strct reflect.Value) error {
 		}
 	}
 
-	if err := e.encodeMapLen(len(fields)); err != nil {
+	if err := e.EncodeMapLen(len(fields)); err != nil {
 		return err
 	}
 
