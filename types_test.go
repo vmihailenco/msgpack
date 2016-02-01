@@ -47,27 +47,27 @@ func (setptr *intSet) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 //------------------------------------------------------------------------------
 
-type compactEncoding struct {
+type CompactEncodingTest struct {
 	str string
-	ref *compactEncoding
+	ref *CompactEncodingTest
 	num int
 }
 
 var (
-	_ msgpack.CustomEncoder = &compactEncoding{}
-	_ msgpack.CustomDecoder = &compactEncoding{}
+	_ msgpack.CustomEncoder = (*CompactEncodingTest)(nil)
+	_ msgpack.CustomDecoder = (*CompactEncodingTest)(nil)
 )
 
-func (s *compactEncoding) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (s *CompactEncodingTest) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.Encode(s.str, s.ref, s.num)
 }
 
-func (s *compactEncoding) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (s *CompactEncodingTest) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.Decode(&s.str, &s.ref, &s.num)
 }
 
-type compactEncodingFieldValue struct {
-	Field compactEncoding
+type CompactEncodingFieldTest struct {
+	Field CompactEncodingTest
 }
 
 //------------------------------------------------------------------------------
@@ -95,10 +95,10 @@ var binTests = []binTest{
 	{intSet{}, []byte{codes.FixedArrayLow}},
 	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
 
-	{&compactEncoding{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
+	{&CompactEncodingTest{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
 	{
-		&compactEncoding{"n", &compactEncoding{"o", nil, 7}, 6},
-		[]byte{codes.FixedStrLow | 1, 'n', codes.FixedStrLow | 1, 'o', codes.Nil, 0x7, 0x6},
+		&CompactEncodingTest{"a", &CompactEncodingTest{"b", nil, 7}, 6},
+		[]byte{codes.FixedStrLow | 1, 'a', codes.FixedStrLow | 1, 'b', codes.Nil, 0x7, 0x6},
 	},
 }
 
@@ -128,14 +128,29 @@ func TestBin(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(b, test.wanted) {
-			t.Fatalf("% x != % x", b, test.wanted)
+			t.Fatalf("%q != %q (in=%v)", b, test.wanted, test.in)
 		}
 	}
 }
 
 //------------------------------------------------------------------------------
 
-type embeddedTime struct {
+type unexported struct {
+	Foo string
+}
+
+type Exported struct {
+	Bar string
+}
+
+type EmbedingTest struct {
+	unexported
+	Exported
+}
+
+//------------------------------------------------------------------------------
+
+type TimeEmbedingTest struct {
 	time.Time
 }
 
@@ -145,7 +160,7 @@ type (
 	stringSlice []string
 )
 
-type testStruct struct {
+type StructTest struct {
 	F1 stringSlice
 	F2 []string
 }
@@ -190,15 +205,24 @@ var (
 		{in: intSet{}, out: new(intSet)},
 		{in: intSet{8: struct{}{}}, out: new(intSet)},
 
-		{in: testStruct{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(testStruct)},
-		{in: &coderStruct{name: "hello"}, out: new(*coderStruct)},
-		{in: &embeddedTime{Time: time.Now()}, out: new(*embeddedTime)},
-
-		{in: &compactEncoding{}, out: new(compactEncoding)},
-		{in: &compactEncoding{"a", &compactEncoding{"b", nil, 1}, 2}, out: new(compactEncoding)},
+		{in: StructTest{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
+		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
 		{
-			in:  &compactEncodingFieldValue{Field: compactEncoding{"a", nil, 1}},
-			out: new(compactEncodingFieldValue),
+			in: EmbedingTest{
+				unexported: unexported{Foo: "hello"},
+				Exported:   Exported{Bar: "world"},
+			},
+			out: new(EmbedingTest),
+		},
+
+		{in: &CompactEncodingTest{}, out: new(CompactEncodingTest)},
+		{
+			in:  &CompactEncodingTest{"a", &CompactEncodingTest{"b", nil, 1}, 2},
+			out: new(CompactEncodingTest),
+		},
+		{
+			in:  &CompactEncodingFieldTest{Field: CompactEncodingTest{"a", nil, 1}},
+			out: new(CompactEncodingFieldTest),
 		},
 	}
 )
@@ -224,7 +248,7 @@ func TestTypes(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Marshal failed: %s (in=%v)", err, test.in)
 		}
 
 		err = msgpack.Unmarshal(b, test.out)
