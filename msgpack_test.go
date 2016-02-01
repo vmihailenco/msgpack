@@ -8,6 +8,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -534,14 +535,16 @@ func (t *MsgpackTest) TestNilCoder(c *C) {
 	c.Assert(out.Name(), Equals, "hello")
 }
 
-// func (t *MsgpackTest) TestNilCoderValue(c *C) {
-// 	in := &coderStruct{name: "hello"}
-// 	var out *coderStruct
-// 	v := reflect.ValueOf(out)
-// 	c.Assert(t.enc.Encode(in), IsNil)
-// 	c.Assert(t.dec.DecodeValue(v), IsNil)
-// 	c.Assert(out.Name(), Equals, "hello")
-// }
+func (t *MsgpackTest) TestNilCoderValue(c *C) {
+	c.Skip("TODO")
+
+	in := &coderStruct{name: "hello"}
+	var out *coderStruct
+	v := reflect.ValueOf(out)
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.DecodeValue(v), IsNil)
+	c.Assert(out.Name(), Equals, "hello")
+}
 
 func (t *MsgpackTest) TestPtrToCoder(c *C) {
 	in := &coderStruct{name: "hello"}
