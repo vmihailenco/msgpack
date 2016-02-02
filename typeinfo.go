@@ -129,6 +129,8 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 type fields struct {
 	List  []*field
 	Table map[string]*field
+
+	omitEmpty bool
 }
 
 func newFields(numField int) *fields {
@@ -145,6 +147,23 @@ func (fs *fields) Len() int {
 func (fs *fields) Add(field *field) {
 	fs.List = append(fs.List, field)
 	fs.Table[field.name] = field
+	if field.omitEmpty {
+		fs.omitEmpty = field.omitEmpty
+	}
+}
+
+func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
+	if !fs.omitEmpty {
+		return fs.List
+	}
+
+	fields := make([]*field, 0, fs.Len())
+	for _, f := range fs.List {
+		if !f.Omit(strct) {
+			fields = append(fields, f)
+		}
+	}
+	return fields
 }
 
 func getFields(typ reflect.Type) *fields {
@@ -170,16 +189,32 @@ func getFields(typ reflect.Type) *fields {
 		if name == "" {
 			name = f.Name
 		}
-		field := &field{
+		field := field{
 			name:      name,
 			index:     f.Index,
 			omitEmpty: opts.Contains("omitempty"),
 			encoder:   getEncoder(f.Type),
 			decoder:   getDecoder(f.Type),
 		}
-		fs.Add(field)
+		fs.Add(&field)
 	}
 	return fs
+}
+
+func inlineFields(fs *fields, f reflect.StructField) {
+	typ := f.Type
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	inlinedFields := getFields(typ).List
+	for _, field := range inlinedFields {
+		if _, ok := fs.Table[field.name]; ok {
+			// Don't overwrite shadowed fields.
+			continue
+		}
+		field.index = append(f.Index, field.index...)
+		fs.Add(field)
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -431,25 +466,6 @@ func (m *structCache) Fields(typ reflect.Type) *fields {
 	}
 
 	return fs
-}
-
-func inlineFields(fs *fields, f reflect.StructField) {
-	typ := f.Type
-	for typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	inlinedFields := getFields(typ).List
-	if len(inlinedFields) == 0 {
-		panic("no fields to inline")
-	}
-	for _, field := range inlinedFields {
-		if _, ok := fs.Table[field.name]; ok {
-			// Don't overwrite shadowed fields.
-			continue
-		}
-		field.index = append(f.Index, field.index...)
-		fs.Add(field)
-	}
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {

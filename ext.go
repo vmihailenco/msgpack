@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	extTypes [128]reflect.Type
+	extTypes []reflect.Type
 )
 
 var bufferPool = &sync.Pool{
@@ -20,6 +20,9 @@ var bufferPool = &sync.Pool{
 }
 
 func RegisterExt(id int8, value interface{}) {
+	if diff := int(id) - len(extTypes) + 1; diff > 0 {
+		extTypes = append(extTypes, make([]reflect.Type, diff)...)
+	}
 	if extTypes[id] != nil {
 		panic(fmt.Errorf("ext with id %d is already registered", id))
 	}
@@ -136,6 +139,9 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 	extId, err := d.r.ReadByte()
 	if err != nil {
 		return nil, err
+	}
+	if int(extId) >= len(extTypes) {
+		return nil, fmt.Errorf("msgpack: unregistered ext id %d", extId)
 	}
 	typ := extTypes[extId]
 	if typ == nil {

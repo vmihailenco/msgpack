@@ -35,12 +35,6 @@ func (w *byteWriter) WriteString(s string) (int, error) {
 }
 
 func Marshal(v ...interface{}) ([]byte, error) {
-	if len(v) == 1 {
-		marshaler, ok := v[0].(Marshaler)
-		if ok {
-			return marshaler.MarshalMsgpack()
-		}
-	}
 	buf := &bytes.Buffer{}
 	err := NewEncoder(buf).Encode(v...)
 	return buf.Bytes(), err
@@ -71,12 +65,10 @@ func (e *Encoder) Encode(v ...interface{}) error {
 	return nil
 }
 
-func (e *Encoder) encode(iv interface{}) error {
-	if iv == nil {
+func (e *Encoder) encode(v interface{}) error {
+	switch v := v.(type) {
+	case nil:
 		return e.EncodeNil()
-	}
-
-	switch v := iv.(type) {
 	case string:
 		return e.EncodeString(v)
 	case []byte:
@@ -111,7 +103,7 @@ func (e *Encoder) encode(iv interface{}) error {
 		_, err = e.w.Write(b)
 		return err
 	}
-	return e.EncodeValue(reflect.ValueOf(iv))
+	return e.EncodeValue(reflect.ValueOf(v))
 }
 
 func (e *Encoder) EncodeValue(v reflect.Value) error {
