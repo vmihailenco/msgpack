@@ -906,7 +906,7 @@ func structForBenchmark2() *benchmarkStruct2 {
 	}
 }
 
-func BenchmarkStruct(b *testing.B) {
+func BenchmarkStructVmihailencoMsgpack(b *testing.B) {
 	in := structForBenchmark()
 	out := &benchmarkStruct{}
 	for i := 0; i < b.N; i++ {
