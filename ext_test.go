@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	msgpack.RegisterExt(127, extTest{})
+	msgpack.RegisterExt(0, extTest{})
 }
 
 func TestRegisterExtPanic(t *testing.T) {
@@ -18,12 +18,12 @@ func TestRegisterExtPanic(t *testing.T) {
 			t.Fatalf("panic expected")
 		}
 		got := r.(error).Error()
-		wanted := "ext with id 127 is already registered"
+		wanted := "ext with id 0 is already registered"
 		if got != wanted {
 			t.Fatalf("got %q, wanted %q", got, wanted)
 		}
 	}()
-	msgpack.RegisterExt(127, extTest{})
+	msgpack.RegisterExt(0, extTest{})
 }
 
 type extTest struct {
