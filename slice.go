@@ -134,12 +134,15 @@ func (d *Decoder) bytes(c byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return d.getBytes(n)
+}
+
+func (d *Decoder) getBytes(n int) ([]byte, error) {
 	if n == -1 {
 		return nil, nil
 	}
 	b := make([]byte, n)
-	_, err = io.ReadFull(d.r, b)
-	if err != nil {
+	if _, err := io.ReadFull(d.r, b); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -279,6 +282,24 @@ func (d *Decoder) skipSlice(c byte) error {
 		}
 	}
 
+	return nil
+}
+
+func (d *Decoder) arrayValue(v reflect.Value) error {
+	n, err := d.DecodeBytesLen()
+	if err != nil {
+		return err
+	}
+	bs, err := d.getBytes(n)
+	if err != nil {
+		return err
+	}
+	for i := range bs {
+		if i >= v.Len() {
+			break
+		}
+		v.Index(i).Set(reflect.ValueOf(bs[i]))
+	}
 	return nil
 }
 
