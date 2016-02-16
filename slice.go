@@ -282,6 +282,23 @@ func (d *Decoder) skipSlice(c byte) error {
 	return nil
 }
 
+func (d *Decoder) arrayValue(v reflect.Value) error {
+	n, err := d.DecodeBytesLen()
+	if err != nil {
+		return err
+	}
+	for i := 0; i < n; i++ {
+		b, err := d.r.ReadByte()
+		if err != nil {
+			return err
+		}
+		if i < v.Len() {
+			v.Index(i).SetUint(uint64(b))
+		}
+	}
+	return nil
+}
+
 func (d *Decoder) sliceValue(v reflect.Value) error {
 	n, err := d.DecodeSliceLen()
 	if err != nil {

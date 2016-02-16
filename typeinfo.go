@@ -267,6 +267,22 @@ func encodeBytesValue(e *Encoder, v reflect.Value) error {
 	return e.EncodeBytes(v.Bytes())
 }
 
+//------------------------------------------------------------------------------
+
+func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
+	if err := e.encodeBytesLen(v.Len()); err != nil {
+		return err
+	}
+	for i := 0; i < v.Len(); i++ {
+		if err := e.w.WriteByte(byte(v.Index(i).Uint())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+//------------------------------------------------------------------------------
+
 func decodeBytesValue(d *Decoder, v reflect.Value) error {
 	return d.bytesValue(v)
 }
@@ -308,6 +324,9 @@ func encodeArrayValue(e *Encoder, v reflect.Value) error {
 }
 
 func decodeArrayValue(d *Decoder, v reflect.Value) error {
+	if v.Type().Elem().Kind() == reflect.Uint8 {
+		return d.arrayValue(v)
+	}
 	return d.sliceValue(v)
 }
 
@@ -497,6 +516,8 @@ func getTypeEncoder(typ reflect.Type) encoderFunc {
 
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
 		return encodeBytesValue
+	} else if kind == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
+		return encodeByteArrayValue
 	}
 
 	return valueEncoders[kind]
