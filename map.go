@@ -1,10 +1,15 @@
 package msgpack
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
+)
+
+var (
+	errNotStringMap = errors.New("not a string map")
 )
 
 func (e *Encoder) EncodeMapLen(l int) error {
@@ -68,7 +73,23 @@ func decodeMap(d *Decoder) (interface{}, error) {
 		}
 		m[mk] = mv
 	}
-	return m, nil
+	strMap, err := tryStringMap(m)
+	if err != nil {
+		return m, nil
+	}
+	return strMap, nil
+}
+func tryStringMap(m map[interface{}]interface{}) (map[string]interface{}, error) {
+	for key := range m {
+		if _, isStr := key.(string); !isStr {
+			return nil, errNotStringMap
+		}
+	}
+	strMap := make(map[string]interface{})
+	for key, value := range m {
+		strMap[key.(string)] = value
+	}
+	return strMap, nil
 }
 
 func (d *Decoder) DecodeMapLen() (int, error) {
