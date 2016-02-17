@@ -29,7 +29,7 @@ func Example_encodeMapStringString() {
 		panic(err)
 	}
 
-	decodedMapValue := value.(map[string]interface{})
+	decodedMapValue := value.(map[interface{}]interface{})
 
 	for _, key := range keys {
 		fmt.Printf("%#v: %#v, ", key, decodedMapValue[key])

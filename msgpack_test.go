@@ -642,7 +642,7 @@ func (t *MsgpackTest) TestMapStringInterface(c *C) {
 	c.Assert(t.dec.Decode(&out), IsNil)
 
 	c.Assert(out["foo"], Equals, "bar")
-	mm := out["hello"].(map[string]interface{})
+	mm := out["hello"].(map[interface{}]interface{})
 	c.Assert(mm["foo"], Equals, "bar")
 }
 

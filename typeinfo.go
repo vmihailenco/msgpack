@@ -270,16 +270,15 @@ func encodeBytesValue(e *Encoder, v reflect.Value) error {
 //------------------------------------------------------------------------------
 
 func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
-	var bs []byte
-	if v.CanAddr() {
-		bs = v.Slice(0, v.Len()).Bytes()
-	} else {
-		bs = make([]byte, v.Len())
-		for i := range bs {
-			bs[i] = uint8(v.Index(i).Uint())
+	if err := e.encodeBytesLen(v.Len()); err != nil {
+		return err
+	}
+	for i := 0; i < v.Len(); i++ {
+		if err := e.w.WriteByte(byte(v.Index(i).Uint())); err != nil {
+			return err
 		}
 	}
-	return e.EncodeBytes(bs)
+	return nil
 }
 
 //------------------------------------------------------------------------------

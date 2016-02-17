@@ -134,15 +134,12 @@ func (d *Decoder) bytes(c byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return d.getBytes(n)
-}
-
-func (d *Decoder) getBytes(n int) ([]byte, error) {
 	if n == -1 {
 		return nil, nil
 	}
 	b := make([]byte, n)
-	if _, err := io.ReadFull(d.r, b); err != nil {
+	_, err = io.ReadFull(d.r, b)
+	if err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -290,15 +287,15 @@ func (d *Decoder) arrayValue(v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	bs, err := d.getBytes(n)
-	if err != nil {
-		return err
+	if n > v.Len() {
+		n = v.Len()
 	}
-	for i := range bs {
-		if i >= v.Len() {
-			break
+	for i := 0; i < n; i++ {
+		b, err := d.r.ReadByte()
+		if err != nil {
+			return err
 		}
-		v.Index(i).Set(reflect.ValueOf(bs[i]))
+		v.Index(i).SetUint(uint64(b))
 	}
 	return nil
 }
