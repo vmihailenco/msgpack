@@ -46,12 +46,12 @@ type Encoder struct {
 }
 
 func NewEncoder(w io.Writer) *Encoder {
-	ww, ok := w.(writer)
+	bw, ok := w.(writer)
 	if !ok {
-		ww = &byteWriter{Writer: w}
+		bw = &byteWriter{Writer: w}
 	}
 	return &Encoder{
-		w:   ww,
+		w:   bw,
 		buf: make([]byte, 9),
 	}
 }

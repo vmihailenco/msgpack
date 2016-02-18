@@ -48,7 +48,7 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 	return e.write(v)
 }
 
-func (e *Encoder) EncodeSliceLen(l int) error {
+func (e *Encoder) EncodeArrayLen(l int) error {
 	if l < 16 {
 		return e.w.WriteByte(codes.FixedArrayLow | byte(l))
 	}
@@ -58,11 +58,16 @@ func (e *Encoder) EncodeSliceLen(l int) error {
 	return e.write4(codes.Array32, uint64(l))
 }
 
+// Deprecated. Use EncodeArrayLen instead.
+func (e *Encoder) EncodeSliceLen(l int) error {
+	return e.EncodeArrayLen(l)
+}
+
 func (e *Encoder) encodeStringSlice(s []string) error {
 	if s == nil {
 		return e.EncodeNil()
 	}
-	if err := e.EncodeSliceLen(len(s)); err != nil {
+	if err := e.EncodeArrayLen(len(s)); err != nil {
 		return err
 	}
 	for _, v := range s {
@@ -156,12 +161,21 @@ func (d *Decoder) skipBytes(c byte) error {
 	return d.skipN(n)
 }
 
-func (d *Decoder) bytesValue(value reflect.Value) error {
+func (d *Decoder) byteSliceValue(value reflect.Value) error {
 	v, err := d.DecodeBytes()
 	if err != nil {
 		return err
 	}
 	value.SetBytes(v)
+	return nil
+}
+
+func (d *Decoder) byteArrayValue(v reflect.Value) error {
+	b, err := d.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	reflect.Copy(v, reflect.ValueOf(b))
 	return nil
 }
 
@@ -279,23 +293,6 @@ func (d *Decoder) skipSlice(c byte) error {
 		}
 	}
 
-	return nil
-}
-
-func (d *Decoder) arrayValue(v reflect.Value) error {
-	n, err := d.DecodeBytesLen()
-	if err != nil {
-		return err
-	}
-	for i := 0; i < n; i++ {
-		b, err := d.r.ReadByte()
-		if err != nil {
-			return err
-		}
-		if i < v.Len() {
-			v.Index(i).SetUint(uint64(b))
-		}
-	}
 	return nil
 }
 
