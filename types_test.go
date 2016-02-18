@@ -90,6 +90,10 @@ type binTest struct {
 
 var binTests = []binTest{
 	{nil, []byte{codes.Nil}},
+
+	{[]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
+	{[3]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
+
 	{OmitEmptyTest{}, []byte{codes.FixedMapLow}},
 
 	{intSet{}, []byte{codes.FixedArrayLow}},
@@ -168,10 +172,11 @@ type StructTest struct {
 type typeTest struct {
 	*testing.T
 
-	in     interface{}
-	out    interface{}
-	encErr string
-	decErr string
+	in      interface{}
+	out     interface{}
+	encErr  string
+	decErr  string
+	wantnil bool
 }
 
 func (t *typeTest) assertErr(err error, s string) {
@@ -197,6 +202,14 @@ var (
 		{in: make([]int, 1000), out: new([]int)},
 		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
+
+		{in: nil, out: new([]byte), wantnil: true},
+		{in: []byte(nil), out: new([]byte)},
+		{in: []byte{1, 2, 3}, out: new([]byte)},
+
+		{in: nil, out: new([3]byte), wantnil: true},
+		{in: [3]byte{1, 2, 3}, out: new([3]byte)},
+		{in: [3]byte{1, 2, 3}, out: new([2]byte)},
 
 		{in: stringSlice{"foo", "bar"}, out: new(stringSlice)},
 		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
@@ -248,7 +261,7 @@ func TestTypes(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			t.Fatalf("Marshal failed: %s (in=%v)", err, test.in)
+			t.Fatalf("Marshal failed: %s (in=%#v)", err, test.in)
 		}
 
 		err = msgpack.Unmarshal(b, test.out)
@@ -257,11 +270,20 @@ func TestTypes(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Unmarshal failed: %s (in=%#v out=%#v)", err, test.in, test.out)
+		}
+
+		out := deref(test.out)
+		if test.wantnil {
+			v := reflect.ValueOf(out)
+			if v.IsNil() {
+				return
+			}
+			t.Fatalf("got %#v, wanted nil", out)
+			return
 		}
 
 		in := deref(test.in)
-		out := deref(test.out)
 		if !reflect.DeepEqual(out, in) {
 			t.Fatalf("%#v != %#v", out, in)
 		}

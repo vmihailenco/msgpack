@@ -263,28 +263,31 @@ func decodeStringValue(d *Decoder, v reflect.Value) error {
 
 //------------------------------------------------------------------------------
 
-func encodeBytesValue(e *Encoder, v reflect.Value) error {
+func encodeByteSliceValue(e *Encoder, v reflect.Value) error {
 	return e.EncodeBytes(v.Bytes())
 }
-
-//------------------------------------------------------------------------------
 
 func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
 	if err := e.encodeBytesLen(v.Len()); err != nil {
 		return err
 	}
-	for i := 0; i < v.Len(); i++ {
-		if err := e.w.WriteByte(byte(v.Index(i).Uint())); err != nil {
-			return err
-		}
+
+	if v.CanAddr() {
+		b := v.Slice(0, v.Len()).Bytes()
+		return e.write(b)
 	}
-	return nil
+
+	b := make([]byte, v.Len())
+	reflect.Copy(reflect.ValueOf(b), v)
+	return e.write(b)
 }
 
-//------------------------------------------------------------------------------
+func decodeByteSliceValue(d *Decoder, v reflect.Value) error {
+	return d.byteSliceValue(v)
+}
 
-func decodeBytesValue(d *Decoder, v reflect.Value) error {
-	return d.bytesValue(v)
+func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
+	return d.byteArrayValue(v)
 }
 
 //------------------------------------------------------------------------------
@@ -324,9 +327,6 @@ func encodeArrayValue(e *Encoder, v reflect.Value) error {
 }
 
 func decodeArrayValue(d *Decoder, v reflect.Value) error {
-	if v.Type().Elem().Kind() == reflect.Uint8 {
-		return d.arrayValue(v)
-	}
 	return d.sliceValue(v)
 }
 
@@ -515,7 +515,7 @@ func getTypeEncoder(typ reflect.Type) encoderFunc {
 	}
 
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-		return encodeBytesValue
+		return encodeByteSliceValue
 	} else if kind == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
 		return encodeByteArrayValue
 	}
@@ -544,7 +544,10 @@ func getDecoder(typ reflect.Type) decoderFunc {
 	}
 
 	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-		return decodeBytesValue
+		return decodeByteSliceValue
+	}
+	if kind == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
+		return decodeByteArrayValue
 	}
 
 	return valueDecoders[kind]
