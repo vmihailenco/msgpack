@@ -287,15 +287,14 @@ func (d *Decoder) arrayValue(v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	if n > v.Len() {
-		n = v.Len()
-	}
 	for i := 0; i < n; i++ {
 		b, err := d.r.ReadByte()
 		if err != nil {
 			return err
 		}
-		v.Index(i).SetUint(uint64(b))
+		if i < v.Len() {
+			v.Index(i).SetUint(uint64(b))
+		}
 	}
 	return nil
 }
