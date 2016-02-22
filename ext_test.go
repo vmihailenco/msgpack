@@ -16,10 +16,9 @@ func TestRegisterExtPanic(t *testing.T) {
 		if r == nil {
 			t.Fatalf("panic expected")
 		}
-		got := r.(error).Error()
-		wanted := "ext with id 0 is already registered"
-		if got != wanted {
-			t.Fatalf("got %q, wanted %q", got, wanted)
+		_, ok := r.(DupExtIdError)
+		if !ok {
+			t.Fatalf("Unexpected panic type: %T", r)
 		}
 	}()
 	RegisterExt(0, extTest{})
@@ -64,9 +63,8 @@ func TestUnknownExt(t *testing.T) {
 	if err == nil {
 		t.Fatalf("got nil, wanted error")
 	}
-	got := err.Error()
-	wanted := "msgpack: unregistered ext id 1"
-	if got != wanted {
-		t.Fatalf("got %q, wanted %q", got, wanted)
+	_, ok := err.(UnregisteredExtError)
+	if !ok {
+		t.Fatalf("Unexpected error type: %T", err)
 	}
 }

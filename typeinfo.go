@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"fmt"
 	"io/ioutil"
 	"reflect"
 	"sync"
@@ -220,11 +219,11 @@ func inlineFields(fs *fields, f reflect.StructField) {
 //------------------------------------------------------------------------------
 
 func encodeUnsupportedValue(e *Encoder, v reflect.Value) error {
-	return fmt.Errorf("msgpack: Encode(unsupported %T)", v.Interface())
+	return UnsupportedTypeError{true, v.Interface()}
 }
 
 func decodeUnsupportedValue(d *Decoder, v reflect.Value) error {
-	return fmt.Errorf("msgpack: Decode(unsupported %T)", v.Interface())
+	return UnsupportedTypeError{false, v.Interface()}
 }
 
 //------------------------------------------------------------------------------
@@ -368,7 +367,7 @@ func encodePtrValue(e *Encoder, v reflect.Value) error {
 func decodePtrValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		if !v.CanSet() {
-			return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+			return NotSettableError{v.Interface()}
 		}
 		vv := reflect.New(v.Type().Elem())
 		v.Set(vv)
@@ -390,7 +389,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 func encodeCustomValuePtr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+		return NonAddressableError{v.Interface()}
 	}
 	switch v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
@@ -415,7 +414,7 @@ func encodeCustomValue(e *Encoder, v reflect.Value) error {
 
 func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+		return NotSettableError{v.Interface()}
 	}
 	if d.gotNilCode() {
 		return d.DecodeNil()

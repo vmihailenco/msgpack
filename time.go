@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 )
@@ -30,7 +29,7 @@ func (d *Decoder) DecodeTime() (time.Time, error) {
 		return time.Time{}, err
 	}
 	if b != 0x92 {
-		return time.Time{}, fmt.Errorf("msgpack: invalid code %x decoding time", b)
+		return time.Time{}, InvalidCodeError{b, "time"}
 	}
 
 	sec, err := d.DecodeInt64()

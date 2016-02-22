@@ -2,7 +2,6 @@ package msgpack
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 	"sync"
 
@@ -24,7 +23,7 @@ func RegisterExt(id int8, value interface{}) {
 		extTypes = append(extTypes, make([]reflect.Type, diff)...)
 	}
 	if extTypes[id] != nil {
-		panic(fmt.Errorf("ext with id %d is already registered", id))
+		panic(DupExtIdError(id))
 	}
 	extTypes[id] = reflect.TypeOf(value)
 }
@@ -118,7 +117,7 @@ func (d *Decoder) extLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	default:
-		return 0, fmt.Errorf("msgpack: invalid code %x decoding ext length", c)
+		return 0, InvalidCodeError{c, "ext length"}
 	}
 }
 
@@ -141,11 +140,11 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 		return nil, err
 	}
 	if int(extId) >= len(extTypes) {
-		return nil, fmt.Errorf("msgpack: unregistered ext id %d", extId)
+		return nil, UnregisteredExtError(extId)
 	}
 	typ := extTypes[extId]
 	if typ == nil {
-		return nil, fmt.Errorf("msgpack: unregistered ext id %d", extId)
+		return nil, UnregisteredExtError(extId)
 	}
 	v := reflect.New(typ).Elem()
 	if err := d.DecodeValue(v); err != nil {

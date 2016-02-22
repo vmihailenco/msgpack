@@ -3,8 +3,6 @@ package msgpack
 import (
 	"bufio"
 	"bytes"
-	"errors"
-	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -155,10 +153,10 @@ func (d *Decoder) decode(dst interface{}) error {
 
 	v := reflect.ValueOf(dst)
 	if !v.IsValid() {
-		return errors.New("msgpack: Decode(nil)")
+		return NullDestError(0)
 	}
 	if v.Kind() != reflect.Ptr {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", dst)
+		return NotSettableError{dst}
 	}
 	return d.DecodeValue(v)
 }
@@ -174,7 +172,7 @@ func (d *Decoder) DecodeNil() error {
 		return err
 	}
 	if c != codes.Nil {
-		return fmt.Errorf("msgpack: invalid code %x decoding nil", c)
+		return InvalidCodeError{c, "nil"}
 	}
 	return nil
 }
@@ -194,7 +192,7 @@ func (d *Decoder) bool(c byte) (bool, error) {
 	if c == codes.True {
 		return true, nil
 	}
-	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
+	return false, InvalidCodeError{c, "bool"}
 }
 
 func (d *Decoder) boolValue(value reflect.Value) error {
@@ -277,7 +275,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.ext(c)
 	}
 
-	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
+	return 0, UnknownCodeError{c, "interface{}"}
 }
 
 // Skip skips next value.
@@ -320,7 +318,7 @@ func (d *Decoder) Skip() error {
 		return d.skipExt(c)
 	}
 
-	return fmt.Errorf("msgpack: unknown code %x", c)
+	return UnknownCodeError{c, ""}
 }
 
 // peekCode returns the next Msgpack code. See

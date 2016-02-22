@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"fmt"
 	"io"
 	"reflect"
 
@@ -123,7 +122,7 @@ func (d *Decoder) bytesLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding bytes length", c)
+	return 0, InvalidCodeError{c, "bytes length"}
 }
 
 func (d *Decoder) DecodeBytes() ([]byte, error) {
@@ -233,7 +232,7 @@ func (d *Decoder) sliceLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
+	return 0, InvalidCodeError{c, "array length"}
 }
 
 func (d *Decoder) decodeIntoStrings(sp *[]string) error {

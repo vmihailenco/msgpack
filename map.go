@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"fmt"
 	"reflect"
 
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
@@ -94,7 +93,7 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
+	return 0, InvalidCodeError{c, "map length"}
 }
 
 func (d *Decoder) decodeIntoMapStringString(mp *map[string]string) error {

@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 
@@ -91,7 +90,7 @@ func (d *Decoder) uint(c byte) (uint64, error) {
 	case codes.Uint64, codes.Int64:
 		return d.uint64()
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
+	return 0, InvalidCodeError{c, "uint64"}
 }
 
 func (d *Decoder) uint64Value(value reflect.Value) error {
@@ -138,7 +137,7 @@ func (d *Decoder) int(c byte) (int64, error) {
 		n, err := d.uint64()
 		return int64(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding int64", c)
+	return 0, InvalidCodeError{c, "int64"}
 }
 
 func (d *Decoder) int64Value(v reflect.Value) error {
@@ -160,7 +159,7 @@ func (d *Decoder) DecodeFloat32() (float32, error) {
 
 func (d *Decoder) float32(c byte) (float32, error) {
 	if c != codes.Float {
-		return 0, fmt.Errorf("msgpack: invalid code %x decoding float32", c)
+		return 0, InvalidCodeError{c, "float32"}
 	}
 	b, err := d.uint32()
 	if err != nil {
@@ -192,7 +191,7 @@ func (d *Decoder) float64(c byte) (float64, error) {
 		return float64(n), err
 	}
 	if c != codes.Double {
-		return 0, fmt.Errorf("msgpack: invalid code %x decoding float64", c)
+		return 0, InvalidCodeError{c, "float64"}
 	}
 	b, err := d.uint64()
 	if err != nil {
