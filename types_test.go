@@ -1,11 +1,10 @@
-package msgpack_test
+package msgpack
 
 import (
 	"reflect"
 	"testing"
 	"time"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
@@ -14,11 +13,11 @@ import (
 type intSet map[int]struct{}
 
 var (
-	_ msgpack.CustomEncoder = (*intSet)(nil)
-	_ msgpack.CustomDecoder = (*intSet)(nil)
+	_ CustomEncoder = (*intSet)(nil)
+	_ CustomDecoder = (*intSet)(nil)
 )
 
-func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (set intSet) EncodeMsgpack(enc *Encoder) error {
 	slice := make([]int, 0, len(set))
 	for n, _ := range set {
 		slice = append(slice, n)
@@ -26,7 +25,7 @@ func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.Encode(slice)
 }
 
-func (setptr *intSet) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (setptr *intSet) DecodeMsgpack(dec *Decoder) error {
 	n, err := dec.DecodeSliceLen()
 	if err != nil {
 		return err
@@ -54,15 +53,15 @@ type CompactEncodingTest struct {
 }
 
 var (
-	_ msgpack.CustomEncoder = (*CompactEncodingTest)(nil)
-	_ msgpack.CustomDecoder = (*CompactEncodingTest)(nil)
+	_ CustomEncoder = (*CompactEncodingTest)(nil)
+	_ CustomDecoder = (*CompactEncodingTest)(nil)
 )
 
-func (s *CompactEncodingTest) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (s *CompactEncodingTest) EncodeMsgpack(enc *Encoder) error {
 	return enc.Encode(s.str, s.ref, s.num)
 }
 
-func (s *CompactEncodingTest) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (s *CompactEncodingTest) DecodeMsgpack(dec *Decoder) error {
 	return dec.Decode(&s.str, &s.ref, &s.num)
 }
 
@@ -126,7 +125,7 @@ func init() {
 
 func TestBin(t *testing.T) {
 	for _, test := range binTests {
-		b, err := msgpack.Marshal(test.in)
+		b, err := Marshal(test.in)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -255,7 +254,7 @@ func TestTypes(t *testing.T) {
 	for _, test := range typeTests {
 		test.T = t
 
-		b, err := msgpack.Marshal(test.in)
+		b, err := Marshal(test.in)
 		if test.encErr != "" {
 			test.assertErr(err, test.encErr)
 			continue
@@ -264,7 +263,7 @@ func TestTypes(t *testing.T) {
 			t.Fatalf("Marshal failed: %s (in=%#v)", err, test.in)
 		}
 
-		err = msgpack.Unmarshal(b, test.out)
+		err = Unmarshal(b, test.out)
 		if test.decErr != "" {
 			test.assertErr(err, test.decErr)
 			continue

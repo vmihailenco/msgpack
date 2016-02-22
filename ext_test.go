@@ -1,14 +1,13 @@
-package msgpack_test
+package msgpack
 
 import (
 	"testing"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 func init() {
-	msgpack.RegisterExt(0, extTest{})
+	RegisterExt(0, extTest{})
 }
 
 func TestRegisterExtPanic(t *testing.T) {
@@ -23,7 +22,7 @@ func TestRegisterExtPanic(t *testing.T) {
 			t.Fatalf("got %q, wanted %q", got, wanted)
 		}
 	}()
-	msgpack.RegisterExt(0, extTest{})
+	RegisterExt(0, extTest{})
 }
 
 type extTest struct {
@@ -36,13 +35,13 @@ type extTest2 struct {
 
 func TestExt(t *testing.T) {
 	for _, v := range []interface{}{extTest{"hello"}, &extTest{"hello"}} {
-		b, err := msgpack.Marshal(v)
+		b, err := Marshal(v)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		var dst interface{}
-		err = msgpack.Unmarshal(b, &dst)
+		err = Unmarshal(b, &dst)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -61,7 +60,7 @@ func TestUnknownExt(t *testing.T) {
 	b := []byte{codes.FixExt1, 1, 0}
 
 	var dst interface{}
-	err := msgpack.Unmarshal(b, &dst)
+	err := Unmarshal(b, &dst)
 	if err == nil {
 		t.Fatalf("got nil, wanted error")
 	}

@@ -1,4 +1,4 @@
-package msgpack_test
+package msgpack
 
 import (
 	"bufio"
@@ -11,7 +11,6 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
@@ -23,16 +22,16 @@ func Test(t *testing.T) { TestingT(t) }
 
 type MsgpackTest struct {
 	buf *bytes.Buffer
-	enc *msgpack.Encoder
-	dec *msgpack.Decoder
+	enc *Encoder
+	dec *Decoder
 }
 
 var _ = Suite(&MsgpackTest{})
 
 func (t *MsgpackTest) SetUpTest(c *C) {
 	t.buf = &bytes.Buffer{}
-	t.enc = msgpack.NewEncoder(t.buf)
-	t.dec = msgpack.NewDecoder(bufio.NewReader(t.buf))
+	t.enc = NewEncoder(t.buf)
+	t.dec = NewDecoder(bufio.NewReader(t.buf))
 }
 
 func (t *MsgpackTest) TestUint64(c *C) {
@@ -497,19 +496,19 @@ type wrapperStruct struct {
 }
 
 var (
-	_ msgpack.CustomEncoder = &coderStruct{}
-	_ msgpack.CustomDecoder = &coderStruct{}
+	_ CustomEncoder = (*coderStruct)(nil)
+	_ CustomDecoder = (*coderStruct)(nil)
 )
 
 func (s *coderStruct) Name() string {
 	return s.name
 }
 
-func (s *coderStruct) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (s *coderStruct) EncodeMsgpack(enc *Encoder) error {
 	return enc.Encode(s.name)
 }
 
-func (s *coderStruct) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (s *coderStruct) DecodeMsgpack(dec *Decoder) error {
 	return dec.Decode(&s.name)
 }
 
@@ -595,12 +594,12 @@ func TestEmbedding(t *testing.T) {
 	}
 	var out Struct3
 
-	b, err := msgpack.Marshal(in)
+	b, err := Marshal(in)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = msgpack.Unmarshal(b, &out)
+	err = Unmarshal(b, &out)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -642,9 +641,9 @@ func (t *MsgpackTest) TestMapStringInterface(c *C) {
 
 func (t *MsgpackTest) TestMapStringInterface2(c *C) {
 	buf := &bytes.Buffer{}
-	enc := msgpack.NewEncoder(buf)
-	dec := msgpack.NewDecoder(buf)
-	dec.DecodeMapFunc = func(d *msgpack.Decoder) (interface{}, error) {
+	enc := NewEncoder(buf)
+	dec := NewDecoder(buf)
+	dec.DecodeMapFunc = func(d *Decoder) (interface{}, error) {
 		n, err := d.DecodeMapLen()
 		if err != nil {
 			return nil, err
