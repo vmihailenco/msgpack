@@ -366,12 +366,15 @@ func encodePtrValue(e *Encoder, v reflect.Value) error {
 }
 
 func decodePtrValue(d *Decoder, v reflect.Value) error {
+	if d.gotNilCode() {
+		v.Set(reflect.New(v.Type()).Elem())
+		return nil
+	}
 	if v.IsNil() {
 		if !v.CanSet() {
 			return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
 		}
-		vv := reflect.New(v.Type().Elem())
-		v.Set(vv)
+		v.Set(reflect.New(v.Type().Elem()))
 	}
 	return d.DecodeValue(v.Elem())
 }

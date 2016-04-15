@@ -177,6 +177,7 @@ type typeTest struct {
 	encErr  string
 	decErr  string
 	wantnil bool
+	wanted  interface{}
 }
 
 func (t *typeTest) assertErr(err error, s string) {
@@ -196,6 +197,9 @@ var (
 		{in: nil, out: 0, decErr: "msgpack: Decode(nonsettable int)"},
 		{in: nil, out: (*int)(nil), decErr: "msgpack: Decode(nonsettable *int)"},
 		{in: nil, out: new(chan bool), decErr: "msgpack: Decode(unsupported chan bool)"},
+
+		{in: nil, out: new(int), wanted: int(0)},
+		{in: nil, out: new(*int), wantnil: true},
 
 		{in: []int(nil), out: new([]int)},
 		{in: make([]int, 0), out: new([]int)},
@@ -273,19 +277,22 @@ func TestTypes(t *testing.T) {
 			t.Fatalf("Unmarshal failed: %s (in=%#v out=%#v)", err, test.in, test.out)
 		}
 
-		out := deref(test.out)
 		if test.wantnil {
-			v := reflect.ValueOf(out)
+			v := reflect.ValueOf(test.out).Elem()
 			if v.IsNil() {
 				return
 			}
-			t.Fatalf("got %#v, wanted nil", out)
+			t.Fatalf("got %#v, wanted nil", v.Interface())
 			return
 		}
 
-		in := deref(test.in)
-		if !reflect.DeepEqual(out, in) {
-			t.Fatalf("%#v != %#v", out, in)
+		out := deref(test.out)
+		wanted := test.wanted
+		if wanted == nil {
+			wanted = deref(test.in)
+		}
+		if !reflect.DeepEqual(out, wanted) {
+			t.Fatalf("%#v != %#v", out, wanted)
 		}
 	}
 }
