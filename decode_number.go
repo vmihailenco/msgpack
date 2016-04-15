@@ -66,6 +66,9 @@ func (d *Decoder) DecodeUint64() (uint64, error) {
 }
 
 func (d *Decoder) uint(c byte) (uint64, error) {
+	if c == codes.Nil {
+		return 0, nil
+	}
 	if codes.IsFixedNum(c) {
 		return uint64(int8(c)), nil
 	}
@@ -112,6 +115,9 @@ func (d *Decoder) DecodeInt64() (int64, error) {
 }
 
 func (d *Decoder) int(c byte) (int64, error) {
+	if c == codes.Nil {
+		return 0, nil
+	}
 	if codes.IsFixedNum(c) {
 		return int64(int8(c)), nil
 	}
