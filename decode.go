@@ -237,7 +237,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	if codes.IsFixedNum(c) {
-		if c >= 0 {
+		if int8(c) >= 0 {
 			return d.uint(c)
 		}
 		return d.int(c)
