@@ -221,10 +221,10 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 	return nil
 }
 
-// Decodes value into interface. Possible value types are:
+// DecodeInterface decodes value into interface. Possible value types are:
 //   - nil,
-//   - int64,
-//   - uint64,
+//   - int64 for negative numbers,
+//   - uint64 for positive numbers,
 //   - bool,
 //   - float32 and float64,
 //   - string,
@@ -237,10 +237,10 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	if codes.IsFixedNum(c) {
-		if int8(c) >= 0 {
-			return d.uint(c)
+		if int8(c) < 0 {
+			return d.int(c)
 		}
-		return d.int(c)
+		return d.uint(c)
 	}
 	if codes.IsFixedMap(c) {
 		d.r.UnreadByte()
