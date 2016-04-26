@@ -58,7 +58,7 @@ func (e *Encoder) EncodeInt64(v int64) error {
 	if v >= 0 {
 		return e.EncodeUint64(uint64(v))
 	}
-	if v >= -32 {
+	if v >= int64(int8(codes.NegFixedNumLow)) {
 		return e.w.WriteByte(byte(v))
 	}
 	if v >= math.MinInt8 {

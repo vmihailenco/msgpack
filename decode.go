@@ -237,10 +237,10 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	if codes.IsFixedNum(c) {
-		if int8(c) >= 0 {
-			return d.uint(c)
+		if int8(c) < 0 {
+			return d.int(c)
 		}
-		return d.int(c)
+		return d.uint(c)
 	}
 	if codes.IsFixedMap(c) {
 		d.r.UnreadByte()

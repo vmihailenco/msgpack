@@ -134,15 +134,12 @@ func (t *MsgpackTest) TestInt64(c *C) {
 		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
 
 		c.Assert(t.enc.Encode(r.v), IsNil)
-		iface, err := t.dec.DecodeInterface()
+		v, err := t.dec.DecodeInterface()
 		c.Assert(err, IsNil)
-		switch iface.(type) {
-		case int64:
-			c.Assert(iface, Equals, r.v)
-		case uint64:
-			c.Assert(iface, Equals, uint64(r.v))
-		default:
-			panic("not reached")
+		if r.v < 0 {
+			c.Assert(v, Equals, r.v)
+		} else {
+			c.Assert(v, Equals, uint64(r.v))
 		}
 	}
 }
