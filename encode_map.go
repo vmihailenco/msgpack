@@ -6,30 +6,6 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
-func decodeMap(d *Decoder) (interface{}, error) {
-	n, err := d.DecodeMapLen()
-	if err != nil {
-		return nil, err
-	}
-	if n == -1 {
-		return nil, nil
-	}
-
-	m := make(map[interface{}]interface{}, n)
-	for i := 0; i < n; i++ {
-		mk, err := d.DecodeInterface()
-		if err != nil {
-			return nil, err
-		}
-		mv, err := d.DecodeInterface()
-		if err != nil {
-			return nil, err
-		}
-		m[mk] = mv
-	}
-	return m, nil
-}
-
 func (e *Encoder) EncodeMapLen(l int) error {
 	if l < 16 {
 		return e.w.WriteByte(codes.FixedMapLow | byte(l))
@@ -41,6 +17,9 @@ func (e *Encoder) EncodeMapLen(l int) error {
 }
 
 func (e *Encoder) encodeMapStringString(m map[string]string) error {
+	if m == nil {
+		return e.EncodeNil()
+	}
 	if err := e.EncodeMapLen(len(m)); err != nil {
 		return err
 	}
@@ -55,15 +34,18 @@ func (e *Encoder) encodeMapStringString(m map[string]string) error {
 	return nil
 }
 
-func (e *Encoder) encodeMap(value reflect.Value) error {
-	if err := e.EncodeMapLen(value.Len()); err != nil {
+func (e *Encoder) encodeMap(v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	if err := e.EncodeMapLen(v.Len()); err != nil {
 		return err
 	}
-	for _, key := range value.MapKeys() {
+	for _, key := range v.MapKeys() {
 		if err := e.EncodeValue(key); err != nil {
 			return err
 		}
-		if err := e.EncodeValue(value.MapIndex(key)); err != nil {
+		if err := e.EncodeValue(v.MapIndex(key)); err != nil {
 			return err
 		}
 	}

@@ -1,6 +1,7 @@
 package msgpack_test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -91,6 +92,7 @@ type binTest struct {
 var binTests = []binTest{
 	{nil, []byte{codes.Nil}},
 
+	{[]byte(nil), []byte{codes.Nil}},
 	{[]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
 	{[3]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
 
@@ -98,6 +100,9 @@ var binTests = []binTest{
 
 	{intSet{}, []byte{codes.FixedArrayLow}},
 	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
+
+	{map[string]string(nil), []byte{codes.Nil}},
+	{map[string]string(nil), []byte{codes.Nil}},
 
 	{&CompactEncodingTest{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
 	{
@@ -132,7 +137,7 @@ func TestBin(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(b, test.wanted) {
-			t.Fatalf("%q != %q (in=%v)", b, test.wanted, test.in)
+			t.Fatalf("%q != %q (in=%#v)", b, test.wanted, test.in)
 		}
 	}
 }
@@ -180,12 +185,16 @@ type typeTest struct {
 	wanted  interface{}
 }
 
+func (t typeTest) String() string {
+	return fmt.Sprintf("in=%#v, out=%#v", t.in, t.out)
+}
+
 func (t *typeTest) assertErr(err error, s string) {
 	if err == nil {
-		t.Fatalf("got %v, wanted %q", err, s)
+		t.Fatalf("got %v error, wanted %q", err, s)
 	}
 	if err.Error() != s {
-		t.Fatalf("got %q, wanted %q", err, s)
+		t.Fatalf("got %q error, wanted %q", err, s)
 	}
 }
 
@@ -201,9 +210,11 @@ var (
 		{in: nil, out: new(int), wanted: int(0)},
 		{in: nil, out: new(*int), wantnil: true},
 
-		{in: []int(nil), out: new([]int)},
+		{in: nil, out: new([]int), wantnil: true},
+		{in: nil, out: &[]int{1, 2}, wantnil: true},
 		{in: make([]int, 0), out: new([]int)},
 		{in: make([]int, 1000), out: new([]int)},
+
 		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
 
@@ -211,9 +222,14 @@ var (
 		{in: []byte(nil), out: new([]byte)},
 		{in: []byte{1, 2, 3}, out: new([]byte)},
 
-		{in: nil, out: new([3]byte), wantnil: true},
+		{in: nil, out: new([3]byte), wanted: [3]byte{}},
 		{in: [3]byte{1, 2, 3}, out: new([3]byte)},
-		{in: [3]byte{1, 2, 3}, out: new([2]byte)},
+		{in: [3]byte{1, 2, 3}, out: new([2]byte), wanted: [2]byte{1, 2}},
+
+		{in: nil, out: new(map[string]string), wantnil: true},
+		{in: nil, out: new(map[int]int), wantnil: true},
+		{in: nil, out: &map[string]string{"foo": "bar"}, wantnil: true},
+		{in: nil, out: &map[int]int{1: 2}, wantnil: true},
 
 		{in: stringSlice{"foo", "bar"}, out: new(stringSlice)},
 		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
@@ -274,16 +290,16 @@ func TestTypes(t *testing.T) {
 			continue
 		}
 		if err != nil {
-			t.Fatalf("Unmarshal failed: %s (in=%#v out=%#v)", err, test.in, test.out)
+			t.Fatalf("Unmarshal failed: %s (%s)", err, test)
 		}
 
 		if test.wantnil {
 			v := reflect.ValueOf(test.out).Elem()
 			if v.IsNil() {
-				return
+				continue
 			}
 			t.Fatalf("got %#v, wanted nil", v.Interface())
-			return
+			continue
 		}
 
 		out := deref(test.out)
@@ -292,7 +308,7 @@ func TestTypes(t *testing.T) {
 			wanted = deref(test.in)
 		}
 		if !reflect.DeepEqual(out, wanted) {
-			t.Fatalf("%#v != %#v", out, wanted)
+			t.Fatalf("%#v != %#v (%s)", out, wanted, test)
 		}
 	}
 }

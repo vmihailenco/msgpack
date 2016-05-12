@@ -7,6 +7,30 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+func decodeMap(d *Decoder) (interface{}, error) {
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return nil, err
+	}
+	if n == -1 {
+		return nil, nil
+	}
+
+	m := make(map[interface{}]interface{}, n)
+	for i := 0; i < n; i++ {
+		mk, err := d.DecodeInterface()
+		if err != nil {
+			return nil, err
+		}
+		mv, err := d.DecodeInterface()
+		if err != nil {
+			return nil, err
+		}
+		m[mk] = mv
+	}
+	return m, nil
+}
+
 func (d *Decoder) DecodeMapLen() (int, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -33,20 +57,20 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
 }
 
-func (d *Decoder) decodeIntoMapStringString(mp *map[string]string) error {
+func (d *Decoder) decodeIntoMapStringString(mptr *map[string]string) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err
 	}
 	if n == -1 {
+		*mptr = nil
 		return nil
 	}
 
-	// TODO(vmihailenco): simpler way?
-	m := *mp
+	m := *mptr
 	if m == nil {
-		*mp = make(map[string]string, n)
-		m = *mp
+		*mptr = make(map[string]string, n)
+		m = *mptr
 	}
 
 	for i := 0; i < n; i++ {
@@ -89,11 +113,13 @@ func (d *Decoder) mapValue(v reflect.Value) error {
 	if err != nil {
 		return err
 	}
+
+	typ := v.Type()
 	if n == -1 {
+		v.Set(reflect.Zero(typ))
 		return nil
 	}
 
-	typ := v.Type()
 	if v.IsNil() {
 		v.Set(reflect.MakeMap(typ))
 	}
