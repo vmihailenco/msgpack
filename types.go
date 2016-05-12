@@ -62,7 +62,7 @@ func init() {
 		reflect.Func:          encodeUnsupportedValue,
 		reflect.Interface:     encodeInterfaceValue,
 		reflect.Map:           encodeMapValue,
-		reflect.Ptr:           encodePtrValue,
+		reflect.Ptr:           encodeUnsupportedValue,
 		reflect.Slice:         encodeSliceValue,
 		reflect.String:        encodeStringValue,
 		reflect.Struct:        encodeStructValue,
@@ -89,7 +89,7 @@ func init() {
 		reflect.Func:          decodeUnsupportedValue,
 		reflect.Interface:     decodeInterfaceValue,
 		reflect.Map:           decodeMapValue,
-		reflect.Ptr:           decodePtrValue,
+		reflect.Ptr:           decodeUnsupportedValue,
 		reflect.Slice:         decodeSliceValue,
 		reflect.String:        decodeStringValue,
 		reflect.Struct:        decodeStructValue,
@@ -238,25 +238,31 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 
 //------------------------------------------------------------------------------
 
-func encodePtrValue(e *Encoder, v reflect.Value) error {
-	if v.IsNil() {
-		return e.EncodeNil()
+func ptrEncoderFunc(typ reflect.Type) encoderFunc {
+	encoder := getEncoder(typ.Elem())
+	return func(e *Encoder, v reflect.Value) error {
+		if v.IsNil() {
+			return e.EncodeNil()
+		}
+		return encoder(e, v.Elem())
 	}
-	return e.EncodeValue(v.Elem())
 }
 
-func decodePtrValue(d *Decoder, v reflect.Value) error {
-	if d.gotNilCode() {
-		v.Set(reflect.New(v.Type()).Elem())
-		return nil
-	}
-	if v.IsNil() {
-		if !v.CanSet() {
-			return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+func ptrDecoderFunc(typ reflect.Type) decoderFunc {
+	decoder := getDecoder(typ.Elem())
+	return func(d *Decoder, v reflect.Value) error {
+		if d.gotNilCode() {
+			v.Set(reflect.Zero(v.Type()))
+			return nil
 		}
-		v.Set(reflect.New(v.Type().Elem()))
+		if v.IsNil() {
+			if !v.CanSet() {
+				return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+			}
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		return decoder(d, v.Elem())
 	}
-	return d.DecodeValue(v.Elem())
 }
 
 //------------------------------------------------------------------------------
@@ -373,14 +379,14 @@ func (m *structCache) Fields(typ reflect.Type) *fields {
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {
-	enc := getTypeEncoder(typ)
+	enc := _getEncoder(typ)
 	if id := extTypeId(typ); id != -1 {
 		return makeExtEncoder(id, enc)
 	}
 	return enc
 }
 
-func getTypeEncoder(typ reflect.Type) encoderFunc {
+func _getEncoder(typ reflect.Type) encoderFunc {
 	kind := typ.Kind()
 
 	if typ.Implements(encoderType) {
@@ -399,12 +405,18 @@ func getTypeEncoder(typ reflect.Type) encoderFunc {
 		return encoder
 	}
 
-	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-		return encodeByteSliceValue
-	} else if kind == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
-		return encodeByteArrayValue
+	switch kind {
+	case reflect.Ptr:
+		return ptrEncoderFunc(typ)
+	case reflect.Slice:
+		if typ.Elem().Kind() == reflect.Uint8 {
+			return encodeByteSliceValue
+		}
+	case reflect.Array:
+		if typ.Elem().Kind() == reflect.Uint8 {
+			return encodeByteArrayValue
+		}
 	}
-
 	return valueEncoders[kind]
 }
 
@@ -428,12 +440,17 @@ func getDecoder(typ reflect.Type) decoderFunc {
 		return decoder
 	}
 
-	if kind == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-		return decodeByteSliceValue
+	switch kind {
+	case reflect.Ptr:
+		return ptrDecoderFunc(typ)
+	case reflect.Slice:
+		if typ.Elem().Kind() == reflect.Uint8 {
+			return decodeByteSliceValue
+		}
+	case reflect.Array:
+		if typ.Elem().Kind() == reflect.Uint8 {
+			return decodeByteArrayValue
+		}
 	}
-	if kind == reflect.Array && typ.Elem().Kind() == reflect.Uint8 {
-		return decodeByteArrayValue
-	}
-
 	return valueDecoders[kind]
 }
