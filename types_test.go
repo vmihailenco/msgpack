@@ -2,6 +2,7 @@ package msgpack_test
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -199,6 +200,7 @@ func (t *typeTest) assertErr(err error, s string) {
 }
 
 var (
+	uri, _    = url.Parse("https://github.com/vmihailenco/msgpack")
 	typeTests = []typeTest{
 		{in: make(chan bool), encErr: "msgpack: Encode(unsupported chan bool)"},
 
@@ -257,6 +259,8 @@ var (
 			in:  &CompactEncodingFieldTest{Field: CompactEncodingTest{"a", nil, 1}},
 			out: new(CompactEncodingFieldTest),
 		},
+
+		{in: uri, out: new(url.URL)},
 	}
 )
 

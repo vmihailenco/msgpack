@@ -329,7 +329,7 @@ func (d *Decoder) Skip() error {
 
 // peekCode returns the next Msgpack code. See
 // https://github.com/msgpack/msgpack/blob/master/spec.md#formats for details.
-func (d *Decoder) peekCode() (code byte, err error) {
+func (d *Decoder) PeekCode() (code byte, err error) {
 	code, err = d.r.ReadByte()
 	if err != nil {
 		return 0, err
@@ -338,7 +338,7 @@ func (d *Decoder) peekCode() (code byte, err error) {
 }
 
 func (d *Decoder) gotNilCode() bool {
-	code, err := d.peekCode()
+	code, err := d.PeekCode()
 	return err == nil && code == codes.Nil
 }
 
