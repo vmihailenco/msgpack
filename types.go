@@ -253,7 +253,7 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	return func(d *Decoder, v reflect.Value) error {
 		if d.gotNilCode() {
 			v.Set(reflect.Zero(v.Type()))
-			return nil
+			return d.DecodeNil()
 		}
 		if v.IsNil() {
 			if !v.CanSet() {

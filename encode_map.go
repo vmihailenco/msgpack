@@ -71,30 +71,3 @@ func (e *Encoder) encodeStruct(strct reflect.Value) error {
 
 	return nil
 }
-
-func (d *Decoder) structValue(strct reflect.Value) error {
-	n, err := d.DecodeMapLen()
-	if err != nil {
-		return err
-	}
-
-	fields := structs.Fields(strct.Type())
-
-	for i := 0; i < n; i++ {
-		name, err := d.DecodeString()
-		if err != nil {
-			return err
-		}
-		if f := fields.Table[name]; f != nil {
-			if err := f.DecodeValue(d, strct); err != nil {
-				return err
-			}
-		} else {
-			if err := d.Skip(); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
