@@ -223,9 +223,9 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 
 // DecodeInterface decodes value into interface. Possible value types are:
 //   - nil,
+//   - bool,
 //   - int64 for negative numbers,
 //   - uint64 for positive numbers,
-//   - bool,
 //   - float32 and float64,
 //   - string,
 //   - slices of any of the above,
@@ -272,8 +272,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	case codes.Str8, codes.Str16, codes.Str32:
 		return d.string(c)
 	case codes.Array16, codes.Array32:
-		d.r.UnreadByte()
-		return d.DecodeSlice()
+		return d.decodeSlice(c)
 	case codes.Map16, codes.Map32:
 		d.r.UnreadByte()
 		return d.DecodeMap()
