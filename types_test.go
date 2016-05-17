@@ -218,21 +218,24 @@ var (
 		{in: make([]int, 0), out: new([]int)},
 		{in: make([]int, 1000), out: new([]int)},
 
-		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
-		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
-
 		{in: nil, out: new([]byte), wantnil: true},
-		{in: []byte(nil), out: new([]byte)},
+		{in: []byte(nil), out: new([]byte), wantnil: true},
+		{in: []byte(nil), out: &[]byte{}, wantnil: true},
 		{in: []byte{1, 2, 3}, out: new([]byte)},
 
 		{in: nil, out: new([3]byte), wanted: [3]byte{}},
 		{in: [3]byte{1, 2, 3}, out: new([3]byte)},
 		{in: [3]byte{1, 2, 3}, out: new([2]byte), wanted: [2]byte{1, 2}},
 
+		{in: nil, out: new([]interface{}), wantnil: true},
+		{in: nil, out: &[]interface{}{}, wantnil: true},
+		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
+
 		{in: nil, out: new(map[string]string), wantnil: true},
 		{in: nil, out: new(map[int]int), wantnil: true},
 		{in: nil, out: &map[string]string{"foo": "bar"}, wantnil: true},
 		{in: nil, out: &map[int]int{1: 2}, wantnil: true},
+		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
 
 		{in: stringSlice{"foo", "bar"}, out: new(stringSlice)},
 		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
@@ -265,11 +268,8 @@ var (
 	}
 )
 
-func deref(viface interface{}) interface{} {
-	v := reflect.ValueOf(viface)
-	for v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
+func indirect(viface interface{}) interface{} {
+	v := reflect.Indirect(reflect.ValueOf(viface))
 	if v.IsValid() {
 		return v.Interface()
 	}
@@ -299,18 +299,17 @@ func TestTypes(t *testing.T) {
 		}
 
 		if test.wantnil {
-			v := reflect.ValueOf(test.out).Elem()
+			v := reflect.Indirect(reflect.ValueOf(test.out))
 			if v.IsNil() {
 				continue
 			}
-			t.Fatalf("got %#v, wanted nil", v.Interface())
-			continue
+			t.Fatalf("got %#v, wanted nil (%s)", test.out, test)
 		}
 
-		out := deref(test.out)
+		out := indirect(test.out)
 		wanted := test.wanted
 		if wanted == nil {
-			wanted = deref(test.in)
+			wanted = indirect(test.in)
 		}
 		if !reflect.DeepEqual(out, wanted) {
 			t.Fatalf("%#v != %#v (%s)", out, wanted, test)

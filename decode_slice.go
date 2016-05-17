@@ -170,11 +170,18 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 }
 
 func (d *Decoder) DecodeSlice() ([]interface{}, error) {
-	n, err := d.DecodeSliceLen()
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return nil, err
 	}
+	return d.decodeSlice(c)
+}
 
+func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
+	n, err := d.sliceLen(c)
+	if err != nil {
+		return nil, err
+	}
 	if n == -1 {
 		return nil, nil
 	}
