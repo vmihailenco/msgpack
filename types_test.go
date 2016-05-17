@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -313,6 +314,26 @@ func TestTypes(t *testing.T) {
 		}
 		if !reflect.DeepEqual(out, wanted) {
 			t.Fatalf("%#v != %#v (%s)", out, wanted, test)
+		}
+	}
+}
+
+func TestStrings(t *testing.T) {
+	for _, n := range []int{0, 1, 31, 32, 255, 256, 65535, 65536} {
+		in := strings.Repeat("x", n)
+		b, err := msgpack.Marshal(in)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var out string
+		err = msgpack.Unmarshal(b, &out)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if out != in {
+			t.Fatalf("%q != %q", out, in)
 		}
 	}
 }

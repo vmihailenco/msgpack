@@ -19,7 +19,7 @@ func (d *Decoder) DecodeBytesLen() (int, error) {
 func (d *Decoder) bytesLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
-	} else if c >= codes.FixedStrLow && c <= codes.FixedStrHigh {
+	} else if codes.IsFixedString(c) {
 		return int(c & codes.FixedStrMask), nil
 	}
 	switch c {
