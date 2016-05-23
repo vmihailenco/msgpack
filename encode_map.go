@@ -8,7 +8,7 @@ import (
 
 func encodeMapValue(e *Encoder, v reflect.Value) error {
 	if e.EncodeMapFunc != nil {
-		return e.EncodeMapFunc(e, v)
+		return e.EncodeMapFunc(v)
 	}
 	if v.IsNil() {
 		return e.EncodeNil()
@@ -29,7 +29,7 @@ func encodeMapValue(e *Encoder, v reflect.Value) error {
 
 func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
 	if e.EncodeMapFunc != nil {
-		return e.EncodeMapFunc(e, v)
+		return e.EncodeMapFunc(v)
 	}
 	if v.IsNil() {
 		return e.EncodeNil()

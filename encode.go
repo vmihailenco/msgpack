@@ -35,7 +35,7 @@ func Marshal(v ...interface{}) ([]byte, error) {
 }
 
 type Encoder struct {
-	EncodeMapFunc func(*Encoder, reflect.Value) error
+	EncodeMapFunc func(reflect.Value) error
 
 	w   writer
 	buf []byte
