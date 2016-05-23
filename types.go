@@ -228,16 +228,6 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 
 //------------------------------------------------------------------------------
 
-func encodeMapValue(e *Encoder, v reflect.Value) error {
-	return e.encodeMap(v)
-}
-
-func decodeMapValue(d *Decoder, v reflect.Value) error {
-	return d.mapValue(v)
-}
-
-//------------------------------------------------------------------------------
-
 func ptrEncoderFunc(typ reflect.Type) encoderFunc {
 	encoder := getEncoder(typ.Elem())
 	return func(e *Encoder, v reflect.Value) error {
@@ -415,6 +405,10 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 	case reflect.Array:
 		if typ.Elem().Kind() == reflect.Uint8 {
 			return encodeByteArrayValue
+		}
+	case reflect.Map:
+		if typ.Key().Kind() == reflect.String && typ.Elem().Kind() == reflect.String {
+			return encodeMapStringStringValue
 		}
 	}
 	return valueEncoders[kind]

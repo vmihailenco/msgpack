@@ -7,6 +7,41 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+func decodeMapValue(d *Decoder, v reflect.Value) error {
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return err
+	}
+
+	typ := v.Type()
+	if n == -1 {
+		v.Set(reflect.Zero(typ))
+		return nil
+	}
+
+	if v.IsNil() {
+		v.Set(reflect.MakeMap(typ))
+	}
+	keyType := typ.Key()
+	valueType := typ.Elem()
+
+	for i := 0; i < n; i++ {
+		mk := reflect.New(keyType).Elem()
+		if err := d.DecodeValue(mk); err != nil {
+			return err
+		}
+
+		mv := reflect.New(valueType).Elem()
+		if err := d.DecodeValue(mv); err != nil {
+			return err
+		}
+
+		v.SetMapIndex(mk, mv)
+	}
+
+	return nil
+}
+
 func decodeMap(d *Decoder) (interface{}, error) {
 	n, err := d.DecodeMapLen()
 	if err != nil {
@@ -105,41 +140,6 @@ func (d *Decoder) skipMap(c byte) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (d *Decoder) mapValue(v reflect.Value) error {
-	n, err := d.DecodeMapLen()
-	if err != nil {
-		return err
-	}
-
-	typ := v.Type()
-	if n == -1 {
-		v.Set(reflect.Zero(typ))
-		return nil
-	}
-
-	if v.IsNil() {
-		v.Set(reflect.MakeMap(typ))
-	}
-	keyType := typ.Key()
-	valueType := typ.Elem()
-
-	for i := 0; i < n; i++ {
-		mk := reflect.New(keyType).Elem()
-		if err := d.DecodeValue(mk); err != nil {
-			return err
-		}
-
-		mv := reflect.New(valueType).Elem()
-		if err := d.DecodeValue(mv); err != nil {
-			return err
-		}
-
-		v.SetMapIndex(mk, mv)
-	}
-
 	return nil
 }
 
