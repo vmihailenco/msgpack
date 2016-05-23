@@ -19,28 +19,24 @@ type byteWriter struct {
 	io.Writer
 }
 
-func (w *byteWriter) WriteByte(b byte) error {
-	n, err := w.Write([]byte{b})
-	if err != nil {
-		return err
-	}
-	if n != 1 {
-		return io.ErrShortWrite
-	}
-	return nil
+func (w byteWriter) WriteByte(b byte) error {
+	_, err := w.Write([]byte{b})
+	return err
 }
 
-func (w *byteWriter) WriteString(s string) (int, error) {
+func (w byteWriter) WriteString(s string) (int, error) {
 	return w.Write([]byte(s))
 }
 
 func Marshal(v ...interface{}) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	err := NewEncoder(buf).Encode(v...)
+	var buf bytes.Buffer
+	err := NewEncoder(&buf).Encode(v...)
 	return buf.Bytes(), err
 }
 
 type Encoder struct {
+	EncodeMapFunc func(*Encoder, reflect.Value) error
+
 	w   writer
 	buf []byte
 }
@@ -48,7 +44,7 @@ type Encoder struct {
 func NewEncoder(w io.Writer) *Encoder {
 	bw, ok := w.(writer)
 	if !ok {
-		bw = &byteWriter{Writer: w}
+		bw = byteWriter{Writer: w}
 	}
 	return &Encoder{
 		w:   bw,
@@ -89,8 +85,6 @@ func (e *Encoder) encode(v interface{}) error {
 		return e.EncodeFloat64(v)
 	case []string:
 		return e.encodeStringSlice(v)
-	case map[string]string:
-		return e.encodeMapStringString(v)
 	case time.Duration:
 		return e.EncodeInt64(int64(v))
 	case time.Time:

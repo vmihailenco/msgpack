@@ -29,7 +29,6 @@ func Unmarshal(b []byte, v ...interface{}) error {
 }
 
 type Decoder struct {
-	// TODO: add map len arg
 	DecodeMapFunc func(*Decoder) (interface{}, error)
 
 	r   bufReader
