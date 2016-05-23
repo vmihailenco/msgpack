@@ -138,7 +138,7 @@ func (d *Decoder) decode(dst interface{}) error {
 	case *[]string:
 		return d.decodeIntoStrings(v)
 	case *map[string]string:
-		return d.decodeIntoMapStringString(v)
+		return d.decodeMapStringStringPtr(v)
 	case *time.Duration:
 		if v != nil {
 			vv, err := d.DecodeInt64()

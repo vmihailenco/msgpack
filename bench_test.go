@@ -165,6 +165,15 @@ func BenchmarkMapStringStringPtr(b *testing.B) {
 	benchmarkEncodeDecode(b, src, &dstptr)
 }
 
+func BenchmarkMapStringStringUgorjiGoCodec(b *testing.B) {
+	src := map[string]string{
+		"hello": "world",
+		"foo":   "bar",
+	}
+	var dst map[string]string
+	benchmarkEncodeDecodeUgorjiGoCodec(b, src, &dst)
+}
+
 func BenchmarkMapIntInt(b *testing.B) {
 	src := map[int]int{
 		1: 10,
