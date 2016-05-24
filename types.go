@@ -445,6 +445,10 @@ func getDecoder(typ reflect.Type) decoderFunc {
 		if typ.Elem().Kind() == reflect.Uint8 {
 			return decodeByteArrayValue
 		}
+	case reflect.Map:
+		if typ.Key().Kind() == reflect.String && typ.Elem().Kind() == reflect.String {
+			return decodeMapStringStringValue
+		}
 	}
 	return valueDecoders[kind]
 }

@@ -54,10 +54,7 @@ func (d *Decoder) bytes(c byte) ([]byte, error) {
 	}
 	b := make([]byte, n)
 	_, err = io.ReadFull(d.r, b)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
+	return b, err
 }
 
 func (d *Decoder) skipBytes(c byte) error {
@@ -106,10 +103,7 @@ func (d *Decoder) string(c byte) (string, error) {
 		return "", nil
 	}
 	b, err := d.readN(n)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+	return string(b), err
 }
 
 func (d *Decoder) stringValue(value reflect.Value) error {
