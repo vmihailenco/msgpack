@@ -150,6 +150,10 @@ func (d *Decoder) decode(dst interface{}) error {
 			*v, err = d.DecodeTime()
 			return err
 		}
+	case CustomDecoder:
+		if v != nil {
+			return v.DecodeMsgpack(d)
+		}
 	}
 
 	v := reflect.ValueOf(dst)
