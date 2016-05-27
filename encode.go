@@ -35,10 +35,10 @@ func Marshal(v ...interface{}) ([]byte, error) {
 }
 
 type Encoder struct {
-	EncodeMapFunc func(reflect.Value) error
-
 	w   writer
 	buf []byte
+
+	sortMapKeys bool
 }
 
 func NewEncoder(w io.Writer) *Encoder {
@@ -50,6 +50,15 @@ func NewEncoder(w io.Writer) *Encoder {
 		w:   bw,
 		buf: make([]byte, 9),
 	}
+}
+
+// SortMapKeys causes the Encoder to encode map keys in increasing order.
+// Supported map types are:
+//   - map[string]string
+//   - map[string]interface{}
+func (e *Encoder) SortMapKeys(v bool) *Encoder {
+	e.sortMapKeys = v
+	return e
 }
 
 func (e *Encoder) Encode(v ...interface{}) error {

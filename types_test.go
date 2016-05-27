@@ -1,6 +1,7 @@
 package msgpack_test
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -104,42 +105,44 @@ var binTests = []binTest{
 	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
 
 	{map[string]string(nil), []byte{codes.Nil}},
-	{map[string]string(nil), []byte{codes.Nil}},
+	{map[string]string{"a": "", "b": "", "c": "", "d": "", "e": ""}, []byte{
+		codes.FixedMapLow | 5,
+		codes.FixedStrLow | 1, 'a', codes.FixedStrLow,
+		codes.FixedStrLow | 1, 'b', codes.FixedStrLow,
+		codes.FixedStrLow | 1, 'c', codes.FixedStrLow,
+		codes.FixedStrLow | 1, 'd', codes.FixedStrLow,
+		codes.FixedStrLow | 1, 'e', codes.FixedStrLow,
+	}},
 
 	{&CompactEncodingTest{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
 	{
 		&CompactEncodingTest{"a", &CompactEncodingTest{"b", nil, 7}, 6},
 		[]byte{codes.FixedStrLow | 1, 'a', codes.FixedStrLow | 1, 'b', codes.Nil, 0x7, 0x6},
 	},
-}
 
-func init() {
-	test := binTest{in: &OmitEmptyTest{Foo: "hello"}}
-	test.wanted = append(test.wanted, codes.FixedMapLow|1)
-	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Foo")))
-	test.wanted = append(test.wanted, "Foo"...)
-	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("hello")))
-	test.wanted = append(test.wanted, "hello"...)
-	binTests = append(binTests, test)
+	{&OmitEmptyTest{Foo: "hello"}, []byte{
+		codes.FixedMapLow | 1,
+		codes.FixedStrLow | byte(len("Foo")), 'F', 'o', 'o',
+		codes.FixedStrLow | byte(len("hello")), 'h', 'e', 'l', 'l', 'o',
+	}},
 
-	test = binTest{in: &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}}
-	test.wanted = append(test.wanted, codes.FixedMapLow|1)
-	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("Bar")))
-	test.wanted = append(test.wanted, "Bar"...)
-	test.wanted = append(test.wanted, codes.FixedStrLow|byte(len("world")))
-	test.wanted = append(test.wanted, "world"...)
-	binTests = append(binTests, test)
+	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, []byte{
+		codes.FixedMapLow | 1,
+		codes.FixedStrLow | byte(len("Bar")), 'B', 'a', 'r',
+		codes.FixedStrLow | byte(len("world")), 'w', 'o', 'r', 'l', 'd',
+	}},
 }
 
 func TestBin(t *testing.T) {
 	for _, test := range binTests {
-		b, err := msgpack.Marshal(test.in)
-		if err != nil {
+		var buf bytes.Buffer
+		enc := msgpack.NewEncoder(&buf).SortMapKeys(true)
+		if err := enc.Encode(test.in); err != nil {
 			t.Fatal(err)
 		}
 
-		if !reflect.DeepEqual(b, test.wanted) {
-			t.Fatalf("%q != %q (in=%#v)", b, test.wanted, test.in)
+		if !bytes.Equal(buf.Bytes(), test.wanted) {
+			t.Fatalf("%q != %q (in=%#v)", buf.Bytes(), test.wanted, test.in)
 		}
 	}
 }
