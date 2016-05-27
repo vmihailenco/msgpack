@@ -2,20 +2,20 @@ package msgpack
 
 import (
 	"reflect"
+	"sort"
 
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
 func encodeMapValue(e *Encoder, v reflect.Value) error {
-	if e.EncodeMapFunc != nil {
-		return e.EncodeMapFunc(v)
-	}
 	if v.IsNil() {
 		return e.EncodeNil()
 	}
+
 	if err := e.EncodeMapLen(v.Len()); err != nil {
 		return err
 	}
+
 	for _, key := range v.MapKeys() {
 		if err := e.EncodeValue(key); err != nil {
 			return err
@@ -24,20 +24,24 @@ func encodeMapValue(e *Encoder, v reflect.Value) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
 func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
-	if e.EncodeMapFunc != nil {
-		return e.EncodeMapFunc(v)
-	}
 	if v.IsNil() {
 		return e.EncodeNil()
 	}
+
 	if err := e.EncodeMapLen(v.Len()); err != nil {
 		return err
 	}
+
 	m := v.Interface().(map[string]string)
+	if e.sortMapKeys {
+		return e.encodeSortedMapStringString(m)
+	}
+
 	for mk, mv := range m {
 		if err := e.EncodeString(mk); err != nil {
 			return err
@@ -46,6 +50,73 @@ func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func encodeMapStringInterfaceValue(e *Encoder, v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+
+	if err := e.EncodeMapLen(v.Len()); err != nil {
+		return err
+	}
+
+	m := v.Interface().(map[string]interface{})
+	if e.sortMapKeys {
+		return e.encodeSortedMapStringInterface(m)
+	}
+
+	for mk, mv := range m {
+		if err := e.EncodeString(mk); err != nil {
+			return err
+		}
+		if err := e.Encode(mv); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (e *Encoder) encodeSortedMapStringString(m map[string]string) error {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		err := e.EncodeString(k)
+		if err != nil {
+			return err
+		}
+		if err = e.EncodeString(m[k]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (e *Encoder) encodeSortedMapStringInterface(m map[string]interface{}) error {
+	keys := make([]string, 0, len(m))
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		err := e.EncodeString(k)
+		if err != nil {
+			return err
+		}
+		if err = e.Encode(m[k]); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

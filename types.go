@@ -407,8 +407,13 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 			return encodeByteArrayValue
 		}
 	case reflect.Map:
-		if typ.Key().Kind() == reflect.String && typ.Elem().Kind() == reflect.String {
-			return encodeMapStringStringValue
+		if typ.Key().Kind() == reflect.String {
+			switch typ.Elem().Kind() {
+			case reflect.String:
+				return encodeMapStringStringValue
+			case reflect.Interface:
+				return encodeMapStringInterfaceValue
+			}
 		}
 	}
 	return valueEncoders[kind]
@@ -446,8 +451,10 @@ func getDecoder(typ reflect.Type) decoderFunc {
 			return decodeByteArrayValue
 		}
 	case reflect.Map:
-		if typ.Key().Kind() == reflect.String && typ.Elem().Kind() == reflect.String {
-			return decodeMapStringStringValue
+		if typ.Key().Kind() == reflect.String {
+			if typ.Elem().Kind() == reflect.String {
+				return decodeMapStringStringValue
+			}
 		}
 	}
 	return valueDecoders[kind]
