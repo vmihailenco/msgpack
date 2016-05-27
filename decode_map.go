@@ -44,7 +44,7 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 
 func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
 	mptr := v.Addr().Interface().(*map[string]string)
-	return d.decodeMapStringStringPtr(mptr)
+	return d.decodeStringStringMapPtr(mptr)
 }
 
 func decodeMap(d *Decoder) (interface{}, error) {
@@ -97,7 +97,7 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
 }
 
-func (d *Decoder) decodeMapStringStringPtr(mptr *map[string]string) error {
+func (d *Decoder) decodeStringStringMapPtr(mptr *map[string]string) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err

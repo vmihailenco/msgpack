@@ -8,6 +8,32 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+var stringType = reflect.TypeOf((*string)(nil)).Elem()
+var stringSlicePtrType = reflect.TypeOf((*[]string)(nil))
+
+func decodeByteSliceValue(d *Decoder, value reflect.Value) error {
+	v, err := d.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	value.SetBytes(v)
+	return nil
+}
+
+func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
+	b, err := d.DecodeBytes()
+	if err != nil {
+		return err
+	}
+	reflect.Copy(v, reflect.ValueOf(b))
+	return nil
+}
+
+func decodeStringSliceValue(d *Decoder, v reflect.Value) error {
+	sptr := v.Addr().Convert(stringSlicePtrType).Interface().(*[]string)
+	return d.decodeStringSlicePtr(sptr)
+}
+
 func (d *Decoder) DecodeBytesLen() (int, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -68,24 +94,6 @@ func (d *Decoder) skipBytes(c byte) error {
 	return d.skipN(n)
 }
 
-func (d *Decoder) byteSliceValue(value reflect.Value) error {
-	v, err := d.DecodeBytes()
-	if err != nil {
-		return err
-	}
-	value.SetBytes(v)
-	return nil
-}
-
-func (d *Decoder) byteArrayValue(v reflect.Value) error {
-	b, err := d.DecodeBytes()
-	if err != nil {
-		return err
-	}
-	reflect.Copy(v, reflect.ValueOf(b))
-	return nil
-}
-
 func (d *Decoder) DecodeString() (string, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -140,7 +148,7 @@ func (d *Decoder) sliceLen(c byte) (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
 }
 
-func (d *Decoder) decodeIntoStrings(sp *[]string) error {
+func (d *Decoder) decodeStringSlicePtr(sptr *[]string) error {
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err
@@ -148,10 +156,13 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 	if n == -1 {
 		return nil
 	}
-	s := *sp
+
+	s := *sptr
 	if s == nil || len(s) < n {
-		s = make([]string, n)
+		*sptr = make([]string, n)
+		s = *sptr
 	}
+
 	for i := 0; i < n; i++ {
 		v, err := d.DecodeString()
 		if err != nil {
@@ -159,7 +170,7 @@ func (d *Decoder) decodeIntoStrings(sp *[]string) error {
 		}
 		s[i] = v
 	}
-	*sp = s
+
 	return nil
 }
 
