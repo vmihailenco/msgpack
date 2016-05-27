@@ -271,12 +271,6 @@ func encodeCustomValuePtr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
 		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
 	}
-	switch v.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
-		if v.IsNil() {
-			return e.EncodeNil()
-		}
-	}
 	encoder := v.Addr().Interface().(CustomEncoder)
 	return encoder.EncodeMsgpack(e)
 }

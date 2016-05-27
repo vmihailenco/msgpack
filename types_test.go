@@ -56,12 +56,13 @@ type CompactEncodingTest struct {
 	num int
 }
 
-var (
-	_ msgpack.CustomEncoder = (*CompactEncodingTest)(nil)
-	_ msgpack.CustomDecoder = (*CompactEncodingTest)(nil)
-)
+var _ msgpack.CustomEncoder = (*CompactEncodingTest)(nil)
+var _ msgpack.CustomDecoder = (*CompactEncodingTest)(nil)
 
 func (s *CompactEncodingTest) EncodeMsgpack(enc *msgpack.Encoder) error {
+	if s == nil {
+		return enc.EncodeNil()
+	}
 	return enc.Encode(s.str, s.ref, s.num)
 }
 
@@ -201,8 +202,8 @@ func (t *typeTest) assertErr(err error, s string) {
 }
 
 var (
-	uri, _    = url.Parse("https://github.com/vmihailenco/msgpack")
-	typeTests = []typeTest{
+	repoURL, _ = url.Parse("https://github.com/vmihailenco/msgpack")
+	typeTests  = []typeTest{
 		{in: make(chan bool), encErr: "msgpack: Encode(unsupported chan bool)"},
 
 		{in: nil, out: nil, decErr: "msgpack: Decode(nil)"},
@@ -228,7 +229,7 @@ var (
 		{in: [3]byte{1, 2, 3}, out: new([2]byte), wanted: [2]byte{1, 2}},
 
 		{in: nil, out: new([]interface{}), wantnil: true},
-		{in: nil, out: &[]interface{}{}, wantnil: true},
+		{in: nil, out: new([]interface{}), wantnil: true},
 		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 
 		{in: nil, out: new(map[string]string), wantnil: true},
@@ -242,10 +243,15 @@ var (
 		{in: []uint8Alias{1}, out: new([]uint8Alias)},
 
 		{in: intSet{}, out: new(intSet)},
-		{in: intSet{8: struct{}{}}, out: new(intSet)},
+		{in: intSet{42: struct{}{}}, out: new(intSet)},
+		{in: intSet{42: struct{}{}}, out: new(*intSet)},
 
 		{in: StructTest{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
+		{in: StructTest{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(*StructTest)},
+
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
+		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},
+
 		{
 			in: EmbedingTest{
 				unexported: unexported{Foo: "hello"},
@@ -253,8 +259,16 @@ var (
 			},
 			out: new(EmbedingTest),
 		},
+		{
+			in: EmbedingTest{
+				unexported: unexported{Foo: "hello"},
+				Exported:   Exported{Bar: "world"},
+			},
+			out: new(*EmbedingTest),
+		},
 
-		{in: &CompactEncodingTest{}, out: new(CompactEncodingTest)},
+		{in: new(CompactEncodingTest), out: new(CompactEncodingTest)},
+		{in: new(CompactEncodingTest), out: new(*CompactEncodingTest)},
 		{
 			in:  &CompactEncodingTest{"a", &CompactEncodingTest{"b", nil, 1}, 2},
 			out: new(CompactEncodingTest),
@@ -264,12 +278,16 @@ var (
 			out: new(CompactEncodingFieldTest),
 		},
 
-		{in: uri, out: new(url.URL)},
+		{in: repoURL, out: new(url.URL)},
+		{in: repoURL, out: new(*url.URL)},
 	}
 )
 
 func indirect(viface interface{}) interface{} {
-	v := reflect.Indirect(reflect.ValueOf(viface))
+	v := reflect.ValueOf(viface)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
 	if v.IsValid() {
 		return v.Interface()
 	}

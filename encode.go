@@ -96,6 +96,8 @@ func (e *Encoder) encode(v interface{}) error {
 		}
 		_, err = e.w.Write(b)
 		return err
+	case CustomEncoder:
+		return v.EncodeMsgpack(e)
 	}
 	return e.EncodeValue(reflect.ValueOf(v))
 }
