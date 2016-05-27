@@ -341,12 +341,12 @@ func (d *Decoder) gotNilCode() bool {
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {
-	var b []byte
 	if n <= cap(d.buf) {
-		b = d.buf[:n]
+		d.buf = d.buf[:n]
 	} else {
-		b = make([]byte, n)
+		d.buf = d.buf[:cap(d.buf)]
+		d.buf = append(d.buf, make([]byte, n-len(d.buf))...)
 	}
-	_, err := io.ReadFull(d.r, b)
-	return b, err
+	_, err := io.ReadFull(d.r, d.buf)
+	return d.buf, err
 }
