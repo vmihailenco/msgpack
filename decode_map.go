@@ -7,6 +7,12 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+var mapStringStringPtrType = reflect.TypeOf((*map[string]string)(nil))
+var mapStringStringType = mapStringStringPtrType.Elem()
+
+var mapStringInterfacePtrType = reflect.TypeOf((*map[string]interface{})(nil))
+var mapStringInterfaceType = mapStringInterfacePtrType.Elem()
+
 func decodeMapValue(d *Decoder, v reflect.Value) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
@@ -43,7 +49,7 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 }
 
 func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
-	mptr := v.Addr().Interface().(*map[string]string)
+	mptr := v.Addr().Convert(mapStringStringPtrType).Interface().(*map[string]string)
 	return d.decodeStringStringMapPtr(mptr)
 }
 
