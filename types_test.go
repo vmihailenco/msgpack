@@ -170,13 +170,15 @@ type TimeEmbedingTest struct {
 }
 
 type (
-	stringAlias string
-	uint8Alias  uint8
-	stringSlice []string
+	stringAlias        string
+	uint8Alias         uint8
+	sliceString        []string
+	mapStringString    map[string]string
+	mapStringInterface map[string]interface{}
 )
 
 type StructTest struct {
-	F1 stringSlice
+	F1 sliceString
 	F2 []string
 }
 
@@ -235,22 +237,24 @@ var (
 		{in: nil, out: new([]interface{}), wantnil: true},
 		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 
+		{in: sliceString{"foo", "bar"}, out: new(sliceString)},
+		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
+		{in: []uint8Alias{1}, out: new([]uint8Alias)},
+
 		{in: nil, out: new(map[string]string), wantnil: true},
 		{in: nil, out: new(map[int]int), wantnil: true},
 		{in: nil, out: &map[string]string{"foo": "bar"}, wantnil: true},
 		{in: nil, out: &map[int]int{1: 2}, wantnil: true},
 		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
-
-		{in: stringSlice{"foo", "bar"}, out: new(stringSlice)},
-		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
-		{in: []uint8Alias{1}, out: new([]uint8Alias)},
+		{in: mapStringString{"foo": "bar"}, out: new(mapStringString)},
+		{in: mapStringInterface{"foo": "bar"}, out: new(mapStringInterface)},
 
 		{in: intSet{}, out: new(intSet)},
 		{in: intSet{42: struct{}{}}, out: new(intSet)},
 		{in: intSet{42: struct{}{}}, out: new(*intSet)},
 
-		{in: StructTest{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
-		{in: StructTest{stringSlice{"foo", "bar"}, []string{"hello"}}, out: new(*StructTest)},
+		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
+		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(*StructTest)},
 
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},

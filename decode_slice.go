@@ -9,7 +9,7 @@ import (
 )
 
 var stringType = reflect.TypeOf((*string)(nil)).Elem()
-var stringSlicePtrType = reflect.TypeOf((*[]string)(nil))
+var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
 
 func decodeByteSliceValue(d *Decoder, value reflect.Value) error {
 	v, err := d.DecodeBytes()
@@ -30,7 +30,7 @@ func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
 }
 
 func decodeStringSliceValue(d *Decoder, v reflect.Value) error {
-	sptr := v.Addr().Convert(stringSlicePtrType).Interface().(*[]string)
+	sptr := v.Addr().Convert(sliceStringPtrType).Interface().(*[]string)
 	return d.decodeStringSlicePtr(sptr)
 }
 
