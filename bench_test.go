@@ -20,7 +20,9 @@ func benchmarkEncodeDecode(b *testing.B, src, dst interface{}) {
 	var buf bytes.Buffer
 	dec := msgpack.NewDecoder(&buf)
 	enc := msgpack.NewEncoder(&buf)
+
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		if err := enc.Encode(src); err != nil {
 			b.Fatal(err)
@@ -33,10 +35,12 @@ func benchmarkEncodeDecode(b *testing.B, src, dst interface{}) {
 
 func benchmarkEncodeDecodeUgorjiGoCodec(b *testing.B, src, dst interface{}) {
 	var buf bytes.Buffer
-	h := &gocodec.MsgpackHandle{}
+	h := new(gocodec.MsgpackHandle)
 	enc := gocodec.NewEncoder(&buf, h)
 	dec := gocodec.NewDecoder(&buf, h)
+
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		if err := enc.Encode(src); err != nil {
 			b.Fatal(err)
@@ -92,7 +96,7 @@ func BenchmarkInt0Binary(b *testing.B) {
 }
 
 func BenchmarkInt0UgorjiGoMsgpack(b *testing.B) {
-	buf := &bytes.Buffer{}
+	buf := new(bytes.Buffer)
 	dec := gomsgpack.NewDecoder(buf, nil)
 	enc := gomsgpack.NewEncoder(buf)
 	var out int
@@ -214,10 +218,8 @@ type benchmarkStruct2 struct {
 	UpdatedAt time.Time
 }
 
-var (
-	_ msgpack.CustomEncoder = &benchmarkStruct2{}
-	_ msgpack.CustomDecoder = &benchmarkStruct2{}
-)
+var _ msgpack.CustomEncoder = (*benchmarkStruct2)(nil)
+var _ msgpack.CustomDecoder = (*benchmarkStruct2)(nil)
 
 func (s *benchmarkStruct2) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.Encode(
@@ -265,7 +267,10 @@ func structForBenchmark2() *benchmarkStruct2 {
 
 func BenchmarkStructVmihailencoMsgpack(b *testing.B) {
 	in := structForBenchmark()
-	out := &benchmarkStruct{}
+	out := new(benchmarkStruct)
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		buf, err := msgpack.Marshal(in)
 		if err != nil {
@@ -298,7 +303,7 @@ func BenchmarkStructUnmarshal(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	out := &benchmarkStruct{}
+	out := new(benchmarkStruct)
 
 	b.ResetTimer()
 
@@ -312,7 +317,10 @@ func BenchmarkStructUnmarshal(b *testing.B) {
 
 func BenchmarkStructManual(b *testing.B) {
 	in := structForBenchmark2()
-	out := &benchmarkStruct2{}
+	out := new(benchmarkStruct2)
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		buf, err := msgpack.Marshal(in)
 		if err != nil {
@@ -328,7 +336,10 @@ func BenchmarkStructManual(b *testing.B) {
 
 func BenchmarkStructUgorjiGoMsgpack(b *testing.B) {
 	in := structForBenchmark()
-	out := &benchmarkStruct{}
+	out := new(benchmarkStruct)
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		buf, err := gomsgpack.Marshal(in)
 		if err != nil {
@@ -344,9 +355,12 @@ func BenchmarkStructUgorjiGoMsgpack(b *testing.B) {
 
 func BenchmarkStructUgorjiGoCodec(b *testing.B) {
 	in := structForBenchmark()
-	out := &benchmarkStruct{}
+	out := new(benchmarkStruct)
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		buf := &bytes.Buffer{}
+		buf := new(bytes.Buffer)
 		enc := gocodec.NewEncoder(buf, &gocodec.MsgpackHandle{})
 		dec := gocodec.NewDecoder(buf, &gocodec.MsgpackHandle{})
 
@@ -361,7 +375,10 @@ func BenchmarkStructUgorjiGoCodec(b *testing.B) {
 
 func BenchmarkStructJSON(b *testing.B) {
 	in := structForBenchmark()
-	out := &benchmarkStruct{}
+	out := new(benchmarkStruct)
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		buf, err := json.Marshal(in)
 		if err != nil {
@@ -377,9 +394,12 @@ func BenchmarkStructJSON(b *testing.B) {
 
 func BenchmarkStructGOB(b *testing.B) {
 	in := structForBenchmark()
-	out := &benchmarkStruct{}
+	out := new(benchmarkStruct)
+
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		buf := &bytes.Buffer{}
+		buf := new(bytes.Buffer)
 		enc := gob.NewEncoder(buf)
 		dec := gob.NewDecoder(buf)
 
@@ -420,7 +440,7 @@ func BenchmarkCSV(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		record := []string{"1", "hello", "world"}
 
-		buf := &bytes.Buffer{}
+		buf := new(bytes.Buffer)
 		r := csv.NewReader(buf)
 		w := csv.NewWriter(buf)
 
@@ -439,7 +459,7 @@ func BenchmarkCSVMsgpack(b *testing.B) {
 		var num int
 		var hello, world string
 
-		buf := &bytes.Buffer{}
+		buf := new(bytes.Buffer)
 		enc := msgpack.NewEncoder(buf)
 		dec := msgpack.NewDecoder(buf)
 

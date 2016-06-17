@@ -11,12 +11,18 @@ import (
 var stringType = reflect.TypeOf((*string)(nil)).Elem()
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
 
-func decodeByteSliceValue(d *Decoder, value reflect.Value) error {
-	v, err := d.DecodeBytes()
+func decodeByteSliceValue(d *Decoder, v reflect.Value) error {
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return err
 	}
-	value.SetBytes(v)
+
+	b, err := d.bytes(c, v.Bytes())
+	if err != nil {
+		return err
+	}
+	v.SetBytes(b)
+
 	return nil
 }
 
@@ -30,8 +36,8 @@ func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
 }
 
 func decodeStringSliceValue(d *Decoder, v reflect.Value) error {
-	sptr := v.Addr().Convert(sliceStringPtrType).Interface().(*[]string)
-	return d.decodeStringSlicePtr(sptr)
+	ptr := v.Addr().Convert(sliceStringPtrType).Interface().(*[]string)
+	return d.decodeStringSlicePtr(ptr)
 }
 
 func (d *Decoder) DecodeBytesLen() (int, error) {
@@ -67,10 +73,10 @@ func (d *Decoder) DecodeBytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return d.bytes(c)
+	return d.bytes(c, nil)
 }
 
-func (d *Decoder) bytes(c byte) ([]byte, error) {
+func (d *Decoder) bytes(c byte, b []byte) ([]byte, error) {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return nil, err
@@ -78,9 +84,46 @@ func (d *Decoder) bytes(c byte) ([]byte, error) {
 	if n == -1 {
 		return nil, nil
 	}
-	b := make([]byte, n)
+
+	if b == nil {
+		b = make([]byte, n)
+	} else if len(b) != n {
+		b = growBytes(b, n)
+	}
+
 	_, err = io.ReadFull(d.r, b)
 	return b, err
+}
+
+func (d *Decoder) decodeBytesPtr(ptr *[]byte) error {
+	c, err := d.r.ReadByte()
+	if err != nil {
+		return err
+	}
+	return d.bytesPtr(c, ptr)
+}
+
+func (d *Decoder) bytesPtr(c byte, ptr *[]byte) error {
+	n, err := d.bytesLen(c)
+	if err != nil {
+		return err
+	}
+	if n == -1 {
+		*ptr = nil
+		return nil
+	}
+
+	b := *ptr
+	if b == nil {
+		*ptr = make([]byte, n)
+		b = *ptr
+	} else if len(b) != n {
+		*ptr = growBytes(b, n)
+		b = *ptr
+	}
+
+	_, err = io.ReadFull(d.r, b)
+	return err
 }
 
 func (d *Decoder) skipBytes(c byte) error {
@@ -148,7 +191,7 @@ func (d *Decoder) sliceLen(c byte) (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
 }
 
-func (d *Decoder) decodeStringSlicePtr(sptr *[]string) error {
+func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 	n, err := d.DecodeSliceLen()
 	if err != nil {
 		return err
@@ -157,10 +200,13 @@ func (d *Decoder) decodeStringSlicePtr(sptr *[]string) error {
 		return nil
 	}
 
-	s := *sptr
-	if s == nil || len(s) < n {
-		*sptr = make([]string, n)
-		s = *sptr
+	s := *ptr
+	if s == nil {
+		*ptr = make([]string, n)
+		s = *ptr
+	} else if len(s) != n {
+		*ptr = growStrings(s, n)
+		s = *ptr
 	}
 
 	for i := 0; i < n; i++ {
@@ -229,8 +275,10 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 		return nil
 	}
 
-	if v.Len() < n || (v.Kind() == reflect.Slice && v.IsNil()) {
+	if v.Kind() == reflect.Slice && v.IsNil() {
 		v.Set(reflect.MakeSlice(v.Type(), n, n))
+	} else if v.Len() != n {
+		v = growSliceValue(v, n)
 	}
 
 	for i := 0; i < n; i++ {
@@ -240,36 +288,5 @@ func (d *Decoder) sliceValue(v reflect.Value) error {
 		}
 	}
 
-	return nil
-}
-
-func (d *Decoder) strings() ([]string, error) {
-	n, err := d.DecodeSliceLen()
-	if err != nil {
-		return nil, err
-	}
-
-	if n == -1 {
-		return nil, nil
-	}
-
-	ss := make([]string, n)
-	for i := 0; i < n; i++ {
-		s, err := d.DecodeString()
-		if err != nil {
-			return nil, err
-		}
-		ss[i] = s
-	}
-
-	return ss, nil
-}
-
-func (d *Decoder) stringsValue(value reflect.Value) error {
-	ss, err := d.strings()
-	if err != nil {
-		return err
-	}
-	value.Set(reflect.ValueOf(ss))
 	return nil
 }
