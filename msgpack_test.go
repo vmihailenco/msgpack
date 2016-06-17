@@ -215,29 +215,6 @@ func (t *MsgpackTest) TestFloat64(c *C) {
 	c.Assert(math.IsNaN(out), Equals, true)
 }
 
-func (t *MsgpackTest) TestBool(c *C) {
-	table := []struct {
-		v bool
-		b []byte
-	}{
-		{false, []byte{0xc2}},
-		{true, []byte{0xc3}},
-	}
-	for _, r := range table {
-		c.Assert(t.enc.Encode(r.v), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("err encoding %v", r.v))
-
-		var v bool
-		c.Assert(t.dec.Decode(&v), IsNil)
-		c.Assert(v, Equals, r.v)
-
-		c.Assert(t.enc.Encode(r.v), IsNil)
-		iface, err := t.dec.DecodeInterface()
-		c.Assert(err, IsNil)
-		c.Assert(iface, Equals, r.v)
-	}
-}
-
 func (t *MsgpackTest) TestDecodeNil(c *C) {
 	c.Assert(t.dec.Decode(nil), NotNil)
 }
@@ -254,56 +231,6 @@ func (t *MsgpackTest) TestTime(c *C) {
 	c.Assert(t.dec.Decode(&out), IsNil)
 	c.Assert(out.Equal(zero), Equals, true)
 	c.Assert(out.IsZero(), Equals, true)
-}
-
-func (t *MsgpackTest) TestSliceOfInts(c *C) {
-	for _, test := range []struct {
-		v []int64
-		b []byte
-	}{
-		{nil, []byte{0xc0}},
-		{[]int64{}, []byte{0x90}},
-		{[]int64{0}, []byte{0x91, 0x0}},
-	} {
-		c.Assert(t.enc.Encode(test.v), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, test.b)
-		var dst []int64
-		c.Assert(t.dec.Decode(&dst), IsNil)
-		c.Assert(dst, DeepEquals, test.v)
-	}
-}
-
-func (t *MsgpackTest) TestArrayOfInts(c *C) {
-	src := [3]int{1, 2, 3}
-	c.Assert(t.enc.Encode(src), IsNil)
-	var dst [3]int
-	c.Assert(t.dec.Decode(&dst), IsNil)
-	c.Assert(dst, DeepEquals, src)
-}
-
-func (t *MsgpackTest) TestSliceOfStrings(c *C) {
-	for _, i := range []struct {
-		src []string
-		b   []byte
-	}{
-		{nil, []byte{0xc0}},
-		{[]string{}, []byte{0x90}},
-		{[]string{"foo", "bar"}, []byte{0x92, 0xa3, 'f', 'o', 'o', 0xa3, 'b', 'a', 'r'}},
-	} {
-		c.Assert(t.enc.Encode(i.src), IsNil)
-		c.Assert(t.buf.Bytes(), DeepEquals, i.b)
-		var dst []string
-		c.Assert(t.dec.Decode(&dst), IsNil)
-		c.Assert(dst, DeepEquals, i.src)
-	}
-}
-
-func (t *MsgpackTest) TestArrayOfStrings(c *C) {
-	src := [2]string{"hello", "world"}
-	c.Assert(t.enc.Encode(src), IsNil)
-	var dst [2]string
-	c.Assert(t.dec.Decode(&dst), IsNil)
-	c.Assert(dst, DeepEquals, src)
 }
 
 func (t *MsgpackTest) TestBin(c *C) {

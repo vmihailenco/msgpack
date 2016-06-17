@@ -216,6 +216,9 @@ var (
 		{in: nil, out: (*int)(nil), decErr: "msgpack: Decode(nonsettable *int)"},
 		{in: nil, out: new(chan bool), decErr: "msgpack: Decode(unsupported chan bool)"},
 
+		{in: true, out: new(bool)},
+		{in: false, out: new(bool)},
+
 		{in: nil, out: new(int), wanted: int(0)},
 		{in: nil, out: new(*int), wantnil: true},
 
@@ -237,7 +240,18 @@ var (
 		{in: nil, out: new([]interface{}), wantnil: true},
 		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 
+		{in: nil, out: new([]int), wantnil: true},
+		{in: []int(nil), out: new([]int), wantnil: true},
+		{in: []int{}, out: new([]int)},
+		{in: []int{1, 2, 3}, out: new([]int)},
+		{in: [3]int{1, 2, 3}, out: new([3]int)},
+
+		{in: []string(nil), out: new([]string), wantnil: true},
+		{in: []string{}, out: new([]string)},
+		{in: []string{"a", "b"}, out: new([]string)},
+		{in: [2]string{"a", "b"}, out: new([2]string)},
 		{in: sliceString{"foo", "bar"}, out: new(sliceString)},
+
 		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
 		{in: []uint8Alias{1}, out: new([]uint8Alias)},
 

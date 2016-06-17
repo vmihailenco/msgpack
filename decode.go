@@ -67,8 +67,7 @@ func (d *Decoder) decode(dst interface{}) error {
 		}
 	case *[]byte:
 		if v != nil {
-			*v, err = d.DecodeBytes()
-			return err
+			return d.decodeBytesPtr(v)
 		}
 	case *int:
 		if v != nil {
@@ -271,7 +270,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	case codes.Int8, codes.Int16, codes.Int32, codes.Int64:
 		return d.int(c)
 	case codes.Bin8, codes.Bin16, codes.Bin32:
-		return d.bytes(c)
+		return d.bytes(c, nil)
 	case codes.Str8, codes.Str16, codes.Str32:
 		return d.string(c)
 	case codes.Array16, codes.Array32:
@@ -345,12 +344,7 @@ func (d *Decoder) gotNilCode() bool {
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {
-	if n <= cap(d.buf) {
-		d.buf = d.buf[:n]
-	} else {
-		d.buf = d.buf[:cap(d.buf)]
-		d.buf = append(d.buf, make([]byte, n-len(d.buf))...)
-	}
+	d.buf = growBytes(d.buf, n)
 	_, err := io.ReadFull(d.r, d.buf)
 	return d.buf, err
 }
