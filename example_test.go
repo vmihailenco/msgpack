@@ -8,31 +8,32 @@ import (
 )
 
 func ExampleMarshal() {
-	b, err := msgpack.Marshal(true)
+	type Item struct {
+		Foo string
+	}
+
+	b, err := msgpack.Marshal(&Item{Foo: "bar"})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%#v\n", b)
-	// Output:
 
-	var out bool
-	err = msgpack.Unmarshal([]byte{0xc3}, &out)
+	var item Item
+	err = msgpack.Unmarshal(b, &item)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(out)
-	// Output: []byte{0xc3}
-	// true
-}
-
-type myStruct struct {
-	S string
+	fmt.Println(item.Foo)
+	// Output: bar
 }
 
 func ExampleRegisterExt() {
-	msgpack.RegisterExt(1, myStruct{})
+	type Item struct {
+		S string
+	}
 
-	b, err := msgpack.Marshal(&myStruct{S: "string"})
+	msgpack.RegisterExt(1, Item{})
+
+	b, err := msgpack.Marshal(&Item{S: "string"})
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +44,7 @@ func ExampleRegisterExt() {
 		panic(err)
 	}
 	fmt.Printf("%#v", v)
-	// Output: msgpack_test.myStruct{S:"string"}
+	// Output: msgpack_test.Item{S:"string"}
 }
 
 func Example_mapStringInterface() {
