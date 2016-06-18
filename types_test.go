@@ -245,6 +245,7 @@ var (
 		{in: []int{}, out: new([]int)},
 		{in: []int{1, 2, 3}, out: new([]int)},
 		{in: [3]int{1, 2, 3}, out: new([3]int)},
+		{in: [3]int{1, 2, 3}, out: new([2]int), wanted: [2]int{1, 2}},
 
 		{in: []string(nil), out: new([]string), wantnil: true},
 		{in: []string{}, out: new([]string)},
