@@ -5,9 +5,10 @@ Supports:
 - Appengine *datastore.Key and datastore.Cursor.
 - [CustomEncoder](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
 - [Extensions](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-RegisterExt) to encode type information.
-- Fields renaming, e.g. `msgpack:"my_field_name"`.
-- Structs inlining, e.g. `msgpack:",inline"`.
-- Omitempty flag, e.g. `msgpack:",omitempty"`.
+- Fields renaming using `msgpack:"my_field_name"`.
+- Structs inlining using `msgpack:",inline"`.
+- Omitempty flag using `msgpack:",omitempty"`.
+- [Map keys sorting](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.SortMapKeys).
 
 API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2.
 Examples: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples.
