@@ -43,11 +43,11 @@ func ExampleMarshal() {
 ## Benchmark
 
 ```
-BenchmarkStructVmihailencoMsgpack-4   	  200000	      8034 ns/op	    3152 B/op	      27 allocs/op
-BenchmarkStructUgorjiGoMsgpack-4      	  200000	     11874 ns/op	    3616 B/op	      70 allocs/op
-BenchmarkStructUgorjiGoCodec-4        	  100000	     13675 ns/op	    7346 B/op	      23 allocs/op
-BenchmarkStructJSON-4                 	   30000	     44763 ns/op	    7864 B/op	      26 allocs/op
-BenchmarkStructGOB-4                  	   20000	     64494 ns/op	   14664 B/op	     278 allocs/op
+BenchmarkStructVmihailencoMsgpack-4   	  200000	     12814 ns/op	    2128 B/op	      26 allocs/op
+BenchmarkStructUgorjiGoMsgpack-4      	  100000	     17678 ns/op	    3616 B/op	      70 allocs/op
+BenchmarkStructUgorjiGoCodec-4        	  100000	     19053 ns/op	    7346 B/op	      23 allocs/op
+BenchmarkStructJSON-4                 	   20000	     69438 ns/op	    7864 B/op	      26 allocs/op
+BenchmarkStructGOB-4                  	   10000	    104331 ns/op	   14664 B/op	     278 allocs/op
 ```
 
 ## Howto
