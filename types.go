@@ -126,18 +126,10 @@ func encodeSliceValue(e *Encoder, v reflect.Value) error {
 	return e.encodeSlice(v)
 }
 
-func decodeSliceValue(d *Decoder, v reflect.Value) error {
-	return d.sliceValue(v)
-}
-
 //------------------------------------------------------------------------------
 
 func encodeArrayValue(e *Encoder, v reflect.Value) error {
 	return e.encodeArray(v)
-}
-
-func decodeArrayValue(d *Decoder, v reflect.Value) error {
-	return d.sliceValue(v)
 }
 
 //------------------------------------------------------------------------------

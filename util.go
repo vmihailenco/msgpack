@@ -2,7 +2,7 @@ package msgpack
 
 import "reflect"
 
-func growBytes(b []byte, n int) []byte {
+func setBytesLen(b []byte, n int) []byte {
 	if n <= cap(b) {
 		return b[:n]
 	}
@@ -11,7 +11,7 @@ func growBytes(b []byte, n int) []byte {
 	return b
 }
 
-func growStrings(s []string, n int) []string {
+func setStringsLen(s []string, n int) []string {
 	if n <= cap(s) {
 		return s[:n]
 	}
@@ -20,12 +20,11 @@ func growStrings(s []string, n int) []string {
 	return s
 }
 
-func growSliceValue(v reflect.Value, n int) reflect.Value {
+func setSliceValueLen(v reflect.Value, n int) reflect.Value {
 	if n <= v.Cap() {
 		return v.Slice(n, n)
 	}
 	v = v.Slice(v.Cap(), v.Cap())
 	diff := n - v.Cap()
-	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
-	return v
+	return reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
 }

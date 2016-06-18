@@ -344,7 +344,7 @@ func (d *Decoder) gotNilCode() bool {
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {
-	d.buf = growBytes(d.buf, n)
+	d.buf = setBytesLen(d.buf, n)
 	_, err := io.ReadFull(d.r, d.buf)
 	return d.buf, err
 }
