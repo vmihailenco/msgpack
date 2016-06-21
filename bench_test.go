@@ -178,6 +178,15 @@ func BenchmarkMapStringStringUgorjiGoCodec(b *testing.B) {
 	benchmarkEncodeDecodeUgorjiGoCodec(b, src, &dst)
 }
 
+func BenchmarkMapStringInterface(b *testing.B) {
+	src := map[string]interface{}{
+		"hello": "world",
+		"foo":   "bar",
+	}
+	var dst map[string]interface{}
+	benchmarkEncodeDecode(b, src, &dst)
+}
+
 func BenchmarkMapIntInt(b *testing.B) {
 	src := map[int]int{
 		1: 10,

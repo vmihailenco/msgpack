@@ -47,12 +47,6 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 
 	return nil
 }
-
-func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
-	mptr := v.Addr().Convert(mapStringStringPtrType).Interface().(*map[string]string)
-	return d.decodeStringStringMapPtr(mptr)
-}
-
 func decodeMap(d *Decoder) (interface{}, error) {
 	n, err := d.DecodeMapLen()
 	if err != nil {
@@ -103,20 +97,25 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding map length", c)
 }
 
-func (d *Decoder) decodeStringStringMapPtr(mptr *map[string]string) error {
+func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
+	mptr := v.Addr().Convert(mapStringStringPtrType).Interface().(*map[string]string)
+	return d.decodeMapStringStringPtr(mptr)
+}
+
+func (d *Decoder) decodeMapStringStringPtr(ptr *map[string]string) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err
 	}
 	if n == -1 {
-		*mptr = nil
+		*ptr = nil
 		return nil
 	}
 
-	m := *mptr
+	m := *ptr
 	if m == nil {
-		*mptr = make(map[string]string, n)
-		m = *mptr
+		*ptr = make(map[string]string, n)
+		m = *ptr
 	}
 
 	for i := 0; i < n; i++ {
@@ -125,6 +124,42 @@ func (d *Decoder) decodeStringStringMapPtr(mptr *map[string]string) error {
 			return err
 		}
 		mv, err := d.DecodeString()
+		if err != nil {
+			return err
+		}
+		m[mk] = mv
+	}
+
+	return nil
+}
+
+func decodeMapStringInterfaceValue(d *Decoder, v reflect.Value) error {
+	ptr := v.Addr().Convert(mapStringInterfacePtrType).Interface().(*map[string]interface{})
+	return d.decodeMapStringInterfacePtr(ptr)
+}
+
+func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error {
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return err
+	}
+	if n == -1 {
+		*ptr = nil
+		return nil
+	}
+
+	m := *ptr
+	if m == nil {
+		*ptr = make(map[string]interface{}, n)
+		m = *ptr
+	}
+
+	for i := 0; i < n; i++ {
+		mk, err := d.DecodeString()
+		if err != nil {
+			return err
+		}
+		mv, err := d.DecodeInterface()
 		if err != nil {
 			return err
 		}
@@ -154,7 +189,7 @@ func (d *Decoder) skipMap(c byte) error {
 	return nil
 }
 
-func (d *Decoder) structValue(strct reflect.Value) error {
+func decodeStructValue(d *Decoder, strct reflect.Value) error {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err

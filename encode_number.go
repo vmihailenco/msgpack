@@ -2,6 +2,7 @@ package msgpack
 
 import (
 	"math"
+	"reflect"
 
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
@@ -118,4 +119,20 @@ func (e *Encoder) write8(code byte, n uint64) error {
 	e.buf[7] = byte(n >> 8)
 	e.buf[8] = byte(n)
 	return e.write(e.buf)
+}
+
+func encodeInt64Value(e *Encoder, v reflect.Value) error {
+	return e.EncodeInt64(v.Int())
+}
+
+func encodeUint64Value(e *Encoder, v reflect.Value) error {
+	return e.EncodeUint64(v.Uint())
+}
+
+func encodeFloat32Value(e *Encoder, v reflect.Value) error {
+	return e.EncodeFloat32(float32(v.Float()))
+}
+
+func encodeFloat64Value(e *Encoder, v reflect.Value) error {
+	return e.EncodeFloat64(v.Float())
 }

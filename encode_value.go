@@ -84,3 +84,7 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 	}
 	return valueEncoders[kind]
 }
+
+func encodeBoolValue(e *Encoder, v reflect.Value) error {
+	return e.EncodeBool(v.Bool())
+}

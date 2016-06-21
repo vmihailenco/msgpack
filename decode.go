@@ -137,7 +137,9 @@ func (d *Decoder) decode(dst interface{}) error {
 	case *[]string:
 		return d.decodeStringSlicePtr(v)
 	case *map[string]string:
-		return d.decodeStringStringMapPtr(v)
+		return d.decodeMapStringStringPtr(v)
+	case *map[string]interface{}:
+		return d.decodeMapStringInterfacePtr(v)
 	case *time.Duration:
 		if v != nil {
 			vv, err := d.DecodeInt64()
@@ -203,15 +205,6 @@ func (d *Decoder) bool(c byte) (bool, error) {
 	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
 }
 
-func (d *Decoder) boolValue(value reflect.Value) error {
-	v, err := d.DecodeBool()
-	if err != nil {
-		return err
-	}
-	value.SetBool(v)
-	return nil
-}
-
 func (d *Decoder) interfaceValue(v reflect.Value) error {
 	iface, err := d.DecodeInterface()
 	if err != nil {
@@ -249,8 +242,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeMap()
 	}
 	if codes.IsFixedArray(c) {
-		d.r.UnreadByte()
-		return d.DecodeSlice()
+		return d.decodeSlice(c)
 	}
 	if codes.IsFixedString(c) {
 		return d.string(c)

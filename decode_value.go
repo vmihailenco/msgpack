@@ -2,6 +2,9 @@ package msgpack
 
 import "reflect"
 
+var interfaceType = reflect.TypeOf((*interface{})(nil)).Elem()
+var stringType = reflect.TypeOf((*string)(nil)).Elem()
+
 var valueDecoders []decoderFunc
 
 func init() {
@@ -17,7 +20,7 @@ func init() {
 		reflect.Uint16:        decodeUint64Value,
 		reflect.Uint32:        decodeUint64Value,
 		reflect.Uint64:        decodeUint64Value,
-		reflect.Float32:       decodeFloat64Value,
+		reflect.Float32:       decodeFloat32Value,
 		reflect.Float64:       decodeFloat64Value,
 		reflect.Complex64:     decodeUnsupportedValue,
 		reflect.Complex128:    decodeUnsupportedValue,
@@ -72,11 +75,24 @@ func getDecoder(typ reflect.Type) decoderFunc {
 			return decodeByteArrayValue
 		}
 	case reflect.Map:
-		if typ.Key().Kind() == reflect.String {
-			if typ.Elem().Kind() == reflect.String {
+		if typ.Key() == stringType {
+			switch typ.Elem() {
+			case stringType:
 				return decodeMapStringStringValue
+			case interfaceType:
+				return decodeMapStringInterfaceValue
+
 			}
 		}
 	}
 	return valueDecoders[kind]
+}
+
+func decodeBoolValue(d *Decoder, v reflect.Value) error {
+	r, err := d.DecodeBool()
+	if err != nil {
+		return err
+	}
+	v.SetBool(r)
+	return nil
 }
