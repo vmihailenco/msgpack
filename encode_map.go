@@ -130,7 +130,7 @@ func (e *Encoder) EncodeMapLen(l int) error {
 	return e.write4(codes.Map32, uint64(l))
 }
 
-func (e *Encoder) encodeStruct(strct reflect.Value) error {
+func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	structFields := structs.Fields(strct.Type())
 	fields := structFields.OmitEmpty(strct)
 

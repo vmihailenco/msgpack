@@ -8,7 +8,6 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
-var stringType = reflect.TypeOf((*string)(nil)).Elem()
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
 
 func (d *Decoder) DecodeSliceLen() (int, error) {
@@ -190,12 +189,12 @@ func (d *Decoder) string(c byte) (string, error) {
 	return string(b), err
 }
 
-func (d *Decoder) stringValue(value reflect.Value) error {
-	v, err := d.DecodeString()
+func decodeStringValue(d *Decoder, v reflect.Value) error {
+	s, err := d.DecodeString()
 	if err != nil {
 		return err
 	}
-	value.SetString(v)
+	v.SetString(s)
 	return nil
 }
 

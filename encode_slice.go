@@ -6,6 +6,29 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+func encodeStringValue(e *Encoder, v reflect.Value) error {
+	return e.EncodeString(v.String())
+}
+
+func encodeByteSliceValue(e *Encoder, v reflect.Value) error {
+	return e.EncodeBytes(v.Bytes())
+}
+
+func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
+	if err := e.encodeBytesLen(v.Len()); err != nil {
+		return err
+	}
+
+	if v.CanAddr() {
+		b := v.Slice(0, v.Len()).Bytes()
+		return e.write(b)
+	}
+
+	b := make([]byte, v.Len())
+	reflect.Copy(reflect.ValueOf(b), v)
+	return e.write(b)
+}
+
 func (e *Encoder) encodeBytesLen(l int) error {
 	if l < 256 {
 		return e.write1(codes.Bin8, uint64(l))
@@ -76,14 +99,14 @@ func (e *Encoder) encodeStringSlice(s []string) error {
 	return nil
 }
 
-func (e *Encoder) encodeSlice(v reflect.Value) error {
+func encodeSliceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
 		return e.EncodeNil()
 	}
-	return e.encodeArray(v)
+	return encodeArrayValue(e, v)
 }
 
-func (e *Encoder) encodeArray(v reflect.Value) error {
+func encodeArrayValue(e *Encoder, v reflect.Value) error {
 	l := v.Len()
 	if err := e.EncodeSliceLen(l); err != nil {
 		return err

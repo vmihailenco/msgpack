@@ -7,23 +7,17 @@ import (
 	"sync"
 )
 
-var (
-	marshalerType   = reflect.TypeOf(new(Marshaler)).Elem()
-	unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
+var marshalerType = reflect.TypeOf(new(Marshaler)).Elem()
+var unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
 
-	encoderType = reflect.TypeOf(new(CustomEncoder)).Elem()
-	decoderType = reflect.TypeOf(new(CustomDecoder)).Elem()
-)
+var encoderType = reflect.TypeOf(new(CustomEncoder)).Elem()
+var decoderType = reflect.TypeOf(new(CustomDecoder)).Elem()
 
-type (
-	encoderFunc func(*Encoder, reflect.Value) error
-	decoderFunc func(*Decoder, reflect.Value) error
-)
+type encoderFunc func(*Encoder, reflect.Value) error
+type decoderFunc func(*Decoder, reflect.Value) error
 
-var (
-	typEncMap = make(map[reflect.Type]encoderFunc)
-	typDecMap = make(map[reflect.Type]decoderFunc)
-)
+var typEncMap = make(map[reflect.Type]encoderFunc)
+var typDecMap = make(map[reflect.Type]decoderFunc)
 
 // Register registers encoder and decoder functions for a type.
 // In most cases you should prefer implementing CustomEncoder and
@@ -43,93 +37,6 @@ func encodeUnsupportedValue(e *Encoder, v reflect.Value) error {
 
 func decodeUnsupportedValue(d *Decoder, v reflect.Value) error {
 	return fmt.Errorf("msgpack: Decode(unsupported %T)", v.Interface())
-}
-
-//------------------------------------------------------------------------------
-
-func encodeBoolValue(e *Encoder, v reflect.Value) error {
-	return e.EncodeBool(v.Bool())
-}
-
-func decodeBoolValue(d *Decoder, v reflect.Value) error {
-	return d.boolValue(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeFloat32Value(e *Encoder, v reflect.Value) error {
-	return e.EncodeFloat32(float32(v.Float()))
-}
-
-func encodeFloat64Value(e *Encoder, v reflect.Value) error {
-	return e.EncodeFloat64(v.Float())
-}
-
-func decodeFloat64Value(d *Decoder, v reflect.Value) error {
-	return d.float64Value(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeStringValue(e *Encoder, v reflect.Value) error {
-	return e.EncodeString(v.String())
-}
-
-func decodeStringValue(d *Decoder, v reflect.Value) error {
-	return d.stringValue(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeByteSliceValue(e *Encoder, v reflect.Value) error {
-	return e.EncodeBytes(v.Bytes())
-}
-
-func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
-	if err := e.encodeBytesLen(v.Len()); err != nil {
-		return err
-	}
-
-	if v.CanAddr() {
-		b := v.Slice(0, v.Len()).Bytes()
-		return e.write(b)
-	}
-
-	b := make([]byte, v.Len())
-	reflect.Copy(reflect.ValueOf(b), v)
-	return e.write(b)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeInt64Value(e *Encoder, v reflect.Value) error {
-	return e.EncodeInt64(v.Int())
-}
-
-func decodeInt64Value(d *Decoder, v reflect.Value) error {
-	return d.int64Value(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeUint64Value(e *Encoder, v reflect.Value) error {
-	return e.EncodeUint64(v.Uint())
-}
-
-func decodeUint64Value(d *Decoder, v reflect.Value) error {
-	return d.uint64Value(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeSliceValue(e *Encoder, v reflect.Value) error {
-	return e.encodeSlice(v)
-}
-
-//------------------------------------------------------------------------------
-
-func encodeArrayValue(e *Encoder, v reflect.Value) error {
-	return e.encodeArray(v)
 }
 
 //------------------------------------------------------------------------------
@@ -175,16 +82,6 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 		}
 		return decoder(d, v.Elem())
 	}
-}
-
-//------------------------------------------------------------------------------
-
-func encodeStructValue(e *Encoder, v reflect.Value) error {
-	return e.encodeStruct(v)
-}
-
-func decodeStructValue(d *Decoder, v reflect.Value) error {
-	return d.structValue(v)
 }
 
 //------------------------------------------------------------------------------

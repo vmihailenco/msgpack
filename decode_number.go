@@ -97,15 +97,6 @@ func (d *Decoder) uint(c byte) (uint64, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
 }
 
-func (d *Decoder) uint64Value(value reflect.Value) error {
-	v, err := d.DecodeUint64()
-	if err != nil {
-		return err
-	}
-	value.SetUint(v)
-	return nil
-}
-
 func (d *Decoder) DecodeInt64() (int64, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -147,15 +138,6 @@ func (d *Decoder) int(c byte) (int64, error) {
 	return 0, fmt.Errorf("msgpack: invalid code %x decoding int64", c)
 }
 
-func (d *Decoder) int64Value(v reflect.Value) error {
-	n, err := d.DecodeInt64()
-	if err != nil {
-		return err
-	}
-	v.SetInt(n)
-	return nil
-}
-
 func (d *Decoder) DecodeFloat32() (float32, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -173,15 +155,6 @@ func (d *Decoder) float32(c byte) (float32, error) {
 		return 0, err
 	}
 	return math.Float32frombits(b), nil
-}
-
-func (d *Decoder) float32Value(value reflect.Value) error {
-	v, err := d.DecodeFloat32()
-	if err != nil {
-		return err
-	}
-	value.SetFloat(float64(v))
-	return nil
 }
 
 func (d *Decoder) DecodeFloat64() (float64, error) {
@@ -205,15 +178,6 @@ func (d *Decoder) float64(c byte) (float64, error) {
 		return 0, err
 	}
 	return math.Float64frombits(b), nil
-}
-
-func (d *Decoder) float64Value(value reflect.Value) error {
-	v, err := d.DecodeFloat64()
-	if err != nil {
-		return err
-	}
-	value.SetFloat(v)
-	return nil
 }
 
 func (d *Decoder) DecodeUint() (uint, error) {
@@ -254,4 +218,40 @@ func (d *Decoder) DecodeInt16() (int16, error) {
 func (d *Decoder) DecodeInt32() (int32, error) {
 	n, err := d.DecodeInt64()
 	return int32(n), err
+}
+
+func decodeFloat32Value(d *Decoder, v reflect.Value) error {
+	f, err := d.DecodeFloat32()
+	if err != nil {
+		return err
+	}
+	v.SetFloat(float64(f))
+	return nil
+}
+
+func decodeFloat64Value(d *Decoder, v reflect.Value) error {
+	f, err := d.DecodeFloat64()
+	if err != nil {
+		return err
+	}
+	v.SetFloat(f)
+	return nil
+}
+
+func decodeInt64Value(d *Decoder, v reflect.Value) error {
+	n, err := d.DecodeInt64()
+	if err != nil {
+		return err
+	}
+	v.SetInt(n)
+	return nil
+}
+
+func decodeUint64Value(d *Decoder, v reflect.Value) error {
+	n, err := d.DecodeUint64()
+	if err != nil {
+		return err
+	}
+	v.SetUint(n)
+	return nil
 }
