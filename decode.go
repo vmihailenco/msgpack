@@ -18,6 +18,13 @@ type bufReader interface {
 	UnreadByte() error
 }
 
+func newBufReader(r io.Reader) bufReader {
+	if br, ok := r.(bufReader); ok {
+		return br
+	}
+	return bufio.NewReader(r)
+}
+
 func Unmarshal(b []byte, v ...interface{}) error {
 	if len(v) == 1 && v[0] != nil {
 		unmarshaler, ok := v[0].(Unmarshaler)
@@ -36,16 +43,17 @@ type Decoder struct {
 }
 
 func NewDecoder(r io.Reader) *Decoder {
-	br, ok := r.(bufReader)
-	if !ok {
-		br = bufio.NewReader(r)
-	}
 	return &Decoder{
 		DecodeMapFunc: decodeMap,
 
-		r:   br,
+		r:   newBufReader(r),
 		buf: make([]byte, 64),
 	}
+}
+
+func (d *Decoder) Reset(r io.Reader) error {
+	d.r = newBufReader(r)
+	return nil
 }
 
 func (d *Decoder) Decode(v ...interface{}) error {

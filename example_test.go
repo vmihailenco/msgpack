@@ -69,7 +69,7 @@ func Example_mapStringInterface() {
 }
 
 func Example_recursiveMapStringInterface() {
-	buf := &bytes.Buffer{}
+	buf := new(bytes.Buffer)
 
 	enc := msgpack.NewEncoder(buf)
 	in := map[string]interface{}{"foo": map[string]interface{}{"hello": "world"}}
@@ -101,4 +101,30 @@ func Example_recursiveMapStringInterface() {
 	out, err := dec.DecodeInterface()
 	fmt.Printf("%v %#v\n", err, out)
 	// Output: <nil> map[string]interface {}{"foo":map[string]interface {}{"hello":"world"}}
+}
+
+func ExampleDecoder_Query() {
+	b, err := msgpack.Marshal([]map[string]interface{}{
+		{"id": 1, "attrs": map[string]interface{}{"phone": 12345}},
+		{"id": 2, "attrs": map[string]interface{}{"phone": 54321}},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(bytes.NewBuffer(b))
+	values, err := dec.Query("*.attrs.phone")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("phones are", values)
+
+	dec.Reset(bytes.NewBuffer(b))
+	values, err = dec.Query("1.attrs.phone")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("2nd phone is", values[0])
+	// Output: phones are [12345 54321]
+	// 2nd phone is 54321
 }

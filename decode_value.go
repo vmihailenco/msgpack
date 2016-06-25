@@ -64,7 +64,7 @@ func getDecoder(typ reflect.Type) decoderFunc {
 		elem := typ.Elem()
 		switch elem.Kind() {
 		case reflect.Uint8:
-			return decodeByteSliceValue
+			return decodeBytesValue
 		}
 		switch elem {
 		case stringType:

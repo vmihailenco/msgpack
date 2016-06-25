@@ -480,3 +480,35 @@ func BenchmarkCSVMsgpack(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkQuery(b *testing.B) {
+	var records []map[string]interface{}
+	for i := 0; i < 1000; i++ {
+		record := map[string]interface{}{
+			"id":    i,
+			"attrs": map[string]interface{}{"phone": i},
+		}
+		records = append(records, record)
+	}
+
+	bs, err := msgpack.Marshal(records)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	dec := msgpack.NewDecoder(bytes.NewBuffer(bs))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		dec.Reset(bytes.NewBuffer(bs))
+
+		values, err := dec.Query("10.attrs.phone")
+		if err != nil {
+			b.Fatal(err)
+		}
+		if values[0].(uint64) != 10 {
+			b.Fatal("%v != %v", values[0], 10)
+		}
+	}
+}
