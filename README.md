@@ -9,6 +9,7 @@ Supports:
 - Structs inlining using `msgpack:",inline"`.
 - Omitempty flag using `msgpack:",omitempty"`.
 - [Map keys sorting](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.SortMapKeys).
+- [Msgpack query](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Decoder-Query) - simple but very efficient.
 
 API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2.
 Examples: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples.
