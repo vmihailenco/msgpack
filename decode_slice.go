@@ -9,7 +9,12 @@ import (
 
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
 
+// Deprecated. Use DecodeArrayLen instead.
 func (d *Decoder) DecodeSliceLen() (int, error) {
+	return d.DecodeArrayLen()
+}
+
+func (d *Decoder) DecodeArrayLen() (int, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
