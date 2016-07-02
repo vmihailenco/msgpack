@@ -599,3 +599,22 @@ func (t *MsgpackTest) TestMapStringInterface2(c *C) {
 	mm := out["hello"].(map[string]interface{})
 	c.Assert(mm["foo"], Equals, "bar")
 }
+
+func TestDecodeExtWithMap(t *testing.T) {
+	type S struct {
+		I int
+	}
+	msgpack.RegisterExt(2, S{})
+	b, err := msgpack.Marshal(&S{I: 42})
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := make(map[string]interface{})
+	if err := msgpack.Unmarshal(b, &v); err != nil {
+		t.Fatal(err)
+	}
+	ev := map[string]interface{}{"I": uint64(42)}
+	if !reflect.DeepEqual(v, ev) {
+		t.Fatalf("expect %#v but got %#v", ev, v)
+	}
+}

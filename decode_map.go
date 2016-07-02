@@ -76,7 +76,30 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	if codes.IsExt(c) {
+		c, err = d.skipExtHeader(c)
+		if err != nil {
+			return 0, err
+		}
+	}
 	return d.mapLen(c)
+}
+
+func (d *Decoder) skipExtHeader(c byte) (byte, error) {
+	// skip type
+	_, err := d.r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	// skip size
+	for i := 0; i < codes.ExtSize(c); i++ {
+		_, err := d.r.ReadByte()
+		if err != nil {
+			return 0, err
+		}
+	}
+	// read c again
+	return d.r.ReadByte()
 }
 
 func (d *Decoder) mapLen(c byte) (int, error) {
