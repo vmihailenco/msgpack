@@ -45,33 +45,32 @@ var (
 	Map16        byte = 0xde
 	Map32        byte = 0xdf
 
-	FixExtLow  byte = 0xd4
-	FixExt1    byte = 0xd4
-	FixExt2    byte = 0xd5
-	FixExt4    byte = 0xd6
-	FixExt8    byte = 0xd7
-	FixExt16   byte = 0xd8
-	FixExtHigh byte = 0xd8
-	ExtLow     byte = 0xc7
-	Ext8       byte = 0xc7
-	Ext16      byte = 0xc8
-	Ext32      byte = 0xc9
-	ExtHigh    byte = 0xc9
+	FixExt1  byte = 0xd4
+	FixExt2  byte = 0xd5
+	FixExt4  byte = 0xd6
+	FixExt8  byte = 0xd7
+	FixExt16 byte = 0xd8
+	Ext8     byte = 0xc7
+	Ext16    byte = 0xc8
+	Ext32    byte = 0xc9
 )
 
-func IsFixedNum(c byte) bool    { return c <= PosFixedNumHigh || c >= NegFixedNumLow }
-func IsFixedMap(c byte) bool    { return c >= FixedMapLow && c <= FixedMapHigh }
-func IsFixedArray(c byte) bool  { return c >= FixedArrayLow && c <= FixedArrayHigh }
-func IsFixedString(c byte) bool { return c >= FixedStrLow && c <= FixedStrHigh }
-func IsExt(c byte) bool         { return c >= FixExtLow && c <= FixExtHigh || c >= ExtLow && c <= ExtHigh }
-func ExtSize(c byte) int {
-	switch c {
-	case Ext8:
-		return 1
-	case Ext16:
-		return 2
-	case Ext32:
-		return 4
-	}
-	return 0
+func IsFixedNum(c byte) bool {
+	return c <= PosFixedNumHigh || c >= NegFixedNumLow
+}
+
+func IsFixedMap(c byte) bool {
+	return c >= FixedMapLow && c <= FixedMapHigh
+}
+
+func IsFixedArray(c byte) bool {
+	return c >= FixedArrayLow && c <= FixedArrayHigh
+}
+
+func IsFixedString(c byte) bool {
+	return c >= FixedStrLow && c <= FixedStrHigh
+}
+
+func IsExt(c byte) bool {
+	return (c >= FixExt1 && c <= FixExt16) || (c >= Ext8 && c <= Ext32)
 }
