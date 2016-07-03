@@ -161,3 +161,32 @@ func (d *Decoder) skipExt(c byte) error {
 	}
 	return d.skipN(n)
 }
+
+func (d *Decoder) skipExtHeader(c byte) (byte, error) {
+	// Read ext type.
+	_, err := d.r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	// Read ext body len.
+	for i := 0; i < extHeaderLen(c); i++ {
+		_, err := d.r.ReadByte()
+		if err != nil {
+			return 0, err
+		}
+	}
+	// Read code again.
+	return d.r.ReadByte()
+}
+
+func extHeaderLen(c byte) int {
+	switch c {
+	case codes.Ext8:
+		return 1
+	case codes.Ext16:
+		return 2
+	case codes.Ext32:
+		return 4
+	}
+	return 0
+}
