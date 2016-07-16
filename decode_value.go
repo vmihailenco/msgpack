@@ -1,6 +1,10 @@
 package msgpack
 
-import "reflect"
+import (
+	"fmt"
+	"io/ioutil"
+	"reflect"
+)
 
 var interfaceType = reflect.TypeOf((*interface{})(nil)).Elem()
 var stringType = reflect.TypeOf((*string)(nil)).Elem()
@@ -88,6 +92,57 @@ func getDecoder(typ reflect.Type) decoderFunc {
 	return valueDecoders[kind]
 }
 
+func ptrDecoderFunc(typ reflect.Type) decoderFunc {
+	decoder := getDecoder(typ.Elem())
+	return func(d *Decoder, v reflect.Value) error {
+		if d.gotNilCode() {
+			v.Set(reflect.Zero(v.Type()))
+			return d.DecodeNil()
+		}
+		if v.IsNil() {
+			if !v.CanSet() {
+				return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+			}
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		return decoder(d, v.Elem())
+	}
+}
+
+func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+	}
+	if d.gotNilCode() {
+		return d.DecodeNil()
+	}
+	decoder := v.Addr().Interface().(CustomDecoder)
+	return decoder.DecodeMsgpack(d)
+}
+
+func decodeCustomValue(d *Decoder, v reflect.Value) error {
+	if d.gotNilCode() {
+		return d.DecodeNil()
+	}
+	if v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+	decoder := v.Interface().(CustomDecoder)
+	return decoder.DecodeMsgpack(d)
+}
+
+func unmarshalValue(d *Decoder, v reflect.Value) error {
+	if v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+	b, err := ioutil.ReadAll(d.r)
+	if err != nil {
+		return err
+	}
+	unmarshaler := v.Interface().(Unmarshaler)
+	return unmarshaler.UnmarshalMsgpack(b)
+}
+
 func decodeBoolValue(d *Decoder, v reflect.Value) error {
 	r, err := d.DecodeBool()
 	if err != nil {
@@ -95,4 +150,15 @@ func decodeBoolValue(d *Decoder, v reflect.Value) error {
 	}
 	v.SetBool(r)
 	return nil
+}
+
+func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
+	if v.IsNil() {
+		return d.interfaceValue(v)
+	}
+	return d.DecodeValue(v.Elem())
+}
+
+func decodeUnsupportedValue(d *Decoder, v reflect.Value) error {
+	return fmt.Errorf("msgpack: Decode(unsupported %s)", v.Type())
 }
