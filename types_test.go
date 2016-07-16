@@ -17,10 +17,8 @@ import (
 
 type intSet map[int]struct{}
 
-var (
-	_ msgpack.CustomEncoder = (*intSet)(nil)
-	_ msgpack.CustomDecoder = (*intSet)(nil)
-)
+var _ msgpack.CustomEncoder = (*intSet)(nil)
+var _ msgpack.CustomDecoder = (*intSet)(nil)
 
 func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 	slice := make([]int, 0, len(set))
@@ -88,12 +86,12 @@ type InlineTest struct {
 
 //------------------------------------------------------------------------------
 
-type binTest struct {
+type encoderTest struct {
 	in     interface{}
 	wanted []byte
 }
 
-var binTests = []binTest{
+var encoderTests = []encoderTest{
 	{nil, []byte{codes.Nil}},
 
 	{[]byte(nil), []byte{codes.Nil}},
@@ -134,8 +132,8 @@ var binTests = []binTest{
 	}},
 }
 
-func TestBin(t *testing.T) {
-	for _, test := range binTests {
+func TestEncoder(t *testing.T) {
+	for _, test := range encoderTests {
 		var buf bytes.Buffer
 		enc := msgpack.NewEncoder(&buf).SortMapKeys(true)
 		if err := enc.Encode(test.in); err != nil {
@@ -144,6 +142,33 @@ func TestBin(t *testing.T) {
 
 		if !bytes.Equal(buf.Bytes(), test.wanted) {
 			t.Fatalf("%q != %q (in=%#v)", buf.Bytes(), test.wanted, test.in)
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+
+type decoderTest struct {
+	b   []byte
+	out interface{}
+	err string
+}
+
+var decoderTests = []decoderTest{
+	{b: []byte{codes.Bin32, 0xff, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
+	{b: []byte{codes.Str32, 0xff, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
+	{b: []byte{codes.Array32, 0xff, 0xff, 0xff, 0xff}, out: new([]int), err: "EOF"},
+	{b: []byte{codes.Map32, 0xff, 0xff, 0xff, 0xff}, out: new(map[int]int), err: "EOF"},
+}
+
+func TestDecoder(t *testing.T) {
+	for i, test := range decoderTests {
+		err := msgpack.Unmarshal(test.b, test.out)
+		if err == nil {
+			t.Fatalf("#%d err is nil, wanted %q", i, test.err)
+		}
+		if err.Error() != test.err {
+			t.Fatalf("#%d err is %q, wanted %q", i, err.Error(), test.err)
 		}
 	}
 }
@@ -234,7 +259,7 @@ var (
 
 		{in: nil, out: new([3]byte), wanted: [3]byte{}},
 		{in: [3]byte{1, 2, 3}, out: new([3]byte)},
-		{in: [3]byte{1, 2, 3}, out: new([2]byte), wanted: [2]byte{1, 2}},
+		{in: [3]byte{1, 2, 3}, out: new([2]byte), decErr: "[2]uint8 len is 2, but msgpack has 3 elements"},
 
 		{in: nil, out: new([]interface{}), wantnil: true},
 		{in: nil, out: new([]interface{}), wantnil: true},
@@ -245,7 +270,7 @@ var (
 		{in: []int{}, out: new([]int)},
 		{in: []int{1, 2, 3}, out: new([]int)},
 		{in: [3]int{1, 2, 3}, out: new([3]int)},
-		{in: [3]int{1, 2, 3}, out: new([2]int), wanted: [2]int{1, 2}},
+		{in: [3]int{1, 2, 3}, out: new([2]int), decErr: "[2]int len is 2, but msgpack has 3 elements"},
 
 		{in: []string(nil), out: new([]string), wantnil: true},
 		{in: []string{}, out: new([]string)},

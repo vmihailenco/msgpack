@@ -12,6 +12,10 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+const bytesAllocLimit = 1024 * 1024 // 1mb
+const sliceAllocLimit = 1e6
+const mapAllocLimit = 1e6
+
 type bufReader interface {
 	Read([]byte) (int, error)
 	ReadByte() (byte, error)
@@ -344,7 +348,45 @@ func (d *Decoder) gotNilCode() bool {
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {
-	d.buf = setBytesLen(d.buf, n)
-	_, err := io.ReadFull(d.r, d.buf)
+	var err error
+	d.buf, err = readN(d.r, d.buf, n)
 	return d.buf, err
+}
+
+func readN(r io.Reader, b []byte, n int) ([]byte, error) {
+	if n == 0 && b == nil {
+		return make([]byte, 0), nil
+	}
+
+	if cap(b) >= n {
+		b = b[:n]
+		_, err := io.ReadFull(r, b)
+		return b, err
+	}
+	b = b[:cap(b)]
+
+	pos := 0
+	for len(b) < n {
+		diff := n - len(b)
+		if diff > bytesAllocLimit {
+			diff = bytesAllocLimit
+		}
+		b = append(b, make([]byte, diff)...)
+
+		_, err := io.ReadFull(r, b[pos:])
+		if err != nil {
+			return nil, err
+		}
+
+		pos = len(b)
+	}
+
+	return b, nil
+}
+
+func min(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
 }
