@@ -1,6 +1,9 @@
 package msgpack
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 var valueEncoders []encoderFunc
 
@@ -85,6 +88,56 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 	return valueEncoders[kind]
 }
 
+func ptrEncoderFunc(typ reflect.Type) encoderFunc {
+	encoder := getEncoder(typ.Elem())
+	return func(e *Encoder, v reflect.Value) error {
+		if v.IsNil() {
+			return e.EncodeNil()
+		}
+		return encoder(e, v.Elem())
+	}
+}
+
+func encodeCustomValuePtr(e *Encoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+	}
+	encoder := v.Addr().Interface().(CustomEncoder)
+	return encoder.EncodeMsgpack(e)
+}
+
+func encodeCustomValue(e *Encoder, v reflect.Value) error {
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		if v.IsNil() {
+			return e.EncodeNil()
+		}
+	}
+	encoder := v.Interface().(CustomEncoder)
+	return encoder.EncodeMsgpack(e)
+}
+
+func marshalValue(e *Encoder, v reflect.Value) error {
+	marshaler := v.Interface().(Marshaler)
+	b, err := marshaler.MarshalMsgpack()
+	if err != nil {
+		return err
+	}
+	_, err = e.w.Write(b)
+	return err
+}
+
 func encodeBoolValue(e *Encoder, v reflect.Value) error {
 	return e.EncodeBool(v.Bool())
+}
+
+func encodeInterfaceValue(e *Encoder, v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	return e.EncodeValue(v.Elem())
+}
+
+func encodeUnsupportedValue(e *Encoder, v reflect.Value) error {
+	return fmt.Errorf("msgpack: Encode(unsupported %s)", v.Type())
 }

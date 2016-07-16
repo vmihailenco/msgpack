@@ -9,13 +9,11 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
-var (
-	extTypes []reflect.Type
-)
+var extTypes []reflect.Type
 
 var bufferPool = &sync.Pool{
 	New: func() interface{} {
-		return &bytes.Buffer{}
+		return new(bytes.Buffer)
 	},
 }
 
