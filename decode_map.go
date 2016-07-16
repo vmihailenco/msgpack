@@ -56,7 +56,7 @@ func decodeMap(d *Decoder) (interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[interface{}]interface{}, n)
+	m := make(map[interface{}]interface{}, min(n, mapAllocLimit))
 	for i := 0; i < n; i++ {
 		mk, err := d.DecodeInterface()
 		if err != nil {
@@ -120,7 +120,7 @@ func (d *Decoder) decodeMapStringStringPtr(ptr *map[string]string) error {
 
 	m := *ptr
 	if m == nil {
-		*ptr = make(map[string]string, n)
+		*ptr = make(map[string]string, min(n, mapAllocLimit))
 		m = *ptr
 	}
 
@@ -156,7 +156,7 @@ func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error
 
 	m := *ptr
 	if m == nil {
-		*ptr = make(map[string]interface{}, n)
+		*ptr = make(map[string]interface{}, min(n, mapAllocLimit))
 		m = *ptr
 	}
 

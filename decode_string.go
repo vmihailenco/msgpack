@@ -8,6 +8,26 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
 )
 
+func (d *Decoder) bytesLen(c byte) (int, error) {
+	if c == codes.Nil {
+		return -1, nil
+	} else if codes.IsFixedString(c) {
+		return int(c & codes.FixedStrMask), nil
+	}
+	switch c {
+	case codes.Str8, codes.Bin8:
+		n, err := d.uint8()
+		return int(n), err
+	case codes.Str16, codes.Bin16:
+		n, err := d.uint16()
+		return int(n), err
+	case codes.Str32, codes.Bin32:
+		n, err := d.uint32()
+		return int(n), err
+	}
+	return 0, fmt.Errorf("msgpack: invalid code %x decoding bytes length", c)
+}
+
 func (d *Decoder) DecodeString() (string, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -45,26 +65,6 @@ func (d *Decoder) DecodeBytesLen() (int, error) {
 	return d.bytesLen(c)
 }
 
-func (d *Decoder) bytesLen(c byte) (int, error) {
-	if c == codes.Nil {
-		return -1, nil
-	} else if codes.IsFixedString(c) {
-		return int(c & codes.FixedStrMask), nil
-	}
-	switch c {
-	case codes.Str8, codes.Bin8:
-		n, err := d.uint8()
-		return int(n), err
-	case codes.Str16, codes.Bin16:
-		n, err := d.uint16()
-		return int(n), err
-	case codes.Str32, codes.Bin32:
-		n, err := d.uint32()
-		return int(n), err
-	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding bytes length", c)
-}
-
 func (d *Decoder) DecodeBytes() ([]byte, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
@@ -81,15 +81,7 @@ func (d *Decoder) bytes(c byte, b []byte) ([]byte, error) {
 	if n == -1 {
 		return nil, nil
 	}
-
-	if b == nil {
-		b = make([]byte, n)
-	} else if len(b) != n {
-		b = setBytesLen(b, n)
-	}
-
-	_, err = io.ReadFull(d.r, b)
-	return b, err
+	return readN(d.r, b, n)
 }
 
 func (d *Decoder) bytesNoCopy() ([]byte, error) {
@@ -125,16 +117,7 @@ func (d *Decoder) bytesPtr(c byte, ptr *[]byte) error {
 		return nil
 	}
 
-	b := *ptr
-	if b == nil {
-		*ptr = make([]byte, n)
-		b = *ptr
-	} else if len(b) != n {
-		*ptr = setBytesLen(b, n)
-		b = *ptr
-	}
-
-	_, err = io.ReadFull(d.r, b)
+	*ptr, err = readN(d.r, *ptr, n)
 	return err
 }
 
@@ -177,8 +160,8 @@ func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
 	if n == -1 {
 		return nil
 	}
-	if n > v.Cap() {
-		n = v.Cap()
+	if n > v.Len() {
+		return fmt.Errorf("%s len is %d, but msgpack has %d elements", v.Type(), v.Len(), n)
 	}
 
 	b := v.Slice(0, n).Bytes()

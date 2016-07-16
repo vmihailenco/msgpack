@@ -53,24 +53,35 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 		return nil
 	}
 
-	s := *ptr
-	if s == nil {
-		*ptr = make([]string, n)
-		s = *ptr
-	} else if len(s) != n {
-		*ptr = setStringsLen(s, n)
-		s = *ptr
-	}
-
+	ss := setStringsCap(*ptr, n)
 	for i := 0; i < n; i++ {
-		v, err := d.DecodeString()
+		s, err := d.DecodeString()
 		if err != nil {
 			return err
 		}
-		s[i] = v
+		ss = append(ss, s)
 	}
+	*ptr = ss
 
 	return nil
+}
+
+func setStringsCap(s []string, n int) []string {
+	if n > sliceAllocLimit {
+		n = sliceAllocLimit
+	}
+
+	if s == nil {
+		return make([]string, 0, n)
+	}
+
+	if cap(s) >= n {
+		return s[:0]
+	}
+
+	s = s[:cap(s)]
+	s = append(s, make([]string, n-len(s))...)
+	return s[:0]
 }
 
 func decodeSliceValue(d *Decoder, v reflect.Value) error {
@@ -83,14 +94,21 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		v.Set(reflect.Zero(v.Type()))
 		return nil
 	}
+	if n == 0 && v.IsNil() {
+		v.Set(reflect.MakeSlice(v.Type(), 0, 0))
+		return nil
+	}
 
-	if v.IsNil() {
-		v.Set(reflect.MakeSlice(v.Type(), n, n))
-	} else if v.Len() != n {
-		v.Set(setSliceValueLen(v, n))
+	if v.Cap() >= n {
+		v.Set(v.Slice(n, n))
+	} else if v.Len() < v.Cap() {
+		v.Set(v.Slice(v.Cap(), v.Cap()))
 	}
 
 	for i := 0; i < n; i++ {
+		if i >= v.Len() {
+			v.Set(growSliceValue(v, n))
+		}
 		sv := v.Index(i)
 		if err := d.DecodeValue(sv); err != nil {
 			return err
@@ -98,6 +116,15 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 	}
 
 	return nil
+}
+
+func growSliceValue(v reflect.Value, n int) reflect.Value {
+	diff := n - v.Cap()
+	if diff > sliceAllocLimit {
+		diff = sliceAllocLimit
+	}
+	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
+	return v
 }
 
 func decodeArrayValue(d *Decoder, v reflect.Value) error {
@@ -110,7 +137,10 @@ func decodeArrayValue(d *Decoder, v reflect.Value) error {
 		return nil
 	}
 
-	for i := 0; i < n && i < v.Len(); i++ {
+	if n > v.Len() {
+		return fmt.Errorf("%s len is %d, but msgpack has %d elements", v.Type(), v.Len(), n)
+	}
+	for i := 0; i < n; i++ {
 		sv := v.Index(i)
 		if err := d.DecodeValue(sv); err != nil {
 			return err
@@ -137,13 +167,13 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 		return nil, nil
 	}
 
-	s := make([]interface{}, n)
+	s := make([]interface{}, 0, min(n, sliceAllocLimit))
 	for i := 0; i < n; i++ {
 		v, err := d.DecodeInterface()
 		if err != nil {
 			return nil, err
 		}
-		s[i] = v
+		s = append(s, v)
 	}
 
 	return s, nil
