@@ -78,7 +78,7 @@ func BenchmarkInt4(b *testing.B) {
 
 func BenchmarkInt8(b *testing.B) {
 	var dst int
-	benchmarkEncodeDecode(b, 2147483648, &dst)
+	benchmarkEncodeDecode(b, int64(2147483648), &dst)
 }
 
 func BenchmarkInt0Binary(b *testing.B) {

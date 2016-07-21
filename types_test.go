@@ -155,10 +155,10 @@ type decoderTest struct {
 }
 
 var decoderTests = []decoderTest{
-	{b: []byte{codes.Bin32, 0xff, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
-	{b: []byte{codes.Str32, 0xff, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
-	{b: []byte{codes.Array32, 0xff, 0xff, 0xff, 0xff}, out: new([]int), err: "EOF"},
-	{b: []byte{codes.Map32, 0xff, 0xff, 0xff, 0xff}, out: new(map[int]int), err: "EOF"},
+	{b: []byte{codes.Bin32, 0x0f, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
+	{b: []byte{codes.Str32, 0x0f, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
+	{b: []byte{codes.Array32, 0x0f, 0xff, 0xff, 0xff}, out: new([]int), err: "EOF"},
+	{b: []byte{codes.Map32, 0x0f, 0xff, 0xff, 0xff}, out: new(map[int]int), err: "EOF"},
 }
 
 func TestDecoder(t *testing.T) {
