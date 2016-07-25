@@ -10,9 +10,6 @@ import (
 	"testing"
 	"time"
 
-	gomsgpack "github.com/ugorji/go-msgpack"
-	gocodec "github.com/ugorji/go/codec"
-
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
@@ -20,24 +17,6 @@ func benchmarkEncodeDecode(b *testing.B, src, dst interface{}) {
 	var buf bytes.Buffer
 	dec := msgpack.NewDecoder(&buf)
 	enc := msgpack.NewEncoder(&buf)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		if err := enc.Encode(src); err != nil {
-			b.Fatal(err)
-		}
-		if err := dec.Decode(dst); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func benchmarkEncodeDecodeUgorjiGoCodec(b *testing.B, src, dst interface{}) {
-	var buf bytes.Buffer
-	h := new(gocodec.MsgpackHandle)
-	enc := gocodec.NewEncoder(&buf, h)
-	dec := gocodec.NewDecoder(&buf, h)
 
 	b.ResetTimer()
 
@@ -95,27 +74,6 @@ func BenchmarkInt0Binary(b *testing.B) {
 	}
 }
 
-func BenchmarkInt0UgorjiGoMsgpack(b *testing.B) {
-	buf := new(bytes.Buffer)
-	dec := gomsgpack.NewDecoder(buf, nil)
-	enc := gomsgpack.NewEncoder(buf)
-	var out int
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		if err := enc.Encode(1); err != nil {
-			b.Fatal(err)
-		}
-		if err := dec.Decode(&out); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkInt0UgorjiGoCodec(b *testing.B) {
-	var dst int
-	benchmarkEncodeDecodeUgorjiGoCodec(b, 1, &dst)
-}
-
 func BenchmarkTime(b *testing.B) {
 	var dst time.Time
 	benchmarkEncodeDecode(b, time.Now(), &dst)
@@ -138,18 +96,6 @@ func BenchmarkByteArray(b *testing.B) {
 	benchmarkEncodeDecode(b, src, &dst)
 }
 
-func BenchmarkByteSliceUgorjiGoCodec(b *testing.B) {
-	src := make([]byte, 1024)
-	var dst []byte
-	benchmarkEncodeDecodeUgorjiGoCodec(b, src, &dst)
-}
-
-func BenchmarkByteArrayUgorjiGoCodec(b *testing.B) {
-	var src [1024]byte
-	var dst [1024]byte
-	benchmarkEncodeDecodeUgorjiGoCodec(b, src, &dst)
-}
-
 func BenchmarkMapStringString(b *testing.B) {
 	src := map[string]string{
 		"hello": "world",
@@ -167,15 +113,6 @@ func BenchmarkMapStringStringPtr(b *testing.B) {
 	var dst map[string]string
 	dstptr := &dst
 	benchmarkEncodeDecode(b, src, &dstptr)
-}
-
-func BenchmarkMapStringStringUgorjiGoCodec(b *testing.B) {
-	src := map[string]string{
-		"hello": "world",
-		"foo":   "bar",
-	}
-	var dst map[string]string
-	benchmarkEncodeDecodeUgorjiGoCodec(b, src, &dst)
 }
 
 func BenchmarkMapStringInterface(b *testing.B) {
@@ -338,45 +275,6 @@ func BenchmarkStructManual(b *testing.B) {
 
 		err = msgpack.Unmarshal(buf, out)
 		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkStructUgorjiGoMsgpack(b *testing.B) {
-	in := structForBenchmark()
-	out := new(benchmarkStruct)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		buf, err := gomsgpack.Marshal(in)
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		err = gomsgpack.Unmarshal(buf, out, nil)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkStructUgorjiGoCodec(b *testing.B) {
-	in := structForBenchmark()
-	out := new(benchmarkStruct)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		buf := new(bytes.Buffer)
-		enc := gocodec.NewEncoder(buf, &gocodec.MsgpackHandle{})
-		dec := gocodec.NewDecoder(buf, &gocodec.MsgpackHandle{})
-
-		if err := enc.Encode(in); err != nil {
-			b.Fatal(err)
-		}
-		if err := dec.Decode(out); err != nil {
 			b.Fatal(err)
 		}
 	}
