@@ -11,8 +11,8 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	msgpack "./"
+	codes "./codes"
 )
 
 type nameStruct struct {
@@ -617,4 +617,43 @@ func TestDecodeExtWithMap(t *testing.T) {
 	if !reflect.DeepEqual(v, ev) {
 		t.Fatalf("expect %#v but got %#v", ev, v)
 	}
+}
+
+func TestDecodeStrictMode(t *testing.T) {
+	var err error
+	type A struct {
+		F1 int
+		F2 int
+		F3 int
+	}
+	a := A{1, 2, 3}
+	type B struct {
+		F1 int
+		F2 int `msgpack:",omitEmpty"`
+	}
+	b := B{}
+	buf, err := msgpack.Marshal(&a)
+	if err != nil {
+		t.Fatalf("marshal error :%v", err)
+	}
+	decoder := msgpack.NewDecoder(bytes.NewReader(buf))
+	decoder.StrictMode = true
+	err = decoder.Decode(&b)
+	if err != nil {
+		t.Fatalf("decode error :%v", err)
+	}
+	println("B:", b.F1, b.F2)
+	type C struct {
+		F1 int
+		F2 int `msgpack:",omitEmpty"`
+		F4 int
+	}
+	c := C{}
+	decoder = msgpack.NewDecoder(bytes.NewReader(buf))
+	decoder.StrictMode = true
+	err = decoder.Decode(&c)
+	if err == nil {
+		t.Fatal("expected error not occurred")
+	}
+	println(err.Error())
 }
