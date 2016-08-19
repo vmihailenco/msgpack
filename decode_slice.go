@@ -100,9 +100,9 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if v.Cap() >= n {
-		v.Set(v.Slice(n, n))
+		v.Set(v.Slice(0, n))
 	} else if v.Len() < v.Cap() {
-		v.Set(v.Slice(v.Cap(), v.Cap()))
+		v.Set(v.Slice(0, v.Cap()))
 	}
 
 	for i := 0; i < n; i++ {
@@ -119,7 +119,7 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 }
 
 func growSliceValue(v reflect.Value, n int) reflect.Value {
-	diff := n - v.Cap()
+	diff := n - v.Len()
 	if diff > sliceAllocLimit {
 		diff = sliceAllocLimit
 	}
