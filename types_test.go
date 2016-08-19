@@ -232,6 +232,7 @@ func (t *typeTest) assertErr(err error, s string) {
 }
 
 var (
+	intSlice   = make([]int, 0, 3)
 	repoURL, _ = url.Parse("https://github.com/vmihailenco/msgpack")
 	typeTests  = []typeTest{
 		{in: make(chan bool), encErr: "msgpack: Encode(unsupported chan bool)"},
@@ -247,11 +248,6 @@ var (
 		{in: nil, out: new(int), wanted: int(0)},
 		{in: nil, out: new(*int), wantnil: true},
 
-		{in: nil, out: new([]int), wantnil: true},
-		{in: nil, out: &[]int{1, 2}, wantnil: true},
-		{in: make([]int, 0), out: new([]int)},
-		{in: make([]int, 1000), out: new([]int)},
-
 		{in: nil, out: new([]byte), wantnil: true},
 		{in: []byte(nil), out: new([]byte), wantnil: true},
 		{in: []byte(nil), out: &[]byte{}, wantnil: true},
@@ -266,9 +262,12 @@ var (
 		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
 
 		{in: nil, out: new([]int), wantnil: true},
+		{in: nil, out: &[]int{1, 2}, wantnil: true},
 		{in: []int(nil), out: new([]int), wantnil: true},
+		{in: make([]int, 0), out: new([]int)},
 		{in: []int{}, out: new([]int)},
 		{in: []int{1, 2, 3}, out: new([]int)},
+		{in: []int{1, 2, 3}, out: &intSlice},
 		{in: [3]int{1, 2, 3}, out: new([3]int)},
 		{in: [3]int{1, 2, 3}, out: new([2]int), decErr: "[2]int len is 2, but msgpack has 3 elements"},
 
