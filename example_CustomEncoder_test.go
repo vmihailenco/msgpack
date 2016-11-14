@@ -11,10 +11,8 @@ type customStruct struct {
 	N int
 }
 
-var (
-	_ msgpack.CustomEncoder = &customStruct{}
-	_ msgpack.CustomDecoder = &customStruct{}
-)
+var _ msgpack.CustomEncoder = (*customStruct)(nil)
+var _ msgpack.CustomDecoder = (*customStruct)(nil)
 
 func (s *customStruct) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.Encode(s.S, s.N)

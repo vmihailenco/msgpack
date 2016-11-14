@@ -48,12 +48,12 @@ func getEncoder(typ reflect.Type) encoderFunc {
 func _getEncoder(typ reflect.Type) encoderFunc {
 	kind := typ.Kind()
 
-	if typ.Implements(encoderType) {
+	if typ.Implements(customEncoderType) {
 		return encodeCustomValue
 	}
 
 	// Addressable struct field value.
-	if reflect.PtrTo(typ).Implements(encoderType) {
+	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(customEncoderType) {
 		return encodeCustomValuePtr
 	}
 
@@ -62,6 +62,9 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 	}
 	if encoder, ok := typEncMap[typ]; ok {
 		return encoder
+	}
+	if typ == errorType {
+		return encodeErrorValue
 	}
 
 	switch kind {
@@ -136,6 +139,13 @@ func encodeInterfaceValue(e *Encoder, v reflect.Value) error {
 		return e.EncodeNil()
 	}
 	return e.EncodeValue(v.Elem())
+}
+
+func encodeErrorValue(e *Encoder, v reflect.Value) error {
+	if v.IsNil() {
+		return e.EncodeNil()
+	}
+	return e.EncodeString(v.Interface().(error).Error())
 }
 
 func encodeUnsupportedValue(e *Encoder, v reflect.Value) error {

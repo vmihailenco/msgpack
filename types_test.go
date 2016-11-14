@@ -248,6 +248,11 @@ var (
 		{in: nil, out: new(int), wanted: int(0)},
 		{in: nil, out: new(*int), wantnil: true},
 
+		{in: nil, out: new(*string), wantnil: true},
+		{in: nil, out: new(string), wanted: ""},
+		{in: "", out: new(string)},
+		{in: "foo", out: new(string)},
+
 		{in: nil, out: new([]byte), wantnil: true},
 		{in: []byte(nil), out: new([]byte), wantnil: true},
 		{in: []byte(nil), out: &[]byte{}, wantnil: true},

@@ -44,13 +44,13 @@ func init() {
 func getDecoder(typ reflect.Type) decoderFunc {
 	kind := typ.Kind()
 
-	// Addressable struct field value.
-	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(decoderType) {
-		return decodeCustomValuePtr
+	if typ.Implements(customDecoderType) {
+		return decodeCustomValue
 	}
 
-	if typ.Implements(decoderType) {
-		return decodeCustomValue
+	// Addressable struct field value.
+	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(customDecoderType) {
+		return decodeCustomValuePtr
 	}
 
 	if typ.Implements(unmarshalerType) {
@@ -85,7 +85,6 @@ func getDecoder(typ reflect.Type) decoderFunc {
 				return decodeMapStringStringValue
 			case interfaceType:
 				return decodeMapStringInterfaceValue
-
 			}
 		}
 	}

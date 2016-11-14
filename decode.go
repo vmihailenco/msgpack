@@ -218,12 +218,19 @@ func (d *Decoder) bool(c byte) (bool, error) {
 }
 
 func (d *Decoder) interfaceValue(v reflect.Value) error {
-	iface, err := d.DecodeInterface()
+	vv, err := d.DecodeInterface()
 	if err != nil {
 		return err
 	}
-	if iface != nil {
-		v.Set(reflect.ValueOf(iface))
+	if vv != nil {
+		if v.Type() == errorType {
+			if vv, ok := vv.(string); ok {
+				v.Set(reflect.ValueOf(errors.New(vv)))
+				return nil
+			}
+		}
+
+		v.Set(reflect.ValueOf(vv))
 	}
 	return nil
 }
@@ -282,7 +289,8 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	case codes.Map16, codes.Map32:
 		d.r.UnreadByte()
 		return d.DecodeMap()
-	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16, codes.Ext8, codes.Ext16, codes.Ext32:
+	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
+		codes.Ext8, codes.Ext16, codes.Ext32:
 		return d.ext(c)
 	}
 
