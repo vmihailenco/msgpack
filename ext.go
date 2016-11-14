@@ -17,6 +17,12 @@ var bufferPool = &sync.Pool{
 	},
 }
 
+// RegisterExt records a type, identified by a value for that type,
+// under the provided id. That id will identify the concrete type of a value
+// sent or received as an interface variable. Only types that will be
+// transferred as implementations of interface values need to be registered.
+// Expecting to be used only during initialization, it panics if the mapping
+// between types and ids is not a bijection.
 func RegisterExt(id int8, value interface{}) {
 	if diff := int(id) - len(extTypes) + 1; diff > 0 {
 		extTypes = append(extTypes, make([]reflect.Type, diff)...)

@@ -27,9 +27,9 @@ func (q *queryResult) nextKey() {
 	q.query = q.query[ind+1:]
 }
 
-// Query extracts field specified by the query from the msgpack stream ignoring
-// any other fields. Query string consists of map keys and array indexes
-// separated with dot, e.g. `key1.0.key2`.
+// Query extracts data specified by the query from the msgpack stream skipping
+// any other data. Query consists of map keys and array indexes separated with dot,
+// e.g. key1.0.key2.
 func (d *Decoder) Query(query string) ([]interface{}, error) {
 	res := queryResult{
 		query: query,
