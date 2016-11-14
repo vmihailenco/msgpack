@@ -24,21 +24,22 @@ Install:
 
 ```go
 func ExampleMarshal() {
-	b, err := msgpack.Marshal(true)
-	if err != nil {
-		panic(err)
+	type Item struct {
+		Foo string
 	}
-	fmt.Printf("%#v\n", b)
-	// Output:
 
-	var out bool
-	err = msgpack.Unmarshal([]byte{0xc3}, &out)
+	b, err := msgpack.Marshal(&Item{Foo: "bar"})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(out)
-	// Output: []byte{0xc3}
-	// true
+
+	var item Item
+	err = msgpack.Unmarshal(b, &item)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(item.Foo)
+	// Output: bar
 }
 ```
 
