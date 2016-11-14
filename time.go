@@ -6,9 +6,7 @@ import (
 	"time"
 )
 
-var (
-	timeType = reflect.TypeOf((*time.Time)(nil)).Elem()
-)
+var timeType = reflect.TypeOf((*time.Time)(nil)).Elem()
 
 func init() {
 	Register(timeType, encodeTimeValue, decodeTimeValue)

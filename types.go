@@ -5,11 +5,13 @@ import (
 	"sync"
 )
 
+var errorType = reflect.TypeOf((*error)(nil)).Elem()
+
+var customEncoderType = reflect.TypeOf((*CustomEncoder)(nil)).Elem()
+var customDecoderType = reflect.TypeOf((*CustomDecoder)(nil)).Elem()
+
 var marshalerType = reflect.TypeOf((*Marshaler)(nil)).Elem()
 var unmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
-
-var encoderType = reflect.TypeOf((*CustomEncoder)(nil)).Elem()
-var decoderType = reflect.TypeOf((*CustomDecoder)(nil)).Elem()
 
 type encoderFunc func(*Encoder, reflect.Value) error
 type decoderFunc func(*Decoder, reflect.Value) error
@@ -21,8 +23,12 @@ var typDecMap = make(map[reflect.Type]decoderFunc)
 // In most cases you should prefer implementing CustomEncoder and
 // CustomDecoder interfaces.
 func Register(typ reflect.Type, enc encoderFunc, dec decoderFunc) {
-	typEncMap[typ] = enc
-	typDecMap[typ] = dec
+	if enc != nil {
+		typEncMap[typ] = enc
+	}
+	if dec != nil {
+		typDecMap[typ] = dec
+	}
 }
 
 //------------------------------------------------------------------------------

@@ -140,21 +140,26 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	extId, err := d.r.ReadByte()
 	if err != nil {
 		return nil, err
 	}
+
 	if int(extId) >= len(extTypes) {
 		return nil, fmt.Errorf("msgpack: unregistered ext id %d", extId)
 	}
+
 	typ := extTypes[extId]
 	if typ == nil {
 		return nil, fmt.Errorf("msgpack: unregistered ext id %d", extId)
 	}
+
 	v := reflect.New(typ).Elem()
 	if err := d.DecodeValue(v); err != nil {
 		return nil, err
 	}
+
 	return v.Interface(), nil
 }
 
