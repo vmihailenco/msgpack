@@ -200,12 +200,18 @@ func decodeStructValue(d *Decoder, strct reflect.Value) error {
 	if err != nil {
 		return err
 	}
+	fields := structs.Fields(strct.Type())
 	if n == -1 {
+		if d.StrictMode {
+			if fields.RequireFields > 0 {
+				return fmt.Errorf("msgpack: Decode(%s) missing required fields", strct.Type().Name())
+			}
+		}
 		strct.Set(reflect.Zero(strct.Type()))
 		return nil
 	}
 
-	fields := structs.Fields(strct.Type())
+	skipTimes := 0
 	for i := 0; i < n; i++ {
 		name, err := d.DecodeString()
 		if err != nil {
@@ -215,12 +221,20 @@ func decodeStructValue(d *Decoder, strct reflect.Value) error {
 			if err := f.DecodeValue(d, strct); err != nil {
 				return err
 			}
+			if f.omitEmpty {
+				skipTimes ++
+			}
 		} else {
 			if err := d.Skip(); err != nil {
 				return err
 			}
+			skipTimes ++
 		}
 	}
-
+	if d.StrictMode {
+		if fields.RequireFields != n - skipTimes {
+			return fmt.Errorf("msgpack: Decode(%s) missing required fields", strct.Type().Name())
+		}
+	}
 	return nil
 }

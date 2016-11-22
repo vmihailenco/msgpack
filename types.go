@@ -95,6 +95,7 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 type fields struct {
 	List  []*field
 	Table map[string]*field
+	RequireFields int
 
 	omitEmpty bool
 }
@@ -115,6 +116,8 @@ func (fs *fields) Add(field *field) {
 	fs.Table[field.name] = field
 	if field.omitEmpty {
 		fs.omitEmpty = field.omitEmpty
+	} else {
+		fs.RequireFields ++
 	}
 }
 

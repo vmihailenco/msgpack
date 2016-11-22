@@ -41,6 +41,12 @@ func Unmarshal(b []byte, v ...interface{}) error {
 
 type Decoder struct {
 	DecodeMapFunc func(*Decoder) (interface{}, error)
+	/*
+	StrictMode: when the message have less
+		fileds than struct type, (omitEmpty fileds are not counted),
+		Decode() returns an error.
+	*/
+	StrictMode bool
 
 	r   bufReader
 	buf []byte
