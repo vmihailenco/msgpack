@@ -9,7 +9,7 @@ Supports:
 - Inlining struct fields via `msgpack:",inline"`.
 - Omitting empty fields via `msgpack:",omitempty"`.
 - [Map keys sorting](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.SortMapKeys).
-- Encoding/decoding all [structs as arrays](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.StructAsArray) or [individual structs](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Marshal-AsArray).
+- Encoding/decoding all [structs as arrays](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.StructAsArray) or [individual structs](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Marshal--AsArray).
 - Simple but very fast and efficient [queries](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Decoder-Query).
 
 API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2.
