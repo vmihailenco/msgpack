@@ -19,10 +19,10 @@ func (d *Decoder) DecodeArrayLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return d.sliceLen(c)
+	return d.arrayLen(c)
 }
 
-func (d *Decoder) sliceLen(c byte) (int, error) {
+func (d *Decoder) arrayLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	} else if c >= codes.FixedArrayLow && c <= codes.FixedArrayHigh {
@@ -45,7 +45,7 @@ func decodeStringSliceValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func setStringsCap(s []string, n int) []string {
 }
 
 func decodeSliceValue(d *Decoder, v reflect.Value) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func growSliceValue(v reflect.Value, n int) reflect.Value {
 }
 
 func decodeArrayValue(d *Decoder, v reflect.Value) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 }
 
 func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
-	n, err := d.sliceLen(c)
+	n, err := d.arrayLen(c)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 }
 
 func (d *Decoder) skipSlice(c byte) error {
-	n, err := d.sliceLen(c)
+	n, err := d.arrayLen(c)
 	if err != nil {
 		return err
 	}

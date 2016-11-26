@@ -94,7 +94,7 @@ func getDecoder(typ reflect.Type) decoderFunc {
 func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	decoder := getDecoder(typ.Elem())
 	return func(d *Decoder, v reflect.Value) error {
-		if d.gotNilCode() {
+		if d.hasNilCode() {
 			v.Set(reflect.Zero(v.Type()))
 			return d.DecodeNil()
 		}
@@ -112,7 +112,7 @@ func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
 		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
 	}
-	if d.gotNilCode() {
+	if d.hasNilCode() {
 		return d.DecodeNil()
 	}
 	decoder := v.Addr().Interface().(CustomDecoder)
@@ -120,7 +120,7 @@ func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
 }
 
 func decodeCustomValue(d *Decoder, v reflect.Value) error {
-	if d.gotNilCode() {
+	if d.hasNilCode() {
 		return d.DecodeNil()
 	}
 	if v.IsNil() {

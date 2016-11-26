@@ -5,11 +5,12 @@ Supports:
 - Appengine *datastore.Key and datastore.Cursor.
 - [CustomEncoder](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
 - [Extensions](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-RegisterExt) to encode type information.
-- Fields renaming using `msgpack:"my_field_name"`.
-- Structs inlining using `msgpack:",inline"`.
-- Omitempty flag using `msgpack:",omitempty"`.
+- Renaming fields via `msgpack:"my_field_name"`.
+- Inlining struct fields via `msgpack:",inline"`.
+- Omitting empty fields via `msgpack:",omitempty"`.
 - [Map keys sorting](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.SortMapKeys).
-- [Msgpack query](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Decoder-Query) - simple but very efficient.
+- Encoding/decoding all [structs as arrays](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.StructAsArray) or [individual structs](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Marshal-AsArray).
+- Simple but very fast and efficient [queries](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Decoder-Query).
 
 API docs: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2.
 Examples: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples.
@@ -18,7 +19,9 @@ Examples: http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples.
 
 Install:
 
-    go get gopkg.in/vmihailenco/msgpack.v2
+```shell
+go get gopkg.in/vmihailenco/msgpack.v2
+```
 
 ## Quickstart
 
