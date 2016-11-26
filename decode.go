@@ -29,14 +29,16 @@ func newBufReader(r io.Reader) bufReader {
 	return bufio.NewReader(r)
 }
 
-func Unmarshal(b []byte, v ...interface{}) error {
+// Unmarshal decodes the MessagePack-encoded data and stores the result
+// in the value pointed to by v.
+func Unmarshal(data []byte, v ...interface{}) error {
 	if len(v) == 1 && v[0] != nil {
 		unmarshaler, ok := v[0].(Unmarshaler)
 		if ok {
-			return unmarshaler.UnmarshalMsgpack(b)
+			return unmarshaler.UnmarshalMsgpack(data)
 		}
 	}
-	return NewDecoder(bytes.NewReader(b)).Decode(v...)
+	return NewDecoder(bytes.NewReader(data)).Decode(v...)
 }
 
 type Decoder struct {
@@ -340,7 +342,7 @@ func (d *Decoder) Skip() error {
 	return fmt.Errorf("msgpack: unknown code %x", c)
 }
 
-// peekCode returns the next Msgpack code. See
+// peekCode returns next MessagePack code. See
 // https://github.com/msgpack/msgpack/blob/master/spec.md#formats for details.
 func (d *Decoder) PeekCode() (code byte, err error) {
 	code, err = d.r.ReadByte()
@@ -350,7 +352,7 @@ func (d *Decoder) PeekCode() (code byte, err error) {
 	return code, d.r.UnreadByte()
 }
 
-func (d *Decoder) gotNilCode() bool {
+func (d *Decoder) hasNilCode() bool {
 	code, err := d.PeekCode()
 	return err == nil && code == codes.Nil
 }

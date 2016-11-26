@@ -84,6 +84,12 @@ type InlineTest struct {
 	OmitEmptyTest `msgpack:",inline"`
 }
 
+type AsArrayTest struct {
+	_msgpack struct{} `msgpack:",asArray"`
+
+	OmitEmptyTest `msgpack:",inline"`
+}
+
 //------------------------------------------------------------------------------
 
 type encoderTest struct {
@@ -97,8 +103,6 @@ var encoderTests = []encoderTest{
 	{[]byte(nil), []byte{codes.Nil}},
 	{[]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
 	{[3]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
-
-	{OmitEmptyTest{}, []byte{codes.FixedMapLow}},
 
 	{intSet{}, []byte{codes.FixedArrayLow}},
 	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
@@ -119,6 +123,8 @@ var encoderTests = []encoderTest{
 		[]byte{codes.FixedStrLow | 1, 'a', codes.FixedStrLow | 1, 'b', codes.Nil, 0x7, 0x6},
 	},
 
+	{OmitEmptyTest{}, []byte{codes.FixedMapLow}},
+
 	{&OmitEmptyTest{Foo: "hello"}, []byte{
 		codes.FixedMapLow | 1,
 		codes.FixedStrLow | byte(len("Foo")), 'F', 'o', 'o',
@@ -130,6 +136,8 @@ var encoderTests = []encoderTest{
 		codes.FixedStrLow | byte(len("Bar")), 'B', 'a', 'r',
 		codes.FixedStrLow | byte(len("world")), 'w', 'o', 'r', 'l', 'd',
 	}},
+
+	{&AsArrayTest{}, []byte{codes.FixedArrayLow | 2, codes.FixedStrLow, codes.FixedStrLow}},
 }
 
 func TestEncoder(t *testing.T) {
@@ -300,9 +308,8 @@ var (
 		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
 		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(*StructTest)},
 
-		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
-		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},
-
+		{in: EmbedingTest{}, out: new(EmbedingTest)},
+		{in: EmbedingTest{}, out: new(*EmbedingTest)},
 		{
 			in: EmbedingTest{
 				unexported: unexported{Foo: "hello"},
@@ -310,13 +317,9 @@ var (
 			},
 			out: new(EmbedingTest),
 		},
-		{
-			in: EmbedingTest{
-				unexported: unexported{Foo: "hello"},
-				Exported:   Exported{Bar: "world"},
-			},
-			out: new(*EmbedingTest),
-		},
+
+		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
+		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},
 
 		{in: new(CompactEncodingTest), out: new(CompactEncodingTest)},
 		{in: new(CompactEncodingTest), out: new(*CompactEncodingTest)},
@@ -331,6 +334,10 @@ var (
 
 		{in: repoURL, out: new(url.URL)},
 		{in: repoURL, out: new(*url.URL)},
+
+		{in: AsArrayTest{}, out: new(AsArrayTest)},
+		{in: AsArrayTest{}, out: new(*AsArrayTest)},
+		{in: AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}}, out: new(AsArrayTest)},
 	}
 )
 

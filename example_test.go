@@ -47,7 +47,7 @@ func ExampleRegisterExt() {
 	// Output: msgpack_test.Item{S:"string"}
 }
 
-func Example_mapStringInterface() {
+func ExampleMarshal_mapStringInterface() {
 	in := map[string]interface{}{"foo": 1, "hello": "world"}
 	b, err := msgpack.Marshal(in)
 	if err != nil {
@@ -68,7 +68,7 @@ func Example_mapStringInterface() {
 	// hello = world
 }
 
-func Example_recursiveMapStringInterface() {
+func ExampleMarshal_recursiveMapStringInterface() {
 	buf := new(bytes.Buffer)
 
 	enc := msgpack.NewEncoder(buf)
@@ -98,9 +98,13 @@ func Example_recursiveMapStringInterface() {
 		}
 		return m, nil
 	}
+
 	out, err := dec.DecodeInterface()
-	fmt.Printf("%v %#v\n", err, out)
-	// Output: <nil> map[string]interface {}{"foo":map[string]interface {}{"hello":"world"}}
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(out)
+	// Output: map[foo:map[hello:world]]
 }
 
 func ExampleDecoder_Query() {
@@ -127,4 +131,49 @@ func ExampleDecoder_Query() {
 	fmt.Println("2nd phone is", values[0])
 	// Output: phones are [12345 54321]
 	// 2nd phone is 54321
+}
+
+func ExampleEncoder_StructAsArray() {
+	type Item struct {
+		Foo string
+		Bar string
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf).StructAsArray(true)
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v, err := dec.DecodeInterface()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(v)
+	// Output: [foo bar]
+}
+
+func ExampleMarshal_asArray() {
+	type Item struct {
+		_msgpack struct{} `msgpack:",asArray"`
+		Foo      string
+		Bar      string
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v, err := dec.DecodeInterface()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(v)
+	// Output: [foo bar]
 }
