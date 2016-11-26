@@ -124,7 +124,6 @@ var encoderTests = []encoderTest{
 	},
 
 	{OmitEmptyTest{}, []byte{codes.FixedMapLow}},
-
 	{&OmitEmptyTest{Foo: "hello"}, []byte{
 		codes.FixedMapLow | 1,
 		codes.FixedStrLow | byte(len("Foo")), 'F', 'o', 'o',
@@ -338,6 +337,11 @@ var (
 		{in: AsArrayTest{}, out: new(AsArrayTest)},
 		{in: AsArrayTest{}, out: new(*AsArrayTest)},
 		{in: AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}}, out: new(AsArrayTest)},
+		{
+			in:     AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}},
+			out:    new(unexported),
+			wanted: unexported{Foo: "foo"},
+		},
 	}
 )
 
@@ -356,7 +360,9 @@ func TestTypes(t *testing.T) {
 	for _, test := range typeTests {
 		test.T = t
 
-		b, err := msgpack.Marshal(test.in)
+		var buf bytes.Buffer
+		enc := msgpack.NewEncoder(&buf)
+		err := enc.Encode(test.in)
 		if test.encErr != "" {
 			test.assertErr(err, test.encErr)
 			continue
@@ -365,13 +371,18 @@ func TestTypes(t *testing.T) {
 			t.Fatalf("Marshal failed: %s (in=%#v)", err, test.in)
 		}
 
-		err = msgpack.Unmarshal(b, test.out)
+		dec := msgpack.NewDecoder(&buf)
+		err = dec.Decode(test.out)
 		if test.decErr != "" {
 			test.assertErr(err, test.decErr)
 			continue
 		}
 		if err != nil {
 			t.Fatalf("Unmarshal failed: %s (%s)", err, test)
+		}
+
+		if buf.Len() > 0 {
+			t.Fatalf("unread data in the buffer: %q (%s)", buf.Bytes(), test)
 		}
 
 		if test.wantnil {

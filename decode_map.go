@@ -227,6 +227,12 @@ func decodeStructValue(d *Decoder, strct reflect.Value) error {
 				return err
 			}
 		}
+		// Skip extra values.
+		for i := len(fields.List); i < n; i++ {
+			if err := d.Skip(); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 
