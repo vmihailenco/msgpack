@@ -2,7 +2,6 @@ package msgpack
 
 import (
 	"fmt"
-	"io/ioutil"
 	"reflect"
 )
 
@@ -49,8 +48,14 @@ func getDecoder(typ reflect.Type) decoderFunc {
 	}
 
 	// Addressable struct field value.
-	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(customDecoderType) {
-		return decodeCustomValuePtr
+	if kind != reflect.Ptr {
+		ptr := reflect.PtrTo(typ)
+		if ptr.Implements(customDecoderType) {
+			return decodeCustomValueAddr
+		}
+		if ptr.Implements(unmarshalerType) {
+			return unmarshalValueAddr
+		}
 	}
 
 	if typ.Implements(unmarshalerType) {
@@ -108,11 +113,12 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	}
 }
 
-func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
+func decodeCustomValueAddr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
 		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
 	}
 	if d.hasNilCode() {
+		// TODO: zeroing?
 		return d.DecodeNil()
 	}
 	decoder := v.Addr().Interface().(CustomDecoder)
@@ -121,6 +127,7 @@ func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
 
 func decodeCustomValue(d *Decoder, v reflect.Value) error {
 	if d.hasNilCode() {
+		// TODO: zeroing?
 		return d.DecodeNil()
 	}
 	if v.IsNil() {
@@ -130,16 +137,41 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 	return decoder.DecodeMsgpack(d)
 }
 
+func unmarshalValueAddr(d *Decoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+	}
+	if d.hasNilCode() {
+		// TODO: zeroing?
+		return d.DecodeNil()
+	}
+	return _unmarshalValue(d, v.Addr())
+}
+
 func unmarshalValue(d *Decoder, v reflect.Value) error {
+	if d.hasNilCode() {
+		// TODO: zeroing?
+		return d.DecodeNil()
+	}
 	if v.IsNil() {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
-	b, err := ioutil.ReadAll(d.r)
-	if err != nil {
+	return _unmarshalValue(d, v)
+}
+
+func _unmarshalValue(d *Decoder, v reflect.Value) error {
+	d.rec = makeBuffer()
+	if err := d.Skip(); err != nil {
 		return err
 	}
+
 	unmarshaler := v.Interface().(Unmarshaler)
-	return unmarshaler.UnmarshalMsgpack(b)
+	if err := unmarshaler.UnmarshalMsgpack(d.rec); err != nil {
+		return err
+	}
+
+	d.rec = nil
+	return nil
 }
 
 func decodeBoolValue(d *Decoder, v reflect.Value) error {
