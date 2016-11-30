@@ -14,7 +14,7 @@ func (d *Decoder) skipN(n int) error {
 }
 
 func (d *Decoder) uint8() (uint8, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -58,7 +58,7 @@ func (d *Decoder) uint64() (uint64, error) {
 }
 
 func (d *Decoder) DecodeUint64() (uint64, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -98,7 +98,7 @@ func (d *Decoder) uint(c byte) (uint64, error) {
 }
 
 func (d *Decoder) DecodeInt64() (int64, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -139,7 +139,7 @@ func (d *Decoder) int(c byte) (int64, error) {
 }
 
 func (d *Decoder) DecodeFloat32() (float32, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -158,7 +158,7 @@ func (d *Decoder) float32(c byte) (float32, error) {
 }
 
 func (d *Decoder) DecodeFloat64() (float64, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}

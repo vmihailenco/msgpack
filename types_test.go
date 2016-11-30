@@ -15,12 +15,29 @@ import (
 
 //------------------------------------------------------------------------------
 
-type intSet map[int]struct{}
+type Object struct {
+	n int
+}
 
-var _ msgpack.CustomEncoder = (*intSet)(nil)
-var _ msgpack.CustomDecoder = (*intSet)(nil)
+func (o *Object) MarshalMsgpack() ([]byte, error) {
+	if o == nil {
+		return msgpack.Marshal(0)
+	}
+	return msgpack.Marshal(o.n)
+}
 
-func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (o *Object) UnmarshalMsgpack(b []byte) error {
+	return msgpack.Unmarshal(b, &o.n)
+}
+
+//------------------------------------------------------------------------------
+
+type IntSet map[int]struct{}
+
+var _ msgpack.CustomEncoder = (*IntSet)(nil)
+var _ msgpack.CustomDecoder = (*IntSet)(nil)
+
+func (set IntSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 	slice := make([]int, 0, len(set))
 	for n, _ := range set {
 		slice = append(slice, n)
@@ -28,13 +45,13 @@ func (set intSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.Encode(slice)
 }
 
-func (setptr *intSet) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (setptr *IntSet) DecodeMsgpack(dec *msgpack.Decoder) error {
 	n, err := dec.DecodeSliceLen()
 	if err != nil {
 		return err
 	}
 
-	set := make(intSet, n)
+	set := make(IntSet, n)
 	for i := 0; i < n; i++ {
 		n, err := dec.DecodeInt()
 		if err != nil {
@@ -49,28 +66,28 @@ func (setptr *intSet) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 //------------------------------------------------------------------------------
 
-type CompactEncodingTest struct {
+type CustomEncoder struct {
 	str string
-	ref *CompactEncodingTest
+	ref *CustomEncoder
 	num int
 }
 
-var _ msgpack.CustomEncoder = (*CompactEncodingTest)(nil)
-var _ msgpack.CustomDecoder = (*CompactEncodingTest)(nil)
+var _ msgpack.CustomEncoder = (*CustomEncoder)(nil)
+var _ msgpack.CustomDecoder = (*CustomEncoder)(nil)
 
-func (s *CompactEncodingTest) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (s *CustomEncoder) EncodeMsgpack(enc *msgpack.Encoder) error {
 	if s == nil {
 		return enc.EncodeNil()
 	}
 	return enc.Encode(s.str, s.ref, s.num)
 }
 
-func (s *CompactEncodingTest) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (s *CustomEncoder) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.Decode(&s.str, &s.ref, &s.num)
 }
 
-type CompactEncodingFieldTest struct {
-	Field CompactEncodingTest
+type CustomEncoderField struct {
+	Field CustomEncoder
 }
 
 //------------------------------------------------------------------------------
@@ -104,8 +121,8 @@ var encoderTests = []encoderTest{
 	{[]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
 	{[3]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
 
-	{intSet{}, []byte{codes.FixedArrayLow}},
-	{intSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
+	{IntSet{}, []byte{codes.FixedArrayLow}},
+	{IntSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
 
 	{map[string]string(nil), []byte{codes.Nil}},
 	{map[string]string{"a": "", "b": "", "c": "", "d": "", "e": ""}, []byte{
@@ -117,9 +134,14 @@ var encoderTests = []encoderTest{
 		codes.FixedStrLow | 1, 'e', codes.FixedStrLow,
 	}},
 
-	{&CompactEncodingTest{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
+	{(*Object)(nil), []byte{0}},
+	{&Object{}, []byte{0}},
+	{&Object{42}, []byte{42}},
+	{[]*Object{nil, nil}, []byte{codes.FixedArrayLow | 2, 0, 0}},
+
+	{&CustomEncoder{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
 	{
-		&CompactEncodingTest{"a", &CompactEncodingTest{"b", nil, 7}, 6},
+		&CustomEncoder{"a", &CustomEncoder{"b", nil, 7}, 6},
 		[]byte{codes.FixedStrLow | 1, 'a', codes.FixedStrLow | 1, 'b', codes.Nil, 0x7, 0x6},
 	},
 
@@ -300,9 +322,13 @@ var (
 		{in: mapStringString{"foo": "bar"}, out: new(mapStringString)},
 		{in: mapStringInterface{"foo": "bar"}, out: new(mapStringInterface)},
 
-		{in: intSet{}, out: new(intSet)},
-		{in: intSet{42: struct{}{}}, out: new(intSet)},
-		{in: intSet{42: struct{}{}}, out: new(*intSet)},
+		{in: (*Object)(nil), out: new(Object), wanted: Object{}},
+		{in: &Object{42}, out: new(Object)},
+		{in: []*Object{new(Object), new(Object)}, out: new([]*Object)},
+
+		{in: IntSet{}, out: new(IntSet)},
+		{in: IntSet{42: struct{}{}}, out: new(IntSet)},
+		{in: IntSet{42: struct{}{}}, out: new(*IntSet)},
 
 		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
 		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(*StructTest)},
@@ -320,15 +346,15 @@ var (
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},
 
-		{in: new(CompactEncodingTest), out: new(CompactEncodingTest)},
-		{in: new(CompactEncodingTest), out: new(*CompactEncodingTest)},
+		{in: new(CustomEncoder), out: new(CustomEncoder)},
+		{in: new(CustomEncoder), out: new(*CustomEncoder)},
 		{
-			in:  &CompactEncodingTest{"a", &CompactEncodingTest{"b", nil, 1}, 2},
-			out: new(CompactEncodingTest),
+			in:  &CustomEncoder{"a", &CustomEncoder{"b", nil, 1}, 2},
+			out: new(CustomEncoder),
 		},
 		{
-			in:  &CompactEncodingFieldTest{Field: CompactEncodingTest{"a", nil, 1}},
-			out: new(CompactEncodingFieldTest),
+			in:  &CustomEncoderField{Field: CustomEncoder{"a", nil, 1}},
+			out: new(CustomEncoderField),
 		},
 
 		{in: repoURL, out: new(url.URL)},

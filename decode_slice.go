@@ -15,7 +15,7 @@ func (d *Decoder) DecodeSliceLen() (int, error) {
 }
 
 func (d *Decoder) DecodeArrayLen() (int, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -151,7 +151,7 @@ func decodeArrayValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeSlice() ([]interface{}, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return nil, err
 	}

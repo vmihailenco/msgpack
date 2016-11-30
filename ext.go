@@ -93,7 +93,7 @@ func (e *Encoder) encodeExtLen(l int) error {
 }
 
 func (d *Decoder) decodeExtLen() (int, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -127,7 +127,7 @@ func (d *Decoder) extLen(c byte) (int, error) {
 }
 
 func (d *Decoder) decodeExt() (interface{}, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
@@ -141,7 +141,7 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 		return nil, err
 	}
 
-	extId, err := d.r.ReadByte()
+	extId, err := d.readByte()
 	if err != nil {
 		return nil, err
 	}
@@ -173,19 +173,19 @@ func (d *Decoder) skipExt(c byte) error {
 
 func (d *Decoder) skipExtHeader(c byte) (byte, error) {
 	// Read ext type.
-	_, err := d.r.ReadByte()
+	_, err := d.readByte()
 	if err != nil {
 		return 0, err
 	}
 	// Read ext body len.
 	for i := 0; i < extHeaderLen(c); i++ {
-		_, err := d.r.ReadByte()
+		_, err := d.readByte()
 		if err != nil {
 			return 0, err
 		}
 	}
 	// Read code again.
-	return d.r.ReadByte()
+	return d.readByte()
 }
 
 func extHeaderLen(c byte) int {
