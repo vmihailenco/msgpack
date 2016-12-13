@@ -1,5 +1,7 @@
 package codes
 
+import "errors"
+
 var (
 	PosFixedNumHigh byte = 0x7f
 	NegFixedNumLow  byte = 0xe0
@@ -53,6 +55,8 @@ var (
 	Ext8     byte = 0xc7
 	Ext16    byte = 0xc8
 	Ext32    byte = 0xc9
+
+	ErrNotExtType = errors.New("not an ext type")
 )
 
 func IsFixedNum(c byte) bool {
@@ -73,4 +77,27 @@ func IsFixedString(c byte) bool {
 
 func IsExt(c byte) bool {
 	return (c >= FixExt1 && c <= FixExt16) || (c >= Ext8 && c <= Ext32)
+}
+
+// ExtType provides a fast way to extract the type field from an ext type without fully unmarshaling it
+func ExtType(value []byte) (int8, error) {
+	if len(value) >= 2 {
+		switch value[0] {
+		case FixExt1, FixExt2, FixExt4, FixExt8, FixExt16:
+			return int8(value[1]), nil
+		case Ext8:
+			if len(value) >= 3 {
+				return int8(value[2]), nil
+			}
+		case Ext16:
+			if len(value) >= 4 {
+				return int8(value[3]), nil
+			}
+		case Ext32:
+			if len(value) >= 6 {
+				return int8(value[5]), nil
+			}
+		}
+	}
+	return 0, ErrNotExtType
 }
