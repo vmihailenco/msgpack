@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	. "gopkg.in/check.v1"
-
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"gopkg.in/vmihailenco/msgpack.v2/codes"
+
+	. "gopkg.in/check.v1"
 )
 
 type nameStruct struct {
