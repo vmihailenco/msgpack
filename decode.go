@@ -13,8 +13,6 @@ import (
 )
 
 const bytesAllocLimit = 1024 * 1024 // 1mb
-const sliceAllocLimit = 1e4
-const mapAllocLimit = 1e4
 
 type bufReader interface {
 	Read([]byte) (int, error)
