@@ -79,11 +79,11 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 			return encodeByteArrayValue
 		}
 	case reflect.Map:
-		if typ.Key().Kind() == reflect.String {
-			switch typ.Elem().Kind() {
-			case reflect.String:
+		if typ.Key() == stringType {
+			switch typ.Elem() {
+			case stringType:
 				return encodeMapStringStringValue
-			case reflect.Interface:
+			case interfaceType:
 				return encodeMapStringInterfaceValue
 			}
 		}

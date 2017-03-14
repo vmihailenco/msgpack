@@ -224,8 +224,11 @@ type TimeEmbedingTest struct {
 }
 
 type (
-	stringAlias        string
+	interfaceAlias     interface{}
+	byteAlias          byte
 	uint8Alias         uint8
+	stringAlias        string
+	sliceByte          []byte
 	sliceString        []string
 	mapStringString    map[string]string
 	mapStringInterface map[string]interface{}
@@ -286,6 +289,10 @@ var (
 		{in: []byte(nil), out: new([]byte), wantnil: true},
 		{in: []byte(nil), out: &[]byte{}, wantnil: true},
 		{in: []byte{1, 2, 3}, out: new([]byte)},
+		{in: []byte{1, 2, 3}, out: new([]byte)},
+		{in: sliceByte{1, 2, 3}, out: new(sliceByte)},
+		{in: []byteAlias{1, 2, 3}, out: new([]byteAlias)},
+		{in: []uint8Alias{1, 2, 3}, out: new([]uint8Alias)},
 
 		{in: nil, out: new([3]byte), wanted: [3]byte{}},
 		{in: [3]byte{1, 2, 3}, out: new([3]byte)},
@@ -310,9 +317,7 @@ var (
 		{in: []string{"a", "b"}, out: new([]string)},
 		{in: [2]string{"a", "b"}, out: new([2]string)},
 		{in: sliceString{"foo", "bar"}, out: new(sliceString)},
-
 		{in: []stringAlias{"hello"}, out: new([]stringAlias)},
-		{in: []uint8Alias{1}, out: new([]uint8Alias)},
 
 		{in: nil, out: new(map[string]string), wantnil: true},
 		{in: nil, out: new(map[int]int), wantnil: true},
@@ -320,7 +325,9 @@ var (
 		{in: nil, out: &map[int]int{1: 2}, wantnil: true},
 		{in: map[string]interface{}{"foo": nil}, out: new(map[string]interface{})},
 		{in: mapStringString{"foo": "bar"}, out: new(mapStringString)},
+		{in: map[stringAlias]stringAlias{"foo": "bar"}, out: new(map[stringAlias]stringAlias)},
 		{in: mapStringInterface{"foo": "bar"}, out: new(mapStringInterface)},
+		{in: map[stringAlias]interfaceAlias{"foo": "bar"}, out: new(map[stringAlias]interfaceAlias)},
 
 		{in: (*Object)(nil), out: new(Object), wanted: Object{}},
 		{in: &Object{42}, out: new(Object)},
