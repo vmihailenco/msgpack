@@ -89,7 +89,7 @@ func (e *Encoder) encodeExtLen(l int) error {
 	if l < 65536 {
 		return e.write2(codes.Ext16, uint64(l))
 	}
-	return e.write4(codes.Ext32, uint64(l))
+	return e.write4(codes.Ext32, uint32(l))
 }
 
 func (d *Decoder) decodeExtLen() (int, error) {

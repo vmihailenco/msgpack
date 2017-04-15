@@ -36,7 +36,7 @@ func (e *Encoder) EncodeBytesLen(l int) error {
 	if l < 65536 {
 		return e.write2(codes.Bin16, uint64(l))
 	}
-	return e.write4(codes.Bin32, uint64(l))
+	return e.write4(codes.Bin32, uint32(l))
 }
 
 func (e *Encoder) encodeStrLen(l int) error {
@@ -49,7 +49,7 @@ func (e *Encoder) encodeStrLen(l int) error {
 	if l < 65536 {
 		return e.write2(codes.Str16, uint64(l))
 	}
-	return e.write4(codes.Str32, uint64(l))
+	return e.write4(codes.Str32, uint32(l))
 }
 
 func (e *Encoder) EncodeString(v string) error {
@@ -76,7 +76,7 @@ func (e *Encoder) EncodeArrayLen(l int) error {
 	if l < 65536 {
 		return e.write2(codes.Array16, uint64(l))
 	}
-	return e.write4(codes.Array32, uint64(l))
+	return e.write4(codes.Array32, uint32(l))
 }
 
 // Deprecated. Use EncodeArrayLen instead.
