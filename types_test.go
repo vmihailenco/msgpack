@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"net/url"
 	"reflect"
 	"strings"
@@ -279,6 +280,18 @@ var (
 
 		{in: nil, out: new(int), wanted: int(0)},
 		{in: nil, out: new(*int), wantnil: true},
+
+		{in: float32(3.14), out: new(float32)},
+		{in: int8(-1), out: new(float32), wanted: float32(-1)},
+		{in: int32(1), out: new(float32), wanted: float32(1)},
+		{in: int32(999999999), out: new(float32), wanted: float32(999999999)},
+		{in: int64(math.MaxInt64), out: new(float32), wanted: float32(math.MaxInt64)},
+
+		{in: float64(3.14), out: new(float64)},
+		{in: int8(-1), out: new(float64), wanted: float64(-1)},
+		{in: int64(1), out: new(float64), wanted: float64(1)},
+		{in: int64(999999999), out: new(float64), wanted: float64(999999999)},
+		{in: int64(math.MaxInt64), out: new(float64), wanted: float64(math.MaxInt64)},
 
 		{in: nil, out: new(*string), wantnil: true},
 		{in: nil, out: new(string), wanted: ""},
