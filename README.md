@@ -59,3 +59,8 @@ BenchmarkStructGOB-4                  	   10000	    104331 ns/op	   14664 B/op	 
 ## Howto
 
 Please go through [examples](http://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples) to get an idea how to use this package.
+
+## See also
+
+- [Golang PostgreSQL ORM](https://github.com/go-pg/pg)
+- [Golang message task queue](https://github.com/go-msgqueue/msgqueue)
