@@ -43,8 +43,15 @@ func init() {
 func getDecoder(typ reflect.Type) decoderFunc {
 	kind := typ.Kind()
 
+	if decoder, ok := typDecMap[typ]; ok {
+		return decoder
+	}
+
 	if typ.Implements(customDecoderType) {
 		return decodeCustomValue
+	}
+	if typ.Implements(unmarshalerType) {
+		return unmarshalValue
 	}
 
 	// Addressable struct field value.
@@ -56,14 +63,6 @@ func getDecoder(typ reflect.Type) decoderFunc {
 		if ptr.Implements(unmarshalerType) {
 			return unmarshalValueAddr
 		}
-	}
-
-	if typ.Implements(unmarshalerType) {
-		return unmarshalValue
-	}
-
-	if decoder, ok := typDecMap[typ]; ok {
-		return decoder
 	}
 
 	switch kind {
@@ -160,26 +159,32 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 }
 
 func _unmarshalValue(d *Decoder, v reflect.Value) error {
-	d.rec = makeBuffer()
-	if err := d.Skip(); err != nil {
-		return err
+	if d.extLen != 0 {
+		b, err := d.readN(d.extLen)
+		d.extLen = 0
+		if err != nil {
+			return err
+		}
+		d.rec = b
+	} else {
+		d.rec = makeBuffer()
+		if err := d.Skip(); err != nil {
+			return err
+		}
 	}
 
 	unmarshaler := v.Interface().(Unmarshaler)
-	if err := unmarshaler.UnmarshalMsgpack(d.rec); err != nil {
-		return err
-	}
-
+	err := unmarshaler.UnmarshalMsgpack(d.rec)
 	d.rec = nil
-	return nil
+	return err
 }
 
 func decodeBoolValue(d *Decoder, v reflect.Value) error {
-	r, err := d.DecodeBool()
+	flag, err := d.DecodeBool()
 	if err != nil {
 		return err
 	}
-	v.SetBool(r)
+	v.SetBool(flag)
 	return nil
 }
 

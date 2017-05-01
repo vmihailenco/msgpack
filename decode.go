@@ -48,7 +48,9 @@ type Decoder struct {
 
 	r   bufReader
 	buf []byte
-	rec []byte // accumulates read data if not nil
+
+	extLen int
+	rec    []byte // accumulates read data if not nil
 }
 
 func NewDecoder(r io.Reader) *Decoder {

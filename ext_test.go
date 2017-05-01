@@ -1,6 +1,7 @@
 package msgpack_test
 
 import (
+	"reflect"
 	"testing"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -8,7 +9,7 @@ import (
 )
 
 func init() {
-	msgpack.RegisterExt(0, extTest{})
+	msgpack.RegisterExt(9, extTest{})
 }
 
 func TestRegisterExtPanic(t *testing.T) {
@@ -18,12 +19,12 @@ func TestRegisterExtPanic(t *testing.T) {
 			t.Fatalf("panic expected")
 		}
 		got := r.(error).Error()
-		wanted := "ext with id 0 is already registered"
+		wanted := "msgpack: ext with id=9 is already registered"
 		if got != wanted {
 			t.Fatalf("got %q, wanted %q", got, wanted)
 		}
 	}()
-	msgpack.RegisterExt(0, extTest{})
+	msgpack.RegisterExt(9, extTest{})
 }
 
 type extTest struct {
@@ -66,8 +67,30 @@ func TestUnknownExt(t *testing.T) {
 		t.Fatalf("got nil, wanted error")
 	}
 	got := err.Error()
-	wanted := "msgpack: unregistered ext id 1"
+	wanted := "msgpack: unregistered ext id=1"
 	if got != wanted {
 		t.Fatalf("got %q, wanted %q", got, wanted)
+	}
+}
+
+func TestDecodeExtWithMap(t *testing.T) {
+	type S struct {
+		I int
+	}
+	msgpack.RegisterExt(2, S{})
+
+	b, err := msgpack.Marshal(&S{I: 42})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got map[string]interface{}
+	if err := msgpack.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	wanted := map[string]interface{}{"I": uint64(42)}
+	if !reflect.DeepEqual(got, wanted) {
+		t.Fatalf("got %#v, but wanted %#v", got, wanted)
 	}
 }

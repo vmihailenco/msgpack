@@ -100,21 +100,10 @@ func (e *Encoder) encode(v interface{}) error {
 		return e.EncodeFloat32(v)
 	case float64:
 		return e.EncodeFloat64(v)
-	case []string:
-		return e.encodeStringSlice(v)
 	case time.Duration:
 		return e.EncodeInt64(int64(v))
 	case time.Time:
 		return e.EncodeTime(v)
-	case Marshaler:
-		b, err := v.MarshalMsgpack()
-		if err != nil {
-			return err
-		}
-		_, err = e.w.Write(b)
-		return err
-	case CustomEncoder:
-		return v.EncodeMsgpack(e)
 	}
 	return e.EncodeValue(reflect.ValueOf(v))
 }
