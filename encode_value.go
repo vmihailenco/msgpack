@@ -38,31 +38,30 @@ func init() {
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {
-	enc := _getEncoder(typ)
-	if id := extTypeId(typ); id != -1 {
-		return makeExtEncoder(id, enc)
+	if encoder, ok := typEncMap[typ]; ok {
+		return encoder
 	}
-	return enc
-}
-
-func _getEncoder(typ reflect.Type) encoderFunc {
-	kind := typ.Kind()
 
 	if typ.Implements(customEncoderType) {
 		return encodeCustomValue
 	}
-
-	// Addressable struct field value.
-	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(customEncoderType) {
-		return encodeCustomValuePtr
-	}
-
 	if typ.Implements(marshalerType) {
 		return marshalValue
 	}
-	if encoder, ok := typEncMap[typ]; ok {
-		return encoder
+
+	kind := typ.Kind()
+
+	// Addressable struct field value.
+	if kind != reflect.Ptr {
+		ptr := reflect.PtrTo(typ)
+		if ptr.Implements(customEncoderType) {
+			return encodeCustomValuePtr
+		}
+		if ptr.Implements(marshalerType) {
+			return marshalValuePtr
+		}
 	}
+
 	if typ == errorType {
 		return encodeErrorValue
 	}
@@ -118,6 +117,13 @@ func encodeCustomValue(e *Encoder, v reflect.Value) error {
 	}
 	encoder := v.Interface().(CustomEncoder)
 	return encoder.EncodeMsgpack(e)
+}
+
+func marshalValuePtr(e *Encoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+	}
+	return marshalValue(e, v.Addr())
 }
 
 func marshalValue(e *Encoder, v reflect.Value) error {

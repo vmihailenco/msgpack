@@ -26,27 +26,6 @@ func ExampleMarshal() {
 	// Output: bar
 }
 
-func ExampleRegisterExt() {
-	type Item struct {
-		S string
-	}
-
-	msgpack.RegisterExt(1, Item{})
-
-	b, err := msgpack.Marshal(&Item{S: "string"})
-	if err != nil {
-		panic(err)
-	}
-
-	var v interface{}
-	err = msgpack.Unmarshal(b, &v)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%#v", v)
-	// Output: msgpack_test.Item{S:"string"}
-}
-
 func ExampleMarshal_mapStringInterface() {
 	in := map[string]interface{}{"foo": 1, "hello": "world"}
 	b, err := msgpack.Marshal(in)
