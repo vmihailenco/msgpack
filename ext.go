@@ -171,21 +171,20 @@ func (d *Decoder) skipExt(c byte) error {
 	return d.skipN(n)
 }
 
-func (d *Decoder) skipExtHeader(c byte) (byte, error) {
+func (d *Decoder) skipExtHeader(c byte) error {
 	// Read ext type.
 	_, err := d.readByte()
 	if err != nil {
-		return 0, err
+		return err
 	}
 	// Read ext body len.
 	for i := 0; i < extHeaderLen(c); i++ {
 		_, err := d.readByte()
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	// Read code again.
-	return d.readByte()
+	return nil
 }
 
 func extHeaderLen(c byte) int {

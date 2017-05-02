@@ -78,12 +78,18 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	if codes.IsExt(c) {
-		c, err = d.skipExtHeader(c)
+		if err = d.skipExtHeader(c); err != nil {
+			return 0, err
+		}
+
+		c, err = d.readByte()
 		if err != nil {
 			return 0, err
 		}
 	}
+
 	return d.mapLen(c)
 }
 

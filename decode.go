@@ -34,12 +34,6 @@ func makeBuffer() []byte {
 // Unmarshal decodes the MessagePack-encoded data and stores the result
 // in the value pointed to by v.
 func Unmarshal(data []byte, v ...interface{}) error {
-	if len(v) == 1 && v[0] != nil {
-		unmarshaler, ok := v[0].(Unmarshaler)
-		if ok {
-			return unmarshaler.UnmarshalMsgpack(data)
-		}
-	}
 	return NewDecoder(bytes.NewReader(data)).Decode(v...)
 }
 
@@ -169,10 +163,6 @@ func (d *Decoder) decode(dst interface{}) error {
 		if v != nil {
 			*v, err = d.DecodeTime()
 			return err
-		}
-	case CustomDecoder:
-		if v != nil {
-			return v.DecodeMsgpack(d)
 		}
 	}
 
