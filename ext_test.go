@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	msgpack.RegisterExt(9, extTest{})
+	msgpack.RegisterExt(9, ExtTest{})
 }
 
 func TestRegisterExtPanic(t *testing.T) {
@@ -24,19 +24,28 @@ func TestRegisterExtPanic(t *testing.T) {
 			t.Fatalf("got %q, wanted %q", got, wanted)
 		}
 	}()
-	msgpack.RegisterExt(9, extTest{})
+	msgpack.RegisterExt(9, ExtTest{})
 }
 
-type extTest struct {
+type ExtTest struct {
 	S string
 }
 
-type extTest2 struct {
-	S string
+var _ msgpack.CustomEncoder = (*ExtTest)(nil)
+var _ msgpack.CustomDecoder = (*ExtTest)(nil)
+
+func (ext ExtTest) EncodeMsgpack(e *msgpack.Encoder) error {
+	return e.EncodeString("hello " + ext.S)
+}
+
+func (ext *ExtTest) DecodeMsgpack(d *msgpack.Decoder) error {
+	var err error
+	ext.S, err = d.DecodeString()
+	return err
 }
 
 func TestExt(t *testing.T) {
-	for _, v := range []interface{}{extTest{"hello"}, &extTest{"hello"}} {
+	for _, v := range []interface{}{ExtTest{"world"}, &ExtTest{"world"}} {
 		b, err := msgpack.Marshal(v)
 		if err != nil {
 			t.Fatal(err)
@@ -48,12 +57,23 @@ func TestExt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		v, ok := dst.(extTest)
+		v, ok := dst.(ExtTest)
 		if !ok {
 			t.Fatalf("got %#v, wanted extTest", dst)
 		}
-		if v.S != "hello" {
-			t.Fatalf("got %q, wanted hello", v.S)
+
+		wanted := "hello world"
+		if v.S != wanted {
+			t.Fatalf("got %q, wanted %q", v.S, wanted)
+		}
+
+		var ext ExtTest
+		err = msgpack.Unmarshal(b, &ext)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ext.S != wanted {
+			t.Fatalf("got %q, wanted %q", ext.S, wanted)
 		}
 	}
 }

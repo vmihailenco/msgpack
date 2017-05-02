@@ -8,6 +8,10 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+func init() {
+	msgpack.RegisterExt(0, &EventTime{})
+}
+
 // https://github.com/fluent/fluentd/wiki/Forward-Protocol-Specification-v1#eventtime-ext-format
 type EventTime struct {
 	time.Time
@@ -34,8 +38,6 @@ func (tm *EventTime) UnmarshalMsgpack(b []byte) error {
 }
 
 func ExampleRegisterExt() {
-	msgpack.RegisterExt(0, &EventTime{})
-
 	b, err := msgpack.Marshal(&EventTime{time.Unix(123456789, 123)})
 	if err != nil {
 		panic(err)
@@ -47,5 +49,14 @@ func ExampleRegisterExt() {
 		panic(err)
 	}
 	fmt.Println(v.(EventTime).UTC())
+
+	var tm EventTime
+	err = msgpack.Unmarshal(b, &tm)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tm.UTC())
+
 	// Output: 1973-11-29 21:33:09.000000123 +0000 UTC
+	// 1973-11-29 21:33:09.000000123 +0000 UTC
 }

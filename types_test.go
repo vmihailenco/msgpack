@@ -21,9 +21,6 @@ type Object struct {
 }
 
 func (o *Object) MarshalMsgpack() ([]byte, error) {
-	if o == nil {
-		return msgpack.Marshal(0)
-	}
 	return msgpack.Marshal(o.n)
 }
 
@@ -135,10 +132,10 @@ var encoderTests = []encoderTest{
 		codes.FixedStrLow | 1, 'e', codes.FixedStrLow,
 	}},
 
-	{(*Object)(nil), []byte{0}},
+	{(*Object)(nil), []byte{codes.Nil}},
 	{&Object{}, []byte{0}},
 	{&Object{42}, []byte{42}},
-	{[]*Object{nil, nil}, []byte{codes.FixedArrayLow | 2, 0, 0}},
+	{[]*Object{nil, nil}, []byte{codes.FixedArrayLow | 2, codes.Nil, codes.Nil}},
 
 	{&CustomEncoder{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
 	{
@@ -342,7 +339,7 @@ var (
 		{in: mapStringInterface{"foo": "bar"}, out: new(mapStringInterface)},
 		{in: map[stringAlias]interfaceAlias{"foo": "bar"}, out: new(map[stringAlias]interfaceAlias)},
 
-		{in: (*Object)(nil), out: new(Object), wanted: Object{}},
+		{in: (*Object)(nil), out: new(*Object)},
 		{in: &Object{42}, out: new(Object)},
 		{in: []*Object{new(Object), new(Object)}, out: new([]*Object)},
 
@@ -388,6 +385,12 @@ var (
 			out:    new(unexported),
 			wanted: unexported{Foo: "foo"},
 		},
+
+		{in: (*EventTime)(nil), out: new(*EventTime)},
+		{in: &EventTime{time.Unix(0, 0)}, out: new(EventTime)},
+
+		{in: (*ExtTest)(nil), out: new(*ExtTest)},
+		{in: &ExtTest{"world"}, out: new(ExtTest), wanted: ExtTest{"hello world"}},
 	}
 )
 
@@ -407,6 +410,7 @@ func TestTypes(t *testing.T) {
 		test.T = t
 
 		var buf bytes.Buffer
+
 		enc := msgpack.NewEncoder(&buf)
 		err := enc.Encode(test.in)
 		if test.encErr != "" {

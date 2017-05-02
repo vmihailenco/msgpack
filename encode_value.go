@@ -115,6 +115,7 @@ func encodeCustomValue(e *Encoder, v reflect.Value) error {
 			return e.EncodeNil()
 		}
 	}
+
 	encoder := v.Interface().(CustomEncoder)
 	return encoder.EncodeMsgpack(e)
 }
@@ -127,6 +128,13 @@ func marshalValuePtr(e *Encoder, v reflect.Value) error {
 }
 
 func marshalValue(e *Encoder, v reflect.Value) error {
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		if v.IsNil() {
+			return e.EncodeNil()
+		}
+	}
+
 	marshaler := v.Interface().(Marshaler)
 	b, err := marshaler.MarshalMsgpack()
 	if err != nil {
