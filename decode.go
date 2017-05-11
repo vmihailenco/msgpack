@@ -195,7 +195,7 @@ func (d *Decoder) DecodeNil() error {
 		return err
 	}
 	if c != codes.Nil {
-		return fmt.Errorf("msgpack: invalid code %x decoding nil", c)
+		return fmt.Errorf("msgpack: invalid code=%x decoding nil", c)
 	}
 	return nil
 }
@@ -215,7 +215,7 @@ func (d *Decoder) bool(c byte) (bool, error) {
 	if c == codes.True {
 		return true, nil
 	}
-	return false, fmt.Errorf("msgpack: invalid code %x decoding bool", c)
+	return false, fmt.Errorf("msgpack: invalid code=%x decoding bool", c)
 }
 
 func (d *Decoder) interfaceValue(v reflect.Value) error {

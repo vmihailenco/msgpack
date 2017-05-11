@@ -94,7 +94,7 @@ func (d *Decoder) uint(c byte) (uint64, error) {
 	case codes.Uint64, codes.Int64:
 		return d.uint64()
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding uint64", c)
+	return 0, fmt.Errorf("msgpack: invalid code=%x decoding uint64", c)
 }
 
 func (d *Decoder) DecodeInt64() (int64, error) {
@@ -135,7 +135,7 @@ func (d *Decoder) int(c byte) (int64, error) {
 		n, err := d.uint64()
 		return int64(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding int64", c)
+	return 0, fmt.Errorf("msgpack: invalid code=%x decoding int64", c)
 }
 
 func (d *Decoder) DecodeFloat32() (float32, error) {
@@ -157,7 +157,7 @@ func (d *Decoder) float32(c byte) (float32, error) {
 
 	n, err := d.int(c)
 	if err != nil {
-		return 0, fmt.Errorf("msgpack: invalid code %x decoding float32", c)
+		return 0, fmt.Errorf("msgpack: invalid code=%x decoding float32", c)
 	}
 	return float32(n), nil
 }
@@ -188,7 +188,7 @@ func (d *Decoder) float64(c byte) (float64, error) {
 
 	n, err := d.int(c)
 	if err != nil {
-		return 0, fmt.Errorf("msgpack: invalid code %x decoding float32", c)
+		return 0, fmt.Errorf("msgpack: invalid code=%x decoding float32", c)
 	}
 	return float64(n), nil
 }

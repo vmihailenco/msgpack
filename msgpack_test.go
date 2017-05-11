@@ -19,7 +19,7 @@ type nameStruct struct {
 	Name string
 }
 
-func Test(t *testing.T) { TestingT(t) }
+func TestGocheck(t *testing.T) { TestingT(t) }
 
 type MsgpackTest struct {
 	buf *bytes.Buffer

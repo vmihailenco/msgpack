@@ -19,10 +19,11 @@ type decoderFunc func(*Decoder, reflect.Value) error
 var typEncMap = make(map[reflect.Type]encoderFunc)
 var typDecMap = make(map[reflect.Type]decoderFunc)
 
-// Register registers encoder and decoder functions for a type.
-// In most cases you should prefer implementing CustomEncoder and
-// CustomDecoder interfaces.
-func Register(typ reflect.Type, enc encoderFunc, dec decoderFunc) {
+// Register registers encoder and decoder functions for a value.
+// This is low level API and in most cases you should prefer implementing
+// Marshaler/CustomEncoder and Unmarshaler/CustomDecoder interfaces.
+func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
+	typ := reflect.TypeOf(value)
 	if enc != nil {
 		typEncMap[typ] = enc
 	}
@@ -36,8 +37,8 @@ func Register(typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 var structs = newStructCache()
 
 type structCache struct {
-	l sync.RWMutex
-	m map[reflect.Type]*fields
+	mu sync.RWMutex
+	m  map[reflect.Type]*fields
 }
 
 func newStructCache() *structCache {
@@ -47,18 +48,20 @@ func newStructCache() *structCache {
 }
 
 func (m *structCache) Fields(typ reflect.Type) *fields {
-	m.l.RLock()
+	m.mu.RLock()
 	fs, ok := m.m[typ]
-	m.l.RUnlock()
-	if !ok {
-		m.l.Lock()
-		fs, ok = m.m[typ]
-		if !ok {
-			fs = getFields(typ)
-			m.m[typ] = fs
-		}
-		m.l.Unlock()
+	m.mu.RUnlock()
+	if ok {
+		return fs
 	}
+
+	m.mu.Lock()
+	fs, ok = m.m[typ]
+	if !ok {
+		fs = getFields(typ)
+		m.m[typ] = fs
+	}
+	m.mu.Unlock()
 
 	return fs
 }

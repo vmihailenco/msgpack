@@ -9,7 +9,7 @@ import (
 	"github.com/vmihailenco/msgpack/codes"
 )
 
-var extTypes []reflect.Type
+var extTypes = make(map[int8]reflect.Type)
 
 var bufferPool = &sync.Pool{
 	New: func() interface{} {
@@ -24,27 +24,31 @@ var bufferPool = &sync.Pool{
 // Expecting to be used only during initialization, it panics if the mapping
 // between types and ids is not a bijection.
 func RegisterExt(id int8, value interface{}) {
-	if diff := int(id) - len(extTypes) + 1; diff > 0 {
-		extTypes = append(extTypes, make([]reflect.Type, diff)...)
-	}
-
-	if extTypes[id] != nil {
-		panic(fmt.Errorf("msgpack: ext with id=%d is already registered", id))
-	}
-
 	typ := reflect.TypeOf(value)
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
 	ptr := reflect.PtrTo(typ)
 
+	if _, ok := extTypes[id]; ok {
+		panic(fmt.Errorf("msgpack: ext with id=%d is already registered", id))
+	}
 	extTypes[id] = typ
-	decoder := getDecoder(typ)
-	Register(ptr, makeExtEncoder(id, getEncoder(ptr)), decoder)
-	Register(typ, makeExtEncoder(id, getEncoder(typ)), decoder)
+
+	registerExt(id, ptr, getEncoder(ptr), nil)
+	registerExt(id, typ, getEncoder(typ), getDecoder(typ))
 }
 
-func makeExtEncoder(id int8, enc encoderFunc) encoderFunc {
+func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
+	if enc != nil {
+		typEncMap[typ] = makeExtEncoder(id, enc)
+	}
+	if dec != nil {
+		typDecMap[typ] = dec
+	}
+}
+
+func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 	return func(e *Encoder, v reflect.Value) error {
 		buf := bufferPool.Get().(*bytes.Buffer)
 		defer bufferPool.Put(buf)
@@ -62,7 +66,7 @@ func makeExtEncoder(id int8, enc encoderFunc) encoderFunc {
 		if err := e.encodeExtLen(buf.Len()); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(id)); err != nil {
+		if err := e.w.WriteByte(byte(typeId)); err != nil {
 			return err
 		}
 		return e.write(buf.Bytes())
@@ -121,7 +125,7 @@ func (d *Decoder) parseExtLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	default:
-		return 0, fmt.Errorf("msgpack: invalid code %x decoding ext length", c)
+		return 0, fmt.Errorf("msgpack: invalid code=%x decoding ext length", c)
 	}
 }
 
@@ -146,12 +150,8 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 		return nil, err
 	}
 
-	if int(extId) >= len(extTypes) {
-		return nil, fmt.Errorf("msgpack: unregistered ext id=%d", extId)
-	}
-
-	typ := extTypes[extId]
-	if typ == nil {
+	typ, ok := extTypes[int8(extId)]
+	if !ok {
 		return nil, fmt.Errorf("msgpack: unregistered ext id=%d", extId)
 	}
 
