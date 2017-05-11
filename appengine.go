@@ -8,14 +8,9 @@ import (
 	ds "google.golang.org/appengine/datastore"
 )
 
-var (
-	keyPtrType = reflect.TypeOf((*ds.Key)(nil))
-	cursorType = reflect.TypeOf((*ds.Cursor)(nil)).Elem()
-)
-
 func init() {
-	Register(keyPtrType, encodeDatastoreKeyValue, decodeDatastoreKeyValue)
-	Register(cursorType, encodeDatastoreCursorValue, decodeDatastoreCursorValue)
+	Register((*ds.Key)(nil), encodeDatastoreKeyValue, decodeDatastoreKeyValue)
+	Register((*ds.Cursor)(nil), encodeDatastoreCursorValue, decodeDatastoreCursorValue)
 }
 
 func EncodeDatastoreKey(e *Encoder, key *ds.Key) error {

@@ -19,10 +19,11 @@ type decoderFunc func(*Decoder, reflect.Value) error
 var typEncMap = make(map[reflect.Type]encoderFunc)
 var typDecMap = make(map[reflect.Type]decoderFunc)
 
-// Register registers encoder and decoder functions for a type.
-// In most cases you should prefer implementing CustomEncoder and
-// CustomDecoder interfaces.
-func Register(typ reflect.Type, enc encoderFunc, dec decoderFunc) {
+// Register registers encoder and decoder functions for a value.
+// This is low level API and in most cases you should prefer implementing
+// Marshaler/CustomEncoder and Unmarshaler/CustomDecoder interfaces.
+func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
+	typ := reflect.TypeOf(value)
 	if enc != nil {
 		typEncMap[typ] = enc
 	}

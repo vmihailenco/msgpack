@@ -33,7 +33,7 @@ func (d *Decoder) arrayLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
+	return 0, fmt.Errorf("msgpack: invalid code=%x decoding array length", c)
 }
 
 func decodeStringSliceValue(d *Decoder, v reflect.Value) error {

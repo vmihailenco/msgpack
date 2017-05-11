@@ -2,6 +2,7 @@ package msgpack_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"net/url"
@@ -109,54 +110,46 @@ type AsArrayTest struct {
 
 type encoderTest struct {
 	in     interface{}
-	wanted []byte
+	wanted string
 }
 
 var encoderTests = []encoderTest{
-	{nil, []byte{codes.Nil}},
+	{nil, "c0"},
 
-	{[]byte(nil), []byte{codes.Nil}},
-	{[]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
-	{[3]byte{1, 2, 3}, []byte{codes.Bin8, 0x3, 0x1, 0x2, 0x3}},
+	{[]byte(nil), "c0"},
+	{[]byte{1, 2, 3}, "c403010203"},
+	{[3]byte{1, 2, 3}, "c403010203"},
 
-	{IntSet{}, []byte{codes.FixedArrayLow}},
-	{IntSet{8: struct{}{}}, []byte{codes.FixedArrayLow | 1, 0x8}},
+	{time.Unix(0, 0), "d6ff00000000"},
+	{time.Unix(1, 1), "d7ff0000000400000001"},
+	{time.Time{}, "c70cff00000000fffffff1886e0900"},
 
-	{map[string]string(nil), []byte{codes.Nil}},
-	{map[string]string{"a": "", "b": "", "c": "", "d": "", "e": ""}, []byte{
-		codes.FixedMapLow | 5,
-		codes.FixedStrLow | 1, 'a', codes.FixedStrLow,
-		codes.FixedStrLow | 1, 'b', codes.FixedStrLow,
-		codes.FixedStrLow | 1, 'c', codes.FixedStrLow,
-		codes.FixedStrLow | 1, 'd', codes.FixedStrLow,
-		codes.FixedStrLow | 1, 'e', codes.FixedStrLow,
-	}},
+	{IntSet{}, "90"},
+	{IntSet{8: struct{}{}}, "9108"},
 
-	{(*Object)(nil), []byte{codes.Nil}},
-	{&Object{}, []byte{0}},
-	{&Object{42}, []byte{42}},
-	{[]*Object{nil, nil}, []byte{codes.FixedArrayLow | 2, codes.Nil, codes.Nil}},
-
-	{&CustomEncoder{}, []byte{codes.FixedStrLow, codes.Nil, 0x0}},
+	{map[string]string(nil), "c0"},
 	{
-		&CustomEncoder{"a", &CustomEncoder{"b", nil, 7}, 6},
-		[]byte{codes.FixedStrLow | 1, 'a', codes.FixedStrLow | 1, 'b', codes.Nil, 0x7, 0x6},
+		map[string]string{"a": "", "b": "", "c": "", "d": "", "e": ""},
+		"85a161a0a162a0a163a0a164a0a165a0",
 	},
 
-	{OmitEmptyTest{}, []byte{codes.FixedMapLow}},
-	{&OmitEmptyTest{Foo: "hello"}, []byte{
-		codes.FixedMapLow | 1,
-		codes.FixedStrLow | byte(len("Foo")), 'F', 'o', 'o',
-		codes.FixedStrLow | byte(len("hello")), 'h', 'e', 'l', 'l', 'o',
-	}},
+	{(*Object)(nil), "c0"},
+	{&Object{}, "00"},
+	{&Object{42}, "2a"},
+	{[]*Object{nil, nil}, "92c0c0"},
 
-	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, []byte{
-		codes.FixedMapLow | 1,
-		codes.FixedStrLow | byte(len("Bar")), 'B', 'a', 'r',
-		codes.FixedStrLow | byte(len("world")), 'w', 'o', 'r', 'l', 'd',
-	}},
+	{&CustomEncoder{}, "a0c000"},
+	{
+		&CustomEncoder{"a", &CustomEncoder{"b", nil, 7}, 6},
+		"a161a162c00706",
+	},
 
-	{&AsArrayTest{}, []byte{codes.FixedArrayLow | 2, codes.FixedStrLow, codes.FixedStrLow}},
+	{OmitEmptyTest{}, "80"},
+	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f"},
+
+	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
+
+	{&AsArrayTest{}, "92a0a0"},
 }
 
 func TestEncoder(t *testing.T) {
@@ -167,8 +160,9 @@ func TestEncoder(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !bytes.Equal(buf.Bytes(), test.wanted) {
-			t.Fatalf("%q != %q (in=%#v)", buf.Bytes(), test.wanted, test.in)
+		s := hex.EncodeToString(buf.Bytes())
+		if s != test.wanted {
+			t.Fatalf("%s != %s (in=%#v)", s, test.wanted, test.in)
 		}
 	}
 }
@@ -360,6 +354,10 @@ var (
 			out: new(EmbedingTest),
 		},
 
+		{in: time.Unix(0, 0), out: new(time.Time)},
+		{in: time.Unix(0, 1), out: new(time.Time)},
+		{in: time.Unix(1, 0), out: new(time.Time)},
+		{in: time.Unix(1, 1), out: new(time.Time)},
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
 		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},
 

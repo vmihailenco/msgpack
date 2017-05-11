@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	msgpack.RegisterExt(9, ExtTest{})
+	msgpack.RegisterExt(9, (*ExtTest)(nil))
 }
 
 func TestRegisterExtPanic(t *testing.T) {
@@ -24,7 +24,7 @@ func TestRegisterExtPanic(t *testing.T) {
 			t.Fatalf("got %q, wanted %q", got, wanted)
 		}
 	}()
-	msgpack.RegisterExt(9, ExtTest{})
+	msgpack.RegisterExt(9, (*ExtTest)(nil))
 }
 
 type ExtTest struct {
@@ -59,7 +59,7 @@ func TestExt(t *testing.T) {
 
 		v, ok := dst.(ExtTest)
 		if !ok {
-			t.Fatalf("got %#v, wanted extTest", dst)
+			t.Fatalf("got %#v, wanted ExtTest", dst)
 		}
 
 		wanted := "hello world"
