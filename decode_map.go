@@ -49,6 +49,7 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 
 	return nil
 }
+
 func decodeMap(d *Decoder) (interface{}, error) {
 	n, err := d.DecodeMapLen()
 	if err != nil {
@@ -58,9 +59,9 @@ func decodeMap(d *Decoder) (interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[interface{}]interface{}, min(n, mapElemsAllocLimit))
+	m := make(map[string]interface{}, min(n, mapElemsAllocLimit))
 	for i := 0; i < n; i++ {
-		mk, err := d.DecodeInterface()
+		mk, err := d.DecodeString()
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +185,7 @@ func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error
 }
 
 func (d *Decoder) DecodeMap() (interface{}, error) {
-	return d.DecodeMapFunc(d)
+	return d.decodeMapFunc(d)
 }
 
 func (d *Decoder) skipMap(c byte) error {

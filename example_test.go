@@ -47,28 +47,31 @@ func ExampleMarshal_mapStringInterface() {
 	// hello = world
 }
 
-func ExampleMarshal_recursiveMapStringInterface() {
+func ExampleDecoder_SetDecodeMapFunc() {
 	buf := new(bytes.Buffer)
 
 	enc := msgpack.NewEncoder(buf)
-	in := map[string]interface{}{"foo": map[string]interface{}{"hello": "world"}}
-	_ = enc.Encode(in)
+	in := map[string]string{"hello": "world"}
+	err := enc.Encode(in)
+	if err != nil {
+		panic(err)
+	}
 
 	dec := msgpack.NewDecoder(buf)
-	dec.DecodeMapFunc = func(d *msgpack.Decoder) (interface{}, error) {
+	dec.SetDecodeMapFunc(func(d *msgpack.Decoder) (interface{}, error) {
 		n, err := d.DecodeMapLen()
 		if err != nil {
 			return nil, err
 		}
 
-		m := make(map[string]interface{}, n)
+		m := make(map[string]string, n)
 		for i := 0; i < n; i++ {
 			mk, err := d.DecodeString()
 			if err != nil {
 				return nil, err
 			}
 
-			mv, err := d.DecodeInterface()
+			mv, err := d.DecodeString()
 			if err != nil {
 				return nil, err
 			}
@@ -76,14 +79,14 @@ func ExampleMarshal_recursiveMapStringInterface() {
 			m[mk] = mv
 		}
 		return m, nil
-	}
+	})
 
 	out, err := dec.DecodeInterface()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(out)
-	// Output: map[foo:map[hello:world]]
+	// Output: map[hello:world]
 }
 
 func ExampleDecoder_Query() {
