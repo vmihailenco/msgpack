@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 //------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ func (set IntSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 }
 
 func (setptr *IntSet) DecodeMsgpack(dec *msgpack.Decoder) error {
-	n, err := dec.DecodeSliceLen()
+	n, err := dec.DecodeArrayLen()
 	if err != nil {
 		return err
 	}

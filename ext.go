@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sync"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 var extTypes []reflect.Type

@@ -4,17 +4,12 @@ import (
 	"fmt"
 	"reflect"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 const sliceElemsAllocLimit = 1e4
 
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
-
-// Deprecated. Use DecodeArrayLen instead.
-func (d *Decoder) DecodeSliceLen() (int, error) {
-	return d.DecodeArrayLen()
-}
 
 func (d *Decoder) DecodeArrayLen() (int, error) {
 	c, err := d.readByte()

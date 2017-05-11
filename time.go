@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 var timeType = reflect.TypeOf((*time.Time)(nil)).Elem()
