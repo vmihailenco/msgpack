@@ -553,49 +553,6 @@ func (t *MsgpackTest) TestMapStringInterface(c *C) {
 	c.Assert(t.dec.Decode(&out), IsNil)
 
 	c.Assert(out["foo"], Equals, "bar")
-	mm := out["hello"].(map[interface{}]interface{})
-	c.Assert(mm["foo"], Equals, "bar")
-}
-
-func (t *MsgpackTest) TestMapStringInterface2(c *C) {
-	buf := &bytes.Buffer{}
-	enc := msgpack.NewEncoder(buf)
-	dec := msgpack.NewDecoder(buf)
-	dec.DecodeMapFunc = func(d *msgpack.Decoder) (interface{}, error) {
-		n, err := d.DecodeMapLen()
-		if err != nil {
-			return nil, err
-		}
-
-		m := make(map[string]interface{}, n)
-		for i := 0; i < n; i++ {
-			mk, err := d.DecodeString()
-			if err != nil {
-				return nil, err
-			}
-
-			mv, err := d.DecodeInterface()
-			if err != nil {
-				return nil, err
-			}
-
-			m[mk] = mv
-		}
-		return m, nil
-	}
-
-	in := map[string]interface{}{
-		"foo": "bar",
-		"hello": map[string]interface{}{
-			"foo": "bar",
-		},
-	}
-	var out map[string]interface{}
-
-	c.Assert(enc.Encode(in), IsNil)
-	c.Assert(dec.Decode(&out), IsNil)
-
-	c.Assert(out["foo"], Equals, "bar")
 	mm := out["hello"].(map[string]interface{})
 	c.Assert(mm["foo"], Equals, "bar")
 }

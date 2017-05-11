@@ -38,22 +38,26 @@ func Unmarshal(data []byte, v ...interface{}) error {
 }
 
 type Decoder struct {
-	DecodeMapFunc func(*Decoder) (interface{}, error)
-
 	r   bufReader
 	buf []byte
 
 	extLen int
 	rec    []byte // accumulates read data if not nil
+
+	decodeMapFunc func(*Decoder) (interface{}, error)
 }
 
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
-		DecodeMapFunc: decodeMap,
+		decodeMapFunc: decodeMap,
 
 		r:   newBufReader(r),
 		buf: makeBuffer(),
 	}
+}
+
+func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
+	d.decodeMapFunc = fn
 }
 
 func (d *Decoder) Reset(r io.Reader) error {
