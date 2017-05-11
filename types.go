@@ -37,8 +37,8 @@ func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
 var structs = newStructCache()
 
 type structCache struct {
-	l sync.RWMutex
-	m map[reflect.Type]*fields
+	mu sync.RWMutex
+	m  map[reflect.Type]*fields
 }
 
 func newStructCache() *structCache {
@@ -48,18 +48,20 @@ func newStructCache() *structCache {
 }
 
 func (m *structCache) Fields(typ reflect.Type) *fields {
-	m.l.RLock()
+	m.mu.RLock()
 	fs, ok := m.m[typ]
-	m.l.RUnlock()
-	if !ok {
-		m.l.Lock()
-		fs, ok = m.m[typ]
-		if !ok {
-			fs = getFields(typ)
-			m.m[typ] = fs
-		}
-		m.l.Unlock()
+	m.mu.RUnlock()
+	if ok {
+		return fs
 	}
+
+	m.mu.Lock()
+	fs, ok = m.m[typ]
+	if !ok {
+		fs = getFields(typ)
+		m.m[typ] = fs
+	}
+	m.mu.Unlock()
 
 	return fs
 }
