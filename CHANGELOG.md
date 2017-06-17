@@ -4,3 +4,4 @@
 - Msgpack maps are decoded into map[string]interface{} by default.
 - EncodeSliceLen is removed in favor of EncodeArrayLen. DecodeSliceLen is removed in favor of DecodeArrayLen.
 - Embedded structs are automatically inlined where possible.
+- Time is encoded using extension as described in https://github.com/msgpack/msgpack/pull/209.
