@@ -6,23 +6,23 @@
 Supports:
 - Primitives, arrays, maps, structs, time.Time and interface{}.
 - Appengine *datastore.Key and datastore.Cursor.
-- [CustomEncoder](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
-- [Extensions](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-RegisterExt) to encode type information.
+- [CustomEncoder](https://godoc.org/github.com/vmihailenco/msgpack#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
+- [Extensions](https://godoc.org/github.com/vmihailenco/msgpack#example-RegisterExt) to encode type information.
 - Renaming fields via `msgpack:"my_field_name"`.
 - Omitting empty fields via `msgpack:",omitempty"`.
-- [Map keys sorting](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.SortMapKeys).
-- Encoding/decoding all [structs as arrays](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.StructAsArray) or [individual structs](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Marshal--AsArray).
-- Simple but very fast and efficient [queries](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Decoder-Query).
+- [Map keys sorting](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.SortMapKeys).
+- Encoding/decoding all [structs as arrays](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.StructAsArray) or [individual structs](https://godoc.org/github.com/vmihailenco/msgpack#example-Marshal--AsArray).
+- Simple but very fast and efficient [queries](https://godoc.org/github.com/vmihailenco/msgpack#example-Decoder-Query).
 
-API docs: https://godoc.org/gopkg.in/vmihailenco/msgpack.v2.
-Examples: https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples.
+API docs: https://godoc.org/github.com/vmihailenco/msgpack.
+Examples: https://godoc.org/github.com/vmihailenco/msgpack#pkg-examples.
 
 ## Installation
 
 Install:
 
 ```shell
-go get gopkg.in/vmihailenco/msgpack.v2
+go get -u github.com/vmihailenco/msgpack
 ```
 
 ## Quickstart
@@ -60,7 +60,7 @@ BenchmarkStructGOB-4                  	   10000	    104331 ns/op	   14664 B/op	 
 
 ## Howto
 
-Please go through [examples](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#pkg-examples) to get an idea how to use this package.
+Please go through [examples](https://godoc.org/github.com/vmihailenco/msgpack#pkg-examples) to get an idea how to use this package.
 
 ## See also
 
