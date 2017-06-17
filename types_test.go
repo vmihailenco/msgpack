@@ -97,13 +97,13 @@ type OmitEmptyTest struct {
 }
 
 type InlineTest struct {
-	OmitEmptyTest `msgpack:",inline"`
+	OmitEmptyTest
 }
 
 type AsArrayTest struct {
 	_msgpack struct{} `msgpack:",asArray"`
 
-	OmitEmptyTest `msgpack:",inline"`
+	OmitEmptyTest
 }
 
 //------------------------------------------------------------------------------
@@ -211,7 +211,7 @@ type EmbedingTest struct {
 
 //------------------------------------------------------------------------------
 
-type TimeEmbedingTest struct {
+type EmbeddedTime struct {
 	time.Time
 }
 
@@ -358,8 +358,8 @@ var (
 		{in: time.Unix(0, 1), out: new(time.Time)},
 		{in: time.Unix(1, 0), out: new(time.Time)},
 		{in: time.Unix(1, 1), out: new(time.Time)},
-		{in: TimeEmbedingTest{Time: time.Now()}, out: new(TimeEmbedingTest)},
-		{in: TimeEmbedingTest{Time: time.Now()}, out: new(*TimeEmbedingTest)},
+		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(EmbeddedTime)},
+		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(*EmbeddedTime)},
 
 		{in: new(CustomEncoder), out: new(CustomEncoder)},
 		{in: new(CustomEncoder), out: new(*CustomEncoder)},

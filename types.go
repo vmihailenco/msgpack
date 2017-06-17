@@ -162,40 +162,59 @@ func getFields(typ reflect.Type) *fields {
 			continue
 		}
 
-		if opt.Contains("inline") {
-			inlineFields(fs, f)
-			continue
-		}
-
 		if name == "" {
 			name = f.Name
 		}
-		field := field{
+		field := &field{
 			name:      name,
 			index:     f.Index,
 			omitEmpty: omitEmpty || opt.Contains("omitempty"),
 			encoder:   getEncoder(f.Type),
 			decoder:   getDecoder(f.Type),
 		}
-		fs.Add(&field)
+
+		if f.Anonymous && inlineFields(fs, f.Type, field) {
+			continue
+		}
+
+		fs.Add(field)
 	}
 	return fs
 }
 
-func inlineFields(fs *fields, f reflect.StructField) {
-	typ := f.Type
+var encodeStructValuePtr uintptr
+var decodeStructValuePtr uintptr
+
+func init() {
+	encodeStructValuePtr = reflect.ValueOf(encodeStructValue).Pointer()
+	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()
+}
+
+func inlineFields(fs *fields, typ reflect.Type, f *field) bool {
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
+	if typ.Kind() != reflect.Struct {
+		return false
+	}
+
+	if reflect.ValueOf(f.encoder).Pointer() != encodeStructValuePtr {
+		return false
+	}
+	if reflect.ValueOf(f.decoder).Pointer() != decodeStructValuePtr {
+		return false
+	}
+
 	inlinedFields := getFields(typ).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Table[field.name]; ok {
 			// Don't overwrite shadowed fields.
 			continue
 		}
-		field.index = append(f.Index, field.index...)
+		field.index = append(f.index, field.index...)
 		fs.Add(field)
 	}
+	return true
 }
 
 func isEmptyValue(v reflect.Value) bool {
