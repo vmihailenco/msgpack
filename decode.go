@@ -402,7 +402,7 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 	}
 	b = b[:cap(b)]
 
-	pos := 0
+	var pos int
 	for len(b) < n {
 		diff := n - len(b)
 		if diff > bytesAllocLimit {
