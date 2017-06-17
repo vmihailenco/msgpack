@@ -200,6 +200,18 @@ func (d *Decoder) DecodeNil() error {
 	return nil
 }
 
+func (d *Decoder) decodeNilValue(v reflect.Value) error {
+	err := d.DecodeNil()
+	if v.IsNil() {
+		return err
+	}
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	v.Set(reflect.Zero(v.Type()))
+	return err
+}
+
 func (d *Decoder) DecodeBool() (bool, error) {
 	c, err := d.readByte()
 	if err != nil {

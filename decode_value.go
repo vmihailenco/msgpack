@@ -150,8 +150,7 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if c == codes.Nil {
-		// TODO: set nil
-		return d.DecodeNil()
+		return d.decodeNilValue(v)
 	}
 
 	if v.IsNil() {
@@ -199,8 +198,7 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if c == codes.Nil {
-		// TODO: set nil
-		return d.DecodeNil()
+		return d.decodeNilValue(v)
 	}
 
 	if v.IsNil() {

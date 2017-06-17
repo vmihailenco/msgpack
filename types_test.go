@@ -234,12 +234,13 @@ type StructTest struct {
 type typeTest struct {
 	*testing.T
 
-	in      interface{}
-	out     interface{}
-	encErr  string
-	decErr  string
-	wantnil bool
-	wanted  interface{}
+	in       interface{}
+	out      interface{}
+	encErr   string
+	decErr   string
+	wantnil  bool
+	wantzero bool
+	wanted   interface{}
 }
 
 func (t typeTest) String() string {
@@ -361,8 +362,8 @@ var (
 		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(EmbeddedTime)},
 		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(*EmbeddedTime)},
 
-		{in: new(CustomEncoder), out: new(CustomEncoder)},
-		{in: new(CustomEncoder), out: new(*CustomEncoder)},
+		{in: nil, out: new(*CustomEncoder), wantnil: true},
+		{in: nil, out: &CustomEncoder{str: "a"}, wantzero: true},
 		{
 			in:  &CustomEncoder{"a", &CustomEncoder{"b", nil, 1}, 2},
 			out: new(CustomEncoder),
@@ -375,8 +376,8 @@ var (
 		{in: repoURL, out: new(url.URL)},
 		{in: repoURL, out: new(*url.URL)},
 
-		{in: AsArrayTest{}, out: new(AsArrayTest)},
-		{in: AsArrayTest{}, out: new(*AsArrayTest)},
+		{in: nil, out: new(*AsArrayTest), wantnil: true},
+		{in: nil, out: new(AsArrayTest), wantzero: true},
 		{in: AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}}, out: new(AsArrayTest)},
 		{
 			in:     AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}},
@@ -435,14 +436,20 @@ func TestTypes(t *testing.T) {
 
 		if test.wantnil {
 			v := reflect.Indirect(reflect.ValueOf(test.out))
-			if v.IsNil() {
-				continue
+			if !v.IsNil() {
+				t.Fatalf("got %#v, wanted nil (%s)", test.out, test)
 			}
-			t.Fatalf("got %#v, wanted nil (%s)", test.out, test)
+			continue
 		}
 
 		out := indirect(test.out)
-		wanted := test.wanted
+		var wanted interface{}
+		if test.wantzero {
+			typ := reflect.TypeOf(out)
+			wanted = reflect.Zero(typ).Interface()
+		} else {
+			wanted = test.wanted
+		}
 		if wanted == nil {
 			wanted = indirect(test.in)
 		}
