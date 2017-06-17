@@ -410,12 +410,12 @@ type coderStruct struct {
 }
 
 type wrapperStruct struct {
-	coderStruct `msgpack:",inline"`
+	coderStruct
 }
 
 var (
-	_ msgpack.CustomEncoder = &coderStruct{}
-	_ msgpack.CustomDecoder = &coderStruct{}
+	_ msgpack.CustomEncoder = (*coderStruct)(nil)
+	_ msgpack.CustomDecoder = (*coderStruct)(nil)
 )
 
 func (s *coderStruct) Name() string {

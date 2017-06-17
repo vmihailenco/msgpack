@@ -9,7 +9,6 @@ Supports:
 - [CustomEncoder](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
 - [Extensions](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-RegisterExt) to encode type information.
 - Renaming fields via `msgpack:"my_field_name"`.
-- Inlining struct fields via `msgpack:",inline"`.
 - Omitting empty fields via `msgpack:",omitempty"`.
 - [Map keys sorting](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.SortMapKeys).
 - Encoding/decoding all [structs as arrays](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#Encoder.StructAsArray) or [individual structs](https://godoc.org/gopkg.in/vmihailenco/msgpack.v2#example-Marshal--AsArray).

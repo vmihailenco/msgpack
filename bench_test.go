@@ -60,6 +60,11 @@ func BenchmarkInt8(b *testing.B) {
 	benchmarkEncodeDecode(b, int64(2147483648), &dst)
 }
 
+func BenchmarkInt32(b *testing.B) {
+	var dst int32
+	benchmarkEncodeDecode(b, int32(0), &dst)
+}
+
 func BenchmarkInt0Binary(b *testing.B) {
 	var buf bytes.Buffer
 	var out int32
