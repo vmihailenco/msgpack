@@ -251,8 +251,8 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 // DecodeInterface decodes value into interface. Possible value types are:
 //   - nil,
 //   - bool,
-//   - int64 for negative numbers,
-//   - uint64 for positive numbers,
+//   - int8, int16, int32, int64,
+//   - uint8, uint16, uint32, uint64,
 //   - float32 and float64,
 //   - string,
 //   - slices of any of the above,
@@ -264,10 +264,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	}
 
 	if codes.IsFixedNum(c) {
-		if int8(c) < 0 {
-			return d.int(c)
-		}
-		return d.uint(c)
+		return int8(c), nil
 	}
 	if codes.IsFixedMap(c) {
 		d.r.UnreadByte()
@@ -289,10 +286,22 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.float32(c)
 	case codes.Double:
 		return d.float64(c)
-	case codes.Uint8, codes.Uint16, codes.Uint32, codes.Uint64:
-		return d.uint(c)
-	case codes.Int8, codes.Int16, codes.Int32, codes.Int64:
-		return d.int(c)
+	case codes.Uint8:
+		return d.uint8()
+	case codes.Uint16:
+		return d.uint16()
+	case codes.Uint32:
+		return d.uint32()
+	case codes.Uint64:
+		return d.uint64()
+	case codes.Int8:
+		return d.int8()
+	case codes.Int16:
+		return d.int16()
+	case codes.Int32:
+		return d.int32()
+	case codes.Int64:
+		return d.int64()
 	case codes.Bin8, codes.Bin16, codes.Bin32:
 		return d.bytes(c, nil)
 	case codes.Str8, codes.Str16, codes.Str32:

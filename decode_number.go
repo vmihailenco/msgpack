@@ -21,12 +21,22 @@ func (d *Decoder) uint8() (uint8, error) {
 	return uint8(c), nil
 }
 
+func (d *Decoder) int8() (int8, error) {
+	n, err := d.uint8()
+	return int8(n), err
+}
+
 func (d *Decoder) uint16() (uint16, error) {
 	b, err := d.readN(2)
 	if err != nil {
 		return 0, err
 	}
 	return (uint16(b[0]) << 8) | uint16(b[1]), nil
+}
+
+func (d *Decoder) int16() (int16, error) {
+	n, err := d.uint16()
+	return int16(n), err
 }
 
 func (d *Decoder) uint32() (uint32, error) {
@@ -39,6 +49,11 @@ func (d *Decoder) uint32() (uint32, error) {
 		(uint32(b[2]) << 8) |
 		uint32(b[3])
 	return n, nil
+}
+
+func (d *Decoder) int32() (int32, error) {
+	n, err := d.uint32()
+	return int32(n), err
 }
 
 func (d *Decoder) uint64() (uint64, error) {
@@ -55,6 +70,11 @@ func (d *Decoder) uint64() (uint64, error) {
 		(uint64(b[6]) << 8) |
 		uint64(b[7])
 	return n, nil
+}
+
+func (d *Decoder) int64() (int64, error) {
+	n, err := d.uint64()
+	return int64(n), err
 }
 
 func (d *Decoder) DecodeUint64() (uint64, error) {
@@ -77,20 +97,20 @@ func (d *Decoder) uint(c byte) (uint64, error) {
 		n, err := d.uint8()
 		return uint64(n), err
 	case codes.Int8:
-		n, err := d.uint8()
-		return uint64(int8(n)), err
+		n, err := d.int8()
+		return uint64(n), err
 	case codes.Uint16:
 		n, err := d.uint16()
 		return uint64(n), err
 	case codes.Int16:
-		n, err := d.uint16()
-		return uint64(int16(n)), err
+		n, err := d.int16()
+		return uint64(n), err
 	case codes.Uint32:
 		n, err := d.uint32()
 		return uint64(n), err
 	case codes.Int32:
-		n, err := d.uint32()
-		return uint64(int32(n)), err
+		n, err := d.int32()
+		return uint64(n), err
 	case codes.Uint64, codes.Int64:
 		return d.uint64()
 	}
