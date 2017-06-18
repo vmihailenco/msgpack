@@ -7,23 +7,8 @@ import (
 	"github.com/vmihailenco/msgpack/codes"
 )
 
-func (e *Encoder) EncodeUint(v uint) error {
-	return e.EncodeUint64(uint64(v))
-}
-
-func (e *Encoder) EncodeUint8(v uint8) error {
-	return e.EncodeUint64(uint64(v))
-}
-
-func (e *Encoder) EncodeUint16(v uint16) error {
-	return e.EncodeUint64(uint64(v))
-}
-
-func (e *Encoder) EncodeUint32(v uint32) error {
-	return e.EncodeUint64(uint64(v))
-}
-
-func (e *Encoder) EncodeUint64(v uint64) error {
+// EncodeUint encodes an uint64 in 1, 2, 3, 5, or 9 bytes.
+func (e *Encoder) EncodeUint(v uint64) error {
 	if v <= math.MaxInt8 {
 		return e.w.WriteByte(byte(v))
 	}
@@ -39,25 +24,10 @@ func (e *Encoder) EncodeUint64(v uint64) error {
 	return e.write8(codes.Uint64, v)
 }
 
-func (e *Encoder) EncodeInt(v int) error {
-	return e.EncodeInt64(int64(v))
-}
-
-func (e *Encoder) EncodeInt8(v int8) error {
-	return e.EncodeInt64(int64(v))
-}
-
-func (e *Encoder) EncodeInt16(v int16) error {
-	return e.EncodeInt64(int64(v))
-}
-
-func (e *Encoder) EncodeInt32(v int32) error {
-	return e.EncodeInt64(int64(v))
-}
-
-func (e *Encoder) EncodeInt64(v int64) error {
+// EncodeInt encodes an int64 in 1, 2, 3, 5, or 9 bytes.
+func (e *Encoder) EncodeInt(v int64) error {
 	if v >= 0 {
-		return e.EncodeUint64(uint64(v))
+		return e.EncodeUint(uint64(v))
 	}
 	if v >= int64(int8(codes.NegFixedNumLow)) {
 		return e.w.WriteByte(byte(v))
@@ -122,11 +92,11 @@ func (e *Encoder) write8(code byte, n uint64) error {
 }
 
 func encodeInt64Value(e *Encoder, v reflect.Value) error {
-	return e.EncodeInt64(v.Int())
+	return e.EncodeInt(v.Int())
 }
 
 func encodeUint64Value(e *Encoder, v reflect.Value) error {
-	return e.EncodeUint64(v.Uint())
+	return e.EncodeUint(v.Uint())
 }
 
 func encodeFloat32Value(e *Encoder, v reflect.Value) error {

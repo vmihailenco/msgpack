@@ -87,13 +87,13 @@ func (e *Encoder) encode(v interface{}) error {
 	case []byte:
 		return e.EncodeBytes(v)
 	case int:
-		return e.EncodeInt64(int64(v))
+		return e.EncodeInt(int64(v))
 	case int64:
-		return e.EncodeInt64(v)
+		return e.EncodeInt(v)
 	case uint:
-		return e.EncodeUint64(uint64(v))
+		return e.EncodeUint(uint64(v))
 	case uint64:
-		return e.EncodeUint64(v)
+		return e.EncodeUint(v)
 	case bool:
 		return e.EncodeBool(v)
 	case float32:
@@ -101,7 +101,7 @@ func (e *Encoder) encode(v interface{}) error {
 	case float64:
 		return e.EncodeFloat64(v)
 	case time.Duration:
-		return e.EncodeInt64(int64(v))
+		return e.EncodeInt(int64(v))
 	case time.Time:
 		return e.EncodeTime(v)
 	}
