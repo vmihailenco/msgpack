@@ -305,7 +305,7 @@ var (
 
 		{in: nil, out: new([]interface{}), wantnil: true},
 		{in: nil, out: new([]interface{}), wantnil: true},
-		{in: []interface{}{uint64(1), "hello"}, out: new([]interface{})},
+		{in: []interface{}{int8(1), "hello"}, out: new([]interface{})},
 
 		{in: nil, out: new([]int), wantnil: true},
 		{in: nil, out: &[]int{1, 2}, wantnil: true},

@@ -69,11 +69,6 @@ func (t *MsgpackTest) TestUint64(c *C) {
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
 		c.Assert(t.dec.Decode(&uint64v), IsNil, Commentf("n=%d", r.v))
 		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
-
-		c.Assert(t.enc.Encode(r.v), IsNil)
-		iface, err := t.dec.DecodeInterface()
-		c.Assert(err, IsNil)
-		c.Assert(iface, Equals, r.v)
 	}
 }
 
@@ -125,15 +120,6 @@ func (t *MsgpackTest) TestInt64(c *C) {
 		c.Assert(t.buf.Bytes(), DeepEquals, r.b, Commentf("n=%d", r.v))
 		c.Assert(t.dec.Decode(&uint64v), IsNil, Commentf("n=%d", r.v))
 		c.Assert(uint64v, Equals, uint64(r.v), Commentf("n=%d", r.v))
-
-		c.Assert(t.enc.Encode(r.v), IsNil)
-		v, err := t.dec.DecodeInterface()
-		c.Assert(err, IsNil)
-		if r.v < 0 {
-			c.Assert(v, Equals, r.v)
-		} else {
-			c.Assert(v, Equals, uint64(r.v))
-		}
 	}
 }
 
