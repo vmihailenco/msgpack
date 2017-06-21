@@ -126,19 +126,10 @@ func (e *Encoder) EncodeBool(value bool) error {
 
 func (e *Encoder) write(b []byte) error {
 	_, err := e.w.Write(b)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (e *Encoder) writeString(s string) error {
-	n, err := e.w.WriteString(s)
-	if err != nil {
-		return err
-	}
-	if n < len(s) {
-		return io.ErrShortWrite
-	}
-	return nil
+	_, err := e.w.WriteString(s)
+	return err
 }
