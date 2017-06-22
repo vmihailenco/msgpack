@@ -76,15 +76,15 @@ func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 func (e *Encoder) encodeExtLen(l int) error {
 	switch l {
 	case 1:
-		return e.w.WriteByte(codes.FixExt1)
+		return e.writeCode(codes.FixExt1)
 	case 2:
-		return e.w.WriteByte(codes.FixExt2)
+		return e.writeCode(codes.FixExt2)
 	case 4:
-		return e.w.WriteByte(codes.FixExt4)
+		return e.writeCode(codes.FixExt4)
 	case 8:
-		return e.w.WriteByte(codes.FixExt8)
+		return e.writeCode(codes.FixExt8)
 	case 16:
-		return e.w.WriteByte(codes.FixExt16)
+		return e.writeCode(codes.FixExt16)
 	}
 	if l < 256 {
 		return e.write1(codes.Ext8, uint64(l))
@@ -96,14 +96,14 @@ func (e *Encoder) encodeExtLen(l int) error {
 }
 
 func (d *Decoder) decodeExtLen() (int, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
 	return d.parseExtLen(c)
 }
 
-func (d *Decoder) parseExtLen(c byte) (int, error) {
+func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 	switch c {
 	case codes.FixExt1:
 		return 1, nil
@@ -130,14 +130,14 @@ func (d *Decoder) parseExtLen(c byte) (int, error) {
 }
 
 func (d *Decoder) decodeExt() (interface{}, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
 	return d.ext(c)
 }
 
-func (d *Decoder) ext(c byte) (interface{}, error) {
+func (d *Decoder) ext(c codes.Code) (interface{}, error) {
 	extLen, err := d.parseExtLen(c)
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 	// Save for later use.
 	d.extLen = extLen
 
-	extId, err := d.readByte()
+	extId, err := d.readCode()
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (d *Decoder) ext(c byte) (interface{}, error) {
 	return v.Interface(), nil
 }
 
-func (d *Decoder) skipExt(c byte) error {
+func (d *Decoder) skipExt(c codes.Code) error {
 	n, err := d.parseExtLen(c)
 	if err != nil {
 		return err
@@ -171,15 +171,15 @@ func (d *Decoder) skipExt(c byte) error {
 	return d.skipN(n)
 }
 
-func (d *Decoder) skipExtHeader(c byte) error {
+func (d *Decoder) skipExtHeader(c codes.Code) error {
 	// Read ext type.
-	_, err := d.readByte()
+	_, err := d.readCode()
 	if err != nil {
 		return err
 	}
 	// Read ext body len.
 	for i := 0; i < extHeaderLen(c); i++ {
-		_, err := d.readByte()
+		_, err := d.readCode()
 		if err != nil {
 			return err
 		}
@@ -187,7 +187,7 @@ func (d *Decoder) skipExtHeader(c byte) error {
 	return nil
 }
 
-func extHeaderLen(c byte) int {
+func extHeaderLen(c codes.Code) int {
 	switch c {
 	case codes.Ext8:
 		return 1

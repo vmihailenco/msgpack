@@ -114,14 +114,18 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 }
 
 func (e *Encoder) EncodeNil() error {
-	return e.w.WriteByte(codes.Nil)
+	return e.writeCode(codes.Nil)
 }
 
 func (e *Encoder) EncodeBool(value bool) error {
 	if value {
-		return e.w.WriteByte(codes.True)
+		return e.writeCode(codes.True)
 	}
-	return e.w.WriteByte(codes.False)
+	return e.writeCode(codes.False)
+}
+
+func (e *Encoder) writeCode(c codes.Code) error {
+	return e.w.WriteByte(byte(c))
 }
 
 func (e *Encoder) write(b []byte) error {

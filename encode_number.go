@@ -52,24 +52,24 @@ func (e *Encoder) EncodeFloat64(n float64) error {
 	return e.write8(codes.Double, math.Float64bits(n))
 }
 
-func (e *Encoder) write1(code byte, n uint64) error {
+func (e *Encoder) write1(code codes.Code, n uint64) error {
 	e.buf = e.buf[:2]
-	e.buf[0] = code
+	e.buf[0] = byte(code)
 	e.buf[1] = byte(n)
 	return e.write(e.buf)
 }
 
-func (e *Encoder) write2(code byte, n uint64) error {
+func (e *Encoder) write2(code codes.Code, n uint64) error {
 	e.buf = e.buf[:3]
-	e.buf[0] = code
+	e.buf[0] = byte(code)
 	e.buf[1] = byte(n >> 8)
 	e.buf[2] = byte(n)
 	return e.write(e.buf)
 }
 
-func (e *Encoder) write4(code byte, n uint32) error {
+func (e *Encoder) write4(code codes.Code, n uint32) error {
 	e.buf = e.buf[:5]
-	e.buf[0] = code
+	e.buf[0] = byte(code)
 	e.buf[1] = byte(n >> 24)
 	e.buf[2] = byte(n >> 16)
 	e.buf[3] = byte(n >> 8)
@@ -77,9 +77,9 @@ func (e *Encoder) write4(code byte, n uint32) error {
 	return e.write(e.buf)
 }
 
-func (e *Encoder) write8(code byte, n uint64) error {
+func (e *Encoder) write8(code codes.Code, n uint64) error {
 	e.buf = e.buf[:9]
-	e.buf[0] = code
+	e.buf[0] = byte(code)
 	e.buf[1] = byte(n >> 56)
 	e.buf[2] = byte(n >> 48)
 	e.buf[3] = byte(n >> 40)

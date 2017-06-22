@@ -128,7 +128,7 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if codes.IsExt(c) {
-		c, err = d.readByte()
+		c, err = d.readCode()
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 			return err
 		}
 
-		_, err = d.readByte()
+		_, err = d.readCode()
 		if err != nil {
 			return err
 		}
@@ -175,7 +175,7 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if codes.IsExt(c) {
-		c, err = d.readByte()
+		c, err = d.readCode()
 		if err != nil {
 			return err
 		}
@@ -186,7 +186,7 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 		}
 		d.extLen = extLen
 
-		_, err = d.readByte()
+		_, err = d.readCode()
 		if err != nil {
 			return err
 		}
