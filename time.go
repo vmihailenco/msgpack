@@ -49,7 +49,7 @@ func (e *Encoder) encodeTime(tm time.Time) []byte {
 }
 
 func (d *Decoder) DecodeTime() (time.Time, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return time.Time{}, err
 	}

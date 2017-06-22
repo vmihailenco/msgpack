@@ -7,3 +7,4 @@
 - Time is encoded using extension as described in https://github.com/msgpack/msgpack/pull/209. Old format is supported as well.
 - EncodeInt8/16/32/64 is replaced with EncodeInt. EncodeUint8/16/32/64 is replaced with EncodeUint. There should be no performance differences.
 - DecodeInterface can now return int8/16/32 and uint8/16/32.
+- PeekCode returns codes.Code instead of byte.

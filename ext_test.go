@@ -79,7 +79,7 @@ func TestExt(t *testing.T) {
 }
 
 func TestUnknownExt(t *testing.T) {
-	b := []byte{codes.FixExt1, 1, 0}
+	b := []byte{byte(codes.FixExt1), 1, 0}
 
 	var dst interface{}
 	err := msgpack.Unmarshal(b, &dst)

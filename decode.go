@@ -190,7 +190,7 @@ func (d *Decoder) DecodeValue(v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeNil() error {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
@@ -213,14 +213,14 @@ func (d *Decoder) decodeNilValue(v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeBool() (bool, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return false, err
 	}
 	return d.bool(c)
 }
 
-func (d *Decoder) bool(c byte) (bool, error) {
+func (d *Decoder) bool(c codes.Code) (bool, error) {
 	if c == codes.False {
 		return false, nil
 	}
@@ -258,7 +258,7 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 //   - slices of any of the above,
 //   - maps of any of the above.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 
 // Skip skips next value.
 func (d *Decoder) Skip() error {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
@@ -362,14 +362,14 @@ func (d *Decoder) Skip() error {
 	return fmt.Errorf("msgpack: unknown code %x", c)
 }
 
-// peekCode returns next MessagePack code. See
-// https://github.com/msgpack/msgpack/blob/master/spec.md#formats for details.
-func (d *Decoder) PeekCode() (code byte, err error) {
-	code, err = d.r.ReadByte()
+// PeekCode returns the next MessagePack code without advancing the reader.
+// Subpackage msgpack/codes contains list of available codes.
+func (d *Decoder) PeekCode() (codes.Code, error) {
+	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	}
-	return code, d.r.UnreadByte()
+	return codes.Code(c), d.r.UnreadByte()
 }
 
 func (d *Decoder) hasNilCode() bool {
@@ -377,7 +377,7 @@ func (d *Decoder) hasNilCode() bool {
 	return err == nil && code == codes.Nil
 }
 
-func (d *Decoder) readByte() (byte, error) {
+func (d *Decoder) readCode() (codes.Code, error) {
 	c, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
@@ -385,7 +385,7 @@ func (d *Decoder) readByte() (byte, error) {
 	if d.rec != nil {
 		d.rec = append(d.rec, c)
 	}
-	return c, nil
+	return codes.Code(c), nil
 }
 
 func (d *Decoder) readFull(b []byte) error {

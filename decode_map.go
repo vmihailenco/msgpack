@@ -75,7 +75,7 @@ func decodeMap(d *Decoder) (interface{}, error) {
 }
 
 func (d *Decoder) DecodeMapLen() (int, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
@@ -85,7 +85,7 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 			return 0, err
 		}
 
-		c, err = d.readByte()
+		c, err = d.readCode()
 		if err != nil {
 			return 0, err
 		}
@@ -94,7 +94,7 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	return d.mapLen(c)
 }
 
-func (d *Decoder) mapLen(c byte) (int, error) {
+func (d *Decoder) mapLen(c codes.Code) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	}
@@ -188,7 +188,7 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 	return d.decodeMapFunc(d)
 }
 
-func (d *Decoder) skipMap(c byte) error {
+func (d *Decoder) skipMap(c codes.Code) error {
 	n, err := d.mapLen(c)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func (d *Decoder) skipMap(c byte) error {
 }
 
 func decodeStructValue(d *Decoder, strct reflect.Value) error {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return err
 	}

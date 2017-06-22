@@ -14,7 +14,7 @@ func (d *Decoder) skipN(n int) error {
 }
 
 func (d *Decoder) uint8() (uint8, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
@@ -78,14 +78,14 @@ func (d *Decoder) int64() (int64, error) {
 }
 
 func (d *Decoder) DecodeUint64() (uint64, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
 	return d.uint(c)
 }
 
-func (d *Decoder) uint(c byte) (uint64, error) {
+func (d *Decoder) uint(c codes.Code) (uint64, error) {
 	if c == codes.Nil {
 		return 0, nil
 	}
@@ -118,14 +118,14 @@ func (d *Decoder) uint(c byte) (uint64, error) {
 }
 
 func (d *Decoder) DecodeInt64() (int64, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
 	return d.int(c)
 }
 
-func (d *Decoder) int(c byte) (int64, error) {
+func (d *Decoder) int(c codes.Code) (int64, error) {
 	if c == codes.Nil {
 		return 0, nil
 	}
@@ -159,14 +159,14 @@ func (d *Decoder) int(c byte) (int64, error) {
 }
 
 func (d *Decoder) DecodeFloat32() (float32, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
 	return d.float32(c)
 }
 
-func (d *Decoder) float32(c byte) (float32, error) {
+func (d *Decoder) float32(c codes.Code) (float32, error) {
 	if c == codes.Float {
 		n, err := d.uint32()
 		if err != nil {
@@ -183,14 +183,14 @@ func (d *Decoder) float32(c byte) (float32, error) {
 }
 
 func (d *Decoder) DecodeFloat64() (float64, error) {
-	c, err := d.readByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
 	return d.float64(c)
 }
 
-func (d *Decoder) float64(c byte) (float64, error) {
+func (d *Decoder) float64(c codes.Code) (float64, error) {
 	switch c {
 	case codes.Float:
 		n, err := d.float32(c)
