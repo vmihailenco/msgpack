@@ -100,6 +100,10 @@ type InlineTest struct {
 	OmitEmptyTest
 }
 
+type InlinePtrTest struct {
+	*OmitEmptyTest
+}
+
 type AsArrayTest struct {
 	_msgpack struct{} `msgpack:",asArray"`
 
@@ -148,6 +152,7 @@ var encoderTests = []encoderTest{
 	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f"},
 
 	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
+	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
 
 	{&AsArrayTest{}, "92a0a0"},
 }
