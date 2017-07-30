@@ -191,17 +191,27 @@ func init() {
 }
 
 func inlineFields(fs *fields, typ reflect.Type, f *field) bool {
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	if typ.Kind() != reflect.Struct {
-		return false
+	var encoder encoderFunc
+	var decoder decoderFunc
+
+	if typ.Kind() == reflect.Struct {
+		encoder = f.encoder
+		decoder = f.decoder
+	} else {
+		for typ.Kind() == reflect.Ptr {
+			typ = typ.Elem()
+			encoder = getEncoder(typ)
+			decoder = getDecoder(typ)
+		}
+		if typ.Kind() != reflect.Struct {
+			return false
+		}
 	}
 
-	if reflect.ValueOf(f.encoder).Pointer() != encodeStructValuePtr {
+	if reflect.ValueOf(encoder).Pointer() != encodeStructValuePtr {
 		return false
 	}
-	if reflect.ValueOf(f.decoder).Pointer() != decodeStructValuePtr {
+	if reflect.ValueOf(decoder).Pointer() != decodeStructValuePtr {
 		return false
 	}
 

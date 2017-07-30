@@ -159,3 +159,37 @@ func ExampleMarshal_asArray() {
 	fmt.Println(v)
 	// Output: [foo bar]
 }
+
+func ExampleMarshal_omitEmpty() {
+	type Item struct {
+		Foo string
+		Bar string
+	}
+
+	item := &Item{
+		Foo: "hello",
+	}
+	b, err := msgpack.Marshal(item)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("item: %q\n", b)
+
+	type ItemOmitEmpty struct {
+		_msgpack struct{} `msgpack:",omitempty"`
+		Foo      string
+		Bar      string
+	}
+
+	itemOmitEmpty := &ItemOmitEmpty{
+		Foo: "hello",
+	}
+	b, err = msgpack.Marshal(itemOmitEmpty)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("item2: %q\n", b)
+
+	// Output: item: "\x82\xa3Foo\xa5hello\xa3Bar\xa0"
+	// item2: "\x81\xa3Foo\xa5hello"
+}
