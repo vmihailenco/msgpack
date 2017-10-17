@@ -244,7 +244,12 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 		return nil
 	}
 
-	fields := structs.Fields(v.Type())
+	var fields *fields
+	if d.useJSONTag {
+		fields = jsonStructs.Fields(v.Type())
+	} else {
+		fields = structs.Fields(v.Type())
+	}
 
 	if isArray {
 		for i, f := range fields.List {
