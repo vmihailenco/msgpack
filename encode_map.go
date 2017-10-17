@@ -131,7 +131,7 @@ func (e *Encoder) EncodeMapLen(l int) error {
 }
 
 func encodeStructValue(e *Encoder, strct reflect.Value) error {
-	structFields := structs.Fields(strct.Type())
+	structFields := structs.Fields(strct.Type(), e.useJSONTag)
 	if e.structAsArray || structFields.asArray {
 		return encodeStructValueAsArray(e, strct, structFields.List)
 	}

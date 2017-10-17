@@ -47,7 +47,7 @@ func newStructCache() *structCache {
 	}
 }
 
-func (m *structCache) Fields(typ reflect.Type) *fields {
+func (m *structCache) Fields(typ reflect.Type, useJSONTag bool) *fields {
 	m.mu.RLock()
 	fs, ok := m.m[typ]
 	m.mu.RUnlock()
@@ -58,7 +58,7 @@ func (m *structCache) Fields(typ reflect.Type) *fields {
 	m.mu.Lock()
 	fs, ok = m.m[typ]
 	if !ok {
-		fs = getFields(typ)
+		fs = getFields(typ, useJSONTag)
 		m.m[typ] = fs
 	}
 	m.mu.Unlock()
@@ -136,15 +136,19 @@ func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
 	return fields
 }
 
-func getFields(typ reflect.Type) *fields {
+func getFields(typ reflect.Type, useJSONTag bool) *fields {
 	numField := typ.NumField()
 	fs := newFields(numField)
+	tag := "msgpack"
+	if useJSONTag {
+		tag = "json"
+	}
 
 	var omitEmpty bool
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
 
-		name, opt := parseTag(f.Tag.Get("msgpack"))
+		name, opt := parseTag(f.Tag.Get(tag))
 		if name == "-" {
 			continue
 		}
@@ -173,7 +177,7 @@ func getFields(typ reflect.Type) *fields {
 			decoder:   getDecoder(f.Type),
 		}
 
-		if f.Anonymous && inlineFields(fs, f.Type, field) {
+		if f.Anonymous && inlineFields(fs, f.Type, field, useJSONTag) {
 			continue
 		}
 
@@ -190,7 +194,7 @@ func init() {
 	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()
 }
 
-func inlineFields(fs *fields, typ reflect.Type, f *field) bool {
+func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
 	var encoder encoderFunc
 	var decoder decoderFunc
 
@@ -215,7 +219,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field) bool {
 		return false
 	}
 
-	inlinedFields := getFields(typ).List
+	inlinedFields := getFields(typ, useJSONTag).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Table[field.name]; ok {
 			// Don't overwrite shadowed fields.
