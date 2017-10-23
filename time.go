@@ -49,6 +49,19 @@ func (e *Encoder) encodeTime(tm time.Time) []byte {
 }
 
 func (d *Decoder) DecodeTime() (time.Time, error) {
+	tm, err := d.decodeTime()
+	if err != nil {
+		return tm, err
+	}
+
+	if tm.IsZero() {
+		// Assume that zero time does not have timezone information.
+		return tm.UTC(), nil
+	}
+	return tm, nil
+}
+
+func (d *Decoder) decodeTime() (time.Time, error) {
 	c, err := d.readCode()
 	if err != nil {
 		return time.Time{}, err
