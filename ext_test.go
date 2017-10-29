@@ -57,7 +57,7 @@ func TestExt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		v, ok := dst.(ExtTest)
+		v, ok := dst.(*ExtTest)
 		if !ok {
 			t.Fatalf("got %#v, wanted ExtTest", dst)
 		}
@@ -67,8 +67,8 @@ func TestExt(t *testing.T) {
 			t.Fatalf("got %q, wanted %q", v.S, wanted)
 		}
 
-		var ext ExtTest
-		err = msgpack.Unmarshal(b, &ext)
+		ext := new(ExtTest)
+		err = msgpack.Unmarshal(b, ext)
 		if err != nil {
 			t.Fatal(err)
 		}

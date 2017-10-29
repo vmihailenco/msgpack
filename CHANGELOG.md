@@ -1,3 +1,7 @@
+## v3.2
+
+- Decoding extension types returns pointer to the value instead of the value. Fixes #153
+
 ## v3
 
 - gopkg.in is not supported any more. Update import path to github.com/vmihailenco/msgpack.
