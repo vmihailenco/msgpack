@@ -48,10 +48,10 @@ func ExampleRegisterExt() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(v.(EventTime).UTC())
+	fmt.Println(v.(*EventTime).UTC())
 
-	var tm EventTime
-	err = msgpack.Unmarshal(b, &tm)
+	tm := new(EventTime)
+	err = msgpack.Unmarshal(b, tm)
 	if err != nil {
 		panic(err)
 	}

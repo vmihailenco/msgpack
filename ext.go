@@ -155,8 +155,8 @@ func (d *Decoder) ext(c codes.Code) (interface{}, error) {
 		return nil, fmt.Errorf("msgpack: unregistered ext id=%d", extId)
 	}
 
-	v := reflect.New(typ).Elem()
-	if err := d.DecodeValue(v); err != nil {
+	v := reflect.New(typ)
+	if err := d.DecodeValue(v.Elem()); err != nil {
 		return nil, err
 	}
 
