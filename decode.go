@@ -14,14 +14,24 @@ import (
 
 const bytesAllocLimit = 1024 * 1024 // 1mb
 
-type bufReader interface {
+// BufferedReader is the interface a reader must implement
+// when providing a reader to the decoder that explicitly does not need
+// to be wrapped by a buffered reader and can be guaranteed
+// across msgpack library upgrades that the caller supplied reader
+// will not need to be wrapped by a buffered reader itself.
+//
+// If methods are added to this interface then callers will
+// no longer be able to supply a reader when resetting the decoder
+// rather than have their reader begin to be invisibly wrapped by
+// a buffered reader. This is a desirable outcome.
+type BufferedReader interface {
 	Read([]byte) (int, error)
 	ReadByte() (byte, error)
 	UnreadByte() error
 }
 
-func newBufReader(r io.Reader) bufReader {
-	if br, ok := r.(bufReader); ok {
+func newBufReader(r io.Reader) BufferedReader {
+	if br, ok := r.(BufferedReader); ok {
 		return br
 	}
 	return bufio.NewReader(r)
@@ -38,7 +48,7 @@ func Unmarshal(data []byte, v ...interface{}) error {
 }
 
 type Decoder struct {
-	r   bufReader
+	r   BufferedReader
 	buf []byte
 
 	extLen int
@@ -60,8 +70,23 @@ func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 	d.decodeMapFunc = fn
 }
 
+// SetBufferedReader allows resetting of the decoder similarly to the Reset call
+// however guarentees that the reader will not be wrapped by a buffered reader
+// of its own, which is enforced by type safety as the reader must implement the
+// BufferedReader interface to be passed as an argument to this call.
+func (d *Decoder) SetBufferedReader(r BufferedReader) error {
+	return d.reset(r)
+}
+
 func (d *Decoder) Reset(r io.Reader) error {
-	d.r = newBufReader(r)
+	return d.reset(newBufReader(r))
+}
+
+// reset is a common place to reset all contents during a reset operation.
+func (d *Decoder) reset(r BufferedReader) error {
+	d.r = r
+	d.buf = d.buf[:0]
+	d.extLen = 0
 	return nil
 }
 
