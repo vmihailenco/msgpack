@@ -47,6 +47,11 @@ type Decoder struct {
 	decodeMapFunc func(*Decoder) (interface{}, error)
 }
 
+// NewDecoder returns a new decoder that reads from r.
+//
+// The decoder introduces its own buffering and may read data from r
+// beyond the MessagePack values requested. Buffering can be disabled
+// by passing a reader that implements io.ByteScanner interface.
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		decodeMapFunc: decodeMap,

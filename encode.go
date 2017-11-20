@@ -43,6 +43,7 @@ type Encoder struct {
 	structAsArray bool
 }
 
+// NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
 	bw, ok := w.(writer)
 	if !ok {
