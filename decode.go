@@ -487,7 +487,11 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 		if diff > bytesAllocLimit {
 			diff = bytesAllocLimit
 		}
-		b = append(b, make([]byte, diff)...)
+		if b == nil {
+			b = make([]byte, diff)
+		} else {
+			b = append(b, make([]byte, diff)...)
+		}
 
 		_, err := io.ReadFull(r, b[pos:])
 		if err != nil {
