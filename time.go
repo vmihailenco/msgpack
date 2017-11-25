@@ -85,7 +85,7 @@ func (d *Decoder) decodeTime() (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	_, err = d.r.ReadByte()
+	_, err = d.s.ReadByte()
 	if err != nil {
 		return time.Time{}, nil
 	}

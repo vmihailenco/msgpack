@@ -15,9 +15,8 @@ import (
 const bytesAllocLimit = 1024 * 1024 // 1mb
 
 type bufReader interface {
-	Read([]byte) (int, error)
-	ReadByte() (byte, error)
-	UnreadByte() error
+	io.Reader
+	io.ByteScanner
 }
 
 func newBufReader(r io.Reader) bufReader {
@@ -38,7 +37,8 @@ func Unmarshal(data []byte, v ...interface{}) error {
 }
 
 type Decoder struct {
-	r   bufReader
+	r   io.Reader
+	s   io.ByteScanner
 	buf []byte
 
 	extLen int
@@ -53,12 +53,13 @@ type Decoder struct {
 // beyond the MessagePack values requested. Buffering can be disabled
 // by passing a reader that implements io.ByteScanner interface.
 func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{
+	d := &Decoder{
 		decodeMapFunc: decodeMap,
 
-		r:   newBufReader(r),
 		buf: makeBuffer(),
 	}
+	d.resetReader(r)
+	return d
 }
 
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
@@ -66,7 +67,7 @@ func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 }
 
 func (d *Decoder) Reset(r io.Reader) error {
-	d.r = newBufReader(r)
+	d.resetReader(r)
 	return nil
 }
 
@@ -273,7 +274,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return int8(c), nil
 	}
 	if codes.IsFixedMap(c) {
-		d.r.UnreadByte()
+		d.s.UnreadByte()
 		return d.DecodeMap()
 	}
 	if codes.IsFixedArray(c) {
@@ -315,7 +316,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 	case codes.Array16, codes.Array32:
 		return d.decodeSlice(c)
 	case codes.Map16, codes.Map32:
-		d.r.UnreadByte()
+		d.s.UnreadByte()
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
 		codes.Ext8, codes.Ext16, codes.Ext32:
@@ -339,7 +340,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 		return int64(c), nil
 	}
 	if codes.IsFixedMap(c) {
-		d.r.UnreadByte()
+		d.s.UnreadByte()
 		return d.DecodeMap()
 	}
 	if codes.IsFixedArray(c) {
@@ -367,7 +368,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 	case codes.Array16, codes.Array32:
 		return d.decodeSlice(c)
 	case codes.Map16, codes.Map32:
-		d.r.UnreadByte()
+		d.s.UnreadByte()
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
 		codes.Ext8, codes.Ext16, codes.Ext32:
@@ -423,11 +424,17 @@ func (d *Decoder) Skip() error {
 // PeekCode returns the next MessagePack code without advancing the reader.
 // Subpackage msgpack/codes contains list of available codes.
 func (d *Decoder) PeekCode() (codes.Code, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err
 	}
-	return codes.Code(c), d.r.UnreadByte()
+	return codes.Code(c), d.s.UnreadByte()
+}
+
+func (d *Decoder) resetReader(r io.Reader) {
+	reader := newBufReader(r)
+	d.r = reader
+	d.s = reader
 }
 
 func (d *Decoder) hasNilCode() bool {
@@ -436,7 +443,7 @@ func (d *Decoder) hasNilCode() bool {
 }
 
 func (d *Decoder) readCode() (codes.Code, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err
 	}
