@@ -71,6 +71,12 @@ func (d *Decoder) Reset(r io.Reader) error {
 	return nil
 }
 
+func (d *Decoder) resetReader(r io.Reader) {
+	reader := newBufReader(r)
+	d.r = reader
+	d.s = reader
+}
+
 func (d *Decoder) Decode(v ...interface{}) error {
 	for _, vv := range v {
 		if err := d.decode(vv); err != nil {
@@ -431,12 +437,6 @@ func (d *Decoder) PeekCode() (codes.Code, error) {
 	return codes.Code(c), d.s.UnreadByte()
 }
 
-func (d *Decoder) resetReader(r io.Reader) {
-	reader := newBufReader(r)
-	d.r = reader
-	d.s = reader
-}
-
 func (d *Decoder) hasNilCode() bool {
 	code, err := d.PeekCode()
 	return err == nil && code == codes.Nil
@@ -477,11 +477,18 @@ func (d *Decoder) readN(n int) ([]byte, error) {
 }
 
 func readN(r io.Reader, b []byte, n int) ([]byte, error) {
-	if n == 0 && b == nil {
-		return make([]byte, 0), nil
+	if b == nil {
+		if n == 0 {
+			return make([]byte, 0), nil
+		}
+		if n <= bytesAllocLimit {
+			b = make([]byte, n)
+		} else {
+			b = make([]byte, bytesAllocLimit)
+		}
 	}
 
-	if cap(b) >= n {
+	if n <= cap(b) {
 		b = b[:n]
 		_, err := io.ReadFull(r, b)
 		return b, err
@@ -494,18 +501,14 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 		if alloc > bytesAllocLimit {
 			alloc = bytesAllocLimit
 		}
-		if b == nil {
-			b = make([]byte, alloc)
-		} else {
-			b = append(b, make([]byte, alloc)...)
-		}
+		b = append(b, make([]byte, alloc)...)
 
 		_, err := io.ReadFull(r, b[pos:])
 		if err != nil {
 			return nil, err
 		}
 
-		if len(b) >= n {
+		if len(b) == n {
 			break
 		}
 		pos = len(b)
