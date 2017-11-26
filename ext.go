@@ -168,7 +168,7 @@ func (d *Decoder) skipExt(c codes.Code) error {
 	if err != nil {
 		return err
 	}
-	return d.skipN(n)
+	return d.skipN(n + 1)
 }
 
 func (d *Decoder) skipExtHeader(c codes.Code) error {

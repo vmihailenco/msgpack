@@ -325,7 +325,7 @@ func BenchmarkStructGOB(b *testing.B) {
 	}
 }
 
-type benchmarkSubStruct struct {
+type benchmarkStructPartially struct {
 	Name string
 	Age  int
 }
@@ -336,7 +336,7 @@ func BenchmarkStructUnmarshalPartially(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	out := &benchmarkSubStruct{}
+	out := new(benchmarkStructPartially)
 
 	b.ResetTimer()
 
@@ -410,7 +410,7 @@ func BenchmarkQuery(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		if values[0].(uint64) != 10 {
+		if values[0].(int8) != 10 {
 			b.Fatalf("%v != %d", values[0], 10)
 		}
 	}
