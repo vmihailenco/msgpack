@@ -482,15 +482,15 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 	b = b[:cap(b)]
 
 	var pos int
-	for len(b) < n {
-		diff := n - len(b)
-		if diff > bytesAllocLimit {
-			diff = bytesAllocLimit
+	for {
+		alloc := n - len(b)
+		if alloc > bytesAllocLimit {
+			alloc = bytesAllocLimit
 		}
 		if b == nil {
-			b = make([]byte, diff)
+			b = make([]byte, alloc)
 		} else {
-			b = append(b, make([]byte, diff)...)
+			b = append(b, make([]byte, alloc)...)
 		}
 
 		_, err := io.ReadFull(r, b[pos:])
@@ -498,6 +498,9 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 			return nil, err
 		}
 
+		if len(b) >= n {
+			break
+		}
 		pos = len(b)
 	}
 
