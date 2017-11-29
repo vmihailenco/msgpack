@@ -41,6 +41,7 @@ type Encoder struct {
 
 	sortMapKeys   bool
 	structAsArray bool
+	useJSONTag    bool
 }
 
 // NewEncoder returns a new encoder that writes to w.
@@ -67,6 +68,12 @@ func (e *Encoder) SortMapKeys(v bool) *Encoder {
 // StructAsArray causes the Encoder to encode Go structs as MessagePack arrays.
 func (e *Encoder) StructAsArray(v bool) *Encoder {
 	e.structAsArray = v
+	return e
+}
+
+// UseJSONTag causes the Encoder to use json struct tags.
+func (e *Encoder) UseJSONTag(v bool) *Encoder {
+	e.useJSONTag = v
 	return e
 }
 

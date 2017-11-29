@@ -91,6 +91,13 @@ type CustomEncoderField struct {
 
 //------------------------------------------------------------------------------
 
+type JSONFallbackTest struct {
+	Foo string `json:"foo,omitempty"`
+	Bar string `json:",omitempty"`
+}
+
+//------------------------------------------------------------------------------
+
 type OmitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`
@@ -113,54 +120,59 @@ type AsArrayTest struct {
 //------------------------------------------------------------------------------
 
 type encoderTest struct {
-	in     interface{}
-	wanted string
+	in         interface{}
+	wanted     string
+	useJSONTag bool
 }
 
 var encoderTests = []encoderTest{
-	{nil, "c0"},
+	{nil, "c0", false},
 
-	{[]byte(nil), "c0"},
-	{[]byte{1, 2, 3}, "c403010203"},
-	{[3]byte{1, 2, 3}, "c403010203"},
+	{[]byte(nil), "c0", false},
+	{[]byte{1, 2, 3}, "c403010203", false},
+	{[3]byte{1, 2, 3}, "c403010203", false},
 
-	{time.Unix(0, 0), "d6ff00000000"},
-	{time.Unix(1, 1), "d7ff0000000400000001"},
-	{time.Time{}, "c70cff00000000fffffff1886e0900"},
+	{time.Unix(0, 0), "d6ff00000000", false},
+	{time.Unix(1, 1), "d7ff0000000400000001", false},
+	{time.Time{}, "c70cff00000000fffffff1886e0900", false},
 
-	{IntSet{}, "90"},
-	{IntSet{8: struct{}{}}, "9108"},
+	{IntSet{}, "90", false},
+	{IntSet{8: struct{}{}}, "9108", false},
 
-	{map[string]string(nil), "c0"},
+	{map[string]string(nil), "c0", false},
 	{
 		map[string]string{"a": "", "b": "", "c": "", "d": "", "e": ""},
 		"85a161a0a162a0a163a0a164a0a165a0",
+		false,
 	},
 
-	{(*Object)(nil), "c0"},
-	{&Object{}, "00"},
-	{&Object{42}, "2a"},
-	{[]*Object{nil, nil}, "92c0c0"},
+	{(*Object)(nil), "c0", false},
+	{&Object{}, "00", false},
+	{&Object{42}, "2a", false},
+	{[]*Object{nil, nil}, "92c0c0", false},
 
-	{&CustomEncoder{}, "a0c000"},
+	{&CustomEncoder{}, "a0c000", false},
 	{
 		&CustomEncoder{"a", &CustomEncoder{"b", nil, 7}, 6},
 		"a161a162c00706",
+		false,
 	},
 
-	{OmitEmptyTest{}, "80"},
-	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f"},
+	{&JSONFallbackTest{Foo: "hello"}, "81a3666f6fa568656c6c6f", true},
 
-	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
-	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
+	{OmitEmptyTest{}, "80", false},
+	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f", false},
 
-	{&AsArrayTest{}, "92a0a0"},
+	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64", false},
+	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64", false},
+
+	{&AsArrayTest{}, "92a0a0", false},
 }
 
 func TestEncoder(t *testing.T) {
 	for _, test := range encoderTests {
 		var buf bytes.Buffer
-		enc := msgpack.NewEncoder(&buf).SortMapKeys(true)
+		enc := msgpack.NewEncoder(&buf).UseJSONTag(test.useJSONTag).SortMapKeys(true)
 		if err := enc.Encode(test.in); err != nil {
 			t.Fatal(err)
 		}
