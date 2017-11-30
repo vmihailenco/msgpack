@@ -204,7 +204,7 @@ func (d *Decoder) skipMap(c codes.Code) error {
 	return nil
 }
 
-func decodeStructValue(d *Decoder, strct reflect.Value) error {
+func decodeStructValue(d *Decoder, v reflect.Value) error {
 	c, err := d.readCode()
 	if err != nil {
 		return err
@@ -222,18 +222,21 @@ func decodeStructValue(d *Decoder, strct reflect.Value) error {
 		isArray = true
 	}
 	if n == -1 {
-		strct.Set(reflect.Zero(strct.Type()))
+		if err = mustSet(v); err != nil {
+			return err
+		}
+		v.Set(reflect.Zero(v.Type()))
 		return nil
 	}
 
-	fields := structs.Fields(strct.Type())
+	fields := structs.Fields(v.Type())
 
 	if isArray {
 		for i, f := range fields.List {
 			if i >= n {
 				break
 			}
-			if err := f.DecodeValue(d, strct); err != nil {
+			if err := f.DecodeValue(d, v); err != nil {
 				return err
 			}
 		}
@@ -252,7 +255,7 @@ func decodeStructValue(d *Decoder, strct reflect.Value) error {
 			return err
 		}
 		if f := fields.Table[name]; f != nil {
-			if err := f.DecodeValue(d, strct); err != nil {
+			if err := f.DecodeValue(d, v); err != nil {
 				return err
 			}
 		} else {

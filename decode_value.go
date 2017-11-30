@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -40,6 +41,13 @@ func init() {
 		reflect.Struct:        decodeStructValue,
 		reflect.UnsafePointer: decodeUnsupportedValue,
 	}
+}
+
+func mustSet(v reflect.Value) error {
+	if !v.CanSet() {
+		return fmt.Errorf("msgpack: Decode(nonsettable %s)", v.Type())
+	}
+	return nil
 }
 
 func getDecoder(typ reflect.Type) decoderFunc {
@@ -105,8 +113,8 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 			return d.DecodeNil()
 		}
 		if v.IsNil() {
-			if !v.CanSet() {
-				return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+			if err := mustSet(v); err != nil {
+				return err
 			}
 			v.Set(reflect.New(v.Type().Elem()))
 		}
@@ -116,7 +124,7 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 
 func decodeCustomValueAddr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+		return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
 	}
 	return decodeCustomValue(d, v.Addr())
 }
@@ -163,7 +171,7 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 
 func unmarshalValueAddr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+		return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
 	}
 	return unmarshalValue(d, v.Addr())
 }
@@ -174,17 +182,19 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	if codes.IsExt(c) {
+	extLen := d.extLen
+	d.extLen = 0
+
+	if extLen == 0 && codes.IsExt(c) {
 		c, err = d.readCode()
 		if err != nil {
 			return err
 		}
 
-		extLen, err := d.parseExtLen(c)
+		extLen, err = d.parseExtLen(c)
 		if err != nil {
 			return err
 		}
-		d.extLen = extLen
 
 		_, err = d.readCode()
 		if err != nil {
@@ -205,9 +215,8 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
 
-	if d.extLen != 0 {
-		b, err := d.readN(d.extLen)
-		d.extLen = 0
+	if extLen != 0 {
+		b, err := d.readN(extLen)
 		if err != nil {
 			return err
 		}
@@ -230,6 +239,9 @@ func decodeBoolValue(d *Decoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
+	if err = mustSet(v); err != nil {
+		return err
+	}
 	v.SetBool(flag)
 	return nil
 }
@@ -239,6 +251,24 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 		return d.interfaceValue(v)
 	}
 	return d.DecodeValue(v.Elem())
+}
+
+func (d *Decoder) interfaceValue(v reflect.Value) error {
+	vv, err := d.DecodeInterface()
+	if err != nil {
+		return err
+	}
+	if vv != nil {
+		if v.Type() == errorType {
+			if vv, ok := vv.(string); ok {
+				v.Set(reflect.ValueOf(errors.New(vv)))
+				return nil
+			}
+		}
+
+		v.Set(reflect.ValueOf(vv))
+	}
+	return nil
 }
 
 func decodeUnsupportedValue(d *Decoder, v reflect.Value) error {
