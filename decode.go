@@ -242,24 +242,6 @@ func (d *Decoder) bool(c codes.Code) (bool, error) {
 	return false, fmt.Errorf("msgpack: invalid code=%x decoding bool", c)
 }
 
-func (d *Decoder) interfaceValue(v reflect.Value) error {
-	vv, err := d.DecodeInterface()
-	if err != nil {
-		return err
-	}
-	if vv != nil {
-		if v.Type() == errorType {
-			if vv, ok := vv.(string); ok {
-				v.Set(reflect.ValueOf(errors.New(vv)))
-				return nil
-			}
-		}
-
-		v.Set(reflect.ValueOf(vv))
-	}
-	return nil
-}
-
 // DecodeInterface decodes value into interface. Possible value types are:
 //   - nil,
 //   - bool,
@@ -326,7 +308,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
 		codes.Ext8, codes.Ext16, codes.Ext32:
-		return d.ext(c)
+		return d.extInterface(c)
 	}
 
 	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
@@ -378,7 +360,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
 		codes.Ext8, codes.Ext16, codes.Ext32:
-		return d.ext(c)
+		return d.extInterface(c)
 	}
 
 	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
