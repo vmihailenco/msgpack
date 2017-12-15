@@ -402,7 +402,8 @@ func (d *Decoder) Skip() error {
 		return d.skipSlice(c)
 	case codes.Map16, codes.Map32:
 		return d.skipMap(c)
-	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16, codes.Ext8, codes.Ext16, codes.Ext32:
+	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
+		codes.Ext8, codes.Ext16, codes.Ext32:
 		return d.skipExt(c)
 	}
 
@@ -425,6 +426,7 @@ func (d *Decoder) hasNilCode() bool {
 }
 
 func (d *Decoder) readCode() (codes.Code, error) {
+	d.extLen = 0
 	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err
