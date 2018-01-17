@@ -77,8 +77,8 @@ type field struct {
 	decoder decoderFunc
 }
 
-func (f *field) value(strct reflect.Value) reflect.Value {
-	return strct.FieldByIndex(f.index)
+func (f *field) value(v reflect.Value) reflect.Value {
+	return fieldByIndex(v, f.index)
 }
 
 func (f *field) Omit(strct reflect.Value) bool {
@@ -243,4 +243,38 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.IsNil()
 	}
 	return false
+}
+
+func fieldByIndex(v reflect.Value, index []int) reflect.Value {
+	if len(index) == 1 {
+		return v.Field(index[0])
+	}
+	for i, x := range index {
+		if i > 0 {
+			var ok bool
+			v, ok = indirectNew(v)
+			if !ok {
+				return v
+			}
+		}
+		v = v.Field(x)
+	}
+	return v
+}
+
+func indirectNew(v reflect.Value) (reflect.Value, bool) {
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			if !v.CanSet() {
+				return v, false
+			}
+			elemType := v.Type().Elem()
+			if elemType.Kind() != reflect.Struct {
+				return v, false
+			}
+			v.Set(reflect.New(elemType))
+		}
+		v = v.Elem()
+	}
+	return v, true
 }

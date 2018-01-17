@@ -209,9 +209,13 @@ type Exported struct {
 	Bar string
 }
 
-type EmbedingTest struct {
+type EmbeddingTest struct {
 	unexported
 	Exported
+}
+
+type EmbeddingPtrTest struct {
+	*Exported
 }
 
 //------------------------------------------------------------------------------
@@ -351,14 +355,19 @@ var (
 		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(StructTest)},
 		{in: StructTest{sliceString{"foo", "bar"}, []string{"hello"}}, out: new(*StructTest)},
 
-		{in: EmbedingTest{}, out: new(EmbedingTest)},
-		{in: EmbedingTest{}, out: new(*EmbedingTest)},
+		{in: EmbeddingTest{}, out: new(EmbeddingTest)},
 		{
-			in: EmbedingTest{
+			in:     EmbeddingTest{},
+			out:    new(EmbeddingPtrTest),
+			wanted: EmbeddingPtrTest{Exported: new(Exported)},
+		},
+		{in: EmbeddingTest{}, out: new(*EmbeddingTest)},
+		{
+			in: EmbeddingTest{
 				unexported: unexported{Foo: "hello"},
 				Exported:   Exported{Bar: "world"},
 			},
-			out: new(EmbedingTest),
+			out: new(EmbeddingTest),
 		},
 
 		{in: time.Unix(0, 0), out: new(time.Time)},
