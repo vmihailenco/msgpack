@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -14,6 +15,8 @@ var mapStringStringType = mapStringStringPtrType.Elem()
 
 var mapStringInterfacePtrType = reflect.TypeOf((*map[string]interface{})(nil))
 var mapStringInterfaceType = mapStringInterfacePtrType.Elem()
+
+var errInvalidCode = errors.New("invalid code")
 
 func decodeMapValue(d *Decoder, v reflect.Value) error {
 	n, err := d.DecodeMapLen()
@@ -90,8 +93,11 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 			return 0, err
 		}
 	}
-
-	return d.mapLen(c)
+	n, err := d.mapLen(c)
+	if err == errInvalidCode {
+		err = fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
+	}
+	return n, err
 }
 
 func (d *Decoder) mapLen(c codes.Code) (int, error) {
@@ -109,7 +115,7 @@ func (d *Decoder) mapLen(c codes.Code) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
+	return 0, errInvalidCode
 }
 
 func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
@@ -190,6 +196,9 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 
 func (d *Decoder) skipMap(c codes.Code) error {
 	n, err := d.mapLen(c)
+	if err == errInvalidCode {
+		err = fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
+	}
 	if err != nil {
 		return err
 	}
