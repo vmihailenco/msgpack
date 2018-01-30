@@ -93,14 +93,16 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 			return 0, err
 		}
 	}
-	n, err := d.mapLen(c)
-	if err == errInvalidCode {
-		err = fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
-	}
-	return n, err
+	return d.mapLen(c)
 }
 
 func (d *Decoder) mapLen(c codes.Code) (int, error) {
+	n, err := d._mapLen(c)
+	err = expandInvalidCodeMapLenError(c, err)
+	return n, err
+}
+
+func (d *Decoder) _mapLen(c codes.Code) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	}
@@ -116,6 +118,13 @@ func (d *Decoder) mapLen(c codes.Code) (int, error) {
 		return int(n), err
 	}
 	return 0, errInvalidCode
+}
+
+func expandInvalidCodeMapLenError(c codes.Code, err error) error {
+	if err == errInvalidCode {
+		return fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
+	}
+	return err
 }
 
 func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
@@ -196,9 +205,6 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 
 func (d *Decoder) skipMap(c codes.Code) error {
 	n, err := d.mapLen(c)
-	if err == errInvalidCode {
-		err = fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
-	}
 	if err != nil {
 		return err
 	}
@@ -221,12 +227,12 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 	var isArray bool
 
-	n, err := d.mapLen(c)
+	n, err := d._mapLen(c)
 	if err != nil {
 		var err2 error
 		n, err2 = d.arrayLen(c)
 		if err2 != nil {
-			return err
+			return expandInvalidCodeMapLenError(c, err)
 		}
 		isArray = true
 	}
