@@ -83,6 +83,12 @@ func BenchmarkByteArray(b *testing.B) {
 	benchmarkEncodeDecode(b, src, &dst)
 }
 
+func BenchmarkByteArrayPtr(b *testing.B) {
+	var src [1024]byte
+	var dst [1024]byte
+	benchmarkEncodeDecode(b, &src, &dst)
+}
+
 func BenchmarkMapStringString(b *testing.B) {
 	src := map[string]string{
 		"hello": "world",

@@ -24,9 +24,18 @@ func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
 		return e.write(b)
 	}
 
-	b := make([]byte, v.Len())
-	reflect.Copy(reflect.ValueOf(b), v)
-	return e.write(b)
+	e.buf = grow(e.buf, v.Len())
+	reflect.Copy(reflect.ValueOf(e.buf), v)
+	return e.write(e.buf)
+}
+
+func grow(b []byte, n int) []byte {
+	if cap(b) >= n {
+		return b[:n]
+	}
+	b = b[:cap(b)]
+	b = append(b, make([]byte, n-len(b))...)
+	return b
 }
 
 func (e *Encoder) EncodeBytesLen(l int) error {
