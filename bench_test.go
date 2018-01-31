@@ -2,6 +2,7 @@ package msgpack_test
 
 import (
 	"bytes"
+	"io/ioutil"
 	"math"
 	"testing"
 	"time"
@@ -9,10 +10,25 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
+func BenchmarkDiscard(b *testing.B) {
+	enc := msgpack.NewEncoder(ioutil.Discard)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if err := enc.Encode(nil); err != nil {
+			b.Fatal(err)
+		}
+		if err := enc.Encode("hello"); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func benchmarkEncodeDecode(b *testing.B, src, dst interface{}) {
 	var buf bytes.Buffer
-	dec := msgpack.NewDecoder(&buf)
 	enc := msgpack.NewEncoder(&buf)
+	dec := msgpack.NewDecoder(&buf)
 
 	b.ResetTimer()
 
