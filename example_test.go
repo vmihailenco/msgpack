@@ -58,6 +58,8 @@ func ExampleDecoder_SetDecodeMapFunc() {
 	}
 
 	dec := msgpack.NewDecoder(buf)
+
+	// Causes decoder to produce map[string]string instead of map[string]interface{}.
 	dec.SetDecodeMapFunc(func(d *msgpack.Decoder) (interface{}, error) {
 		n, err := d.DecodeMapLen()
 		if err != nil {
@@ -85,8 +87,8 @@ func ExampleDecoder_SetDecodeMapFunc() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(out)
-	// Output: map[hello:world]
+	fmt.Printf("%#v", out)
+	// Output: map[string]string{"hello":"world"}
 }
 
 func ExampleDecoder_Query() {
