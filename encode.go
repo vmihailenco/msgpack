@@ -17,15 +17,29 @@ type writer interface {
 
 type byteWriter struct {
 	io.Writer
+
+	buf       []byte
+	bootstrap [64]byte
 }
 
-func (w byteWriter) WriteByte(b byte) error {
-	_, err := w.Write([]byte{b})
+func newByteWriter(w io.Writer) *byteWriter {
+	bw := &byteWriter{
+		Writer: w,
+	}
+	bw.buf = bw.bootstrap[:]
+	return bw
+}
+
+func (w *byteWriter) WriteByte(c byte) error {
+	w.buf = w.buf[:1]
+	w.buf[0] = c
+	_, err := w.Write(w.buf)
 	return err
 }
 
-func (w byteWriter) WriteString(s string) (int, error) {
-	return w.Write([]byte(s))
+func (w *byteWriter) WriteString(s string) (int, error) {
+	w.buf = append(w.buf[:0], s...)
+	return w.Write(w.buf)
 }
 
 // Marshal returns the MessagePack encoding of v.
@@ -47,7 +61,7 @@ type Encoder struct {
 func NewEncoder(w io.Writer) *Encoder {
 	bw, ok := w.(writer)
 	if !ok {
-		bw = byteWriter{Writer: w}
+		bw = newByteWriter(w)
 	}
 	return &Encoder{
 		w:   bw,
