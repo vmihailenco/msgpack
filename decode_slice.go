@@ -166,7 +166,7 @@ func (d *Decoder) decodeSlice(c codes.Code) ([]interface{}, error) {
 
 	s := make([]interface{}, 0, min(n, sliceElemsAllocLimit))
 	for i := 0; i < n; i++ {
-		v, err := d.DecodeInterface()
+		v, err := d.decodeInterface()
 		if err != nil {
 			return nil, err
 		}

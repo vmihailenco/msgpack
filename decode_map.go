@@ -68,7 +68,7 @@ func decodeMap(d *Decoder) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		mv, err := d.DecodeInterface()
+		mv, err := d.decodeInterface()
 		if err != nil {
 			return nil, err
 		}
@@ -189,7 +189,7 @@ func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error
 		if err != nil {
 			return err
 		}
-		mv, err := d.DecodeInterface()
+		mv, err := d.decodeInterface()
 		if err != nil {
 			return err
 		}
