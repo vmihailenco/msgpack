@@ -34,16 +34,21 @@ func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
 
 //------------------------------------------------------------------------------
 
-var structs = newStructCache()
+var structs = newStructCache(false)
+var jsonStructs = newStructCache(true)
 
 type structCache struct {
 	mu sync.RWMutex
 	m  map[reflect.Type]*fields
+
+	useJSONTag bool
 }
 
-func newStructCache() *structCache {
+func newStructCache(useJSONTag bool) *structCache {
 	return &structCache{
 		m: make(map[reflect.Type]*fields),
+
+		useJSONTag: useJSONTag,
 	}
 }
 
@@ -58,7 +63,7 @@ func (m *structCache) Fields(typ reflect.Type) *fields {
 	m.mu.Lock()
 	fs, ok = m.m[typ]
 	if !ok {
-		fs = getFields(typ)
+		fs = getFields(typ, m.useJSONTag)
 		m.m[typ] = fs
 	}
 	m.mu.Unlock()
@@ -72,9 +77,8 @@ type field struct {
 	name      string
 	index     []int
 	omitEmpty bool
-
-	encoder encoderFunc
-	decoder decoderFunc
+	encoder   encoderFunc
+	decoder   decoderFunc
 }
 
 func (f *field) value(v reflect.Value) reflect.Value {
@@ -96,38 +100,34 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 //------------------------------------------------------------------------------
 
 type fields struct {
-	List  []*field
-	Table map[string]*field
+	Table   map[string]*field
+	List    []*field
+	AsArray bool
 
-	asArray   bool
-	omitEmpty bool
+	hasOmitEmpty bool
 }
 
 func newFields(numField int) *fields {
 	return &fields{
-		List:  make([]*field, 0, numField),
 		Table: make(map[string]*field, numField),
+		List:  make([]*field, 0, numField),
 	}
 }
 
-func (fs *fields) Len() int {
-	return len(fs.List)
-}
-
 func (fs *fields) Add(field *field) {
-	fs.List = append(fs.List, field)
 	fs.Table[field.name] = field
+	fs.List = append(fs.List, field)
 	if field.omitEmpty {
-		fs.omitEmpty = field.omitEmpty
+		fs.hasOmitEmpty = true
 	}
 }
 
 func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
-	if !fs.omitEmpty {
+	if !fs.hasOmitEmpty {
 		return fs.List
 	}
 
-	fields := make([]*field, 0, fs.Len())
+	fields := make([]*field, 0, len(fs.List))
 	for _, f := range fs.List {
 		if !f.Omit(strct) {
 			fields = append(fields, f)
@@ -136,7 +136,7 @@ func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
 	return fields
 }
 
-func getFields(typ reflect.Type) *fields {
+func getFields(typ reflect.Type, useJSONTag bool) *fields {
 	numField := typ.NumField()
 	fs := newFields(numField)
 
@@ -144,14 +144,19 @@ func getFields(typ reflect.Type) *fields {
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
 
-		name, opt := parseTag(f.Tag.Get("msgpack"))
+		tag := f.Tag.Get("msgpack")
+		if useJSONTag && tag == "" {
+			tag = f.Tag.Get("json")
+		}
+
+		name, opt := parseTag(tag)
 		if name == "-" {
 			continue
 		}
 
 		if f.Name == "_msgpack" {
 			if opt.Contains("asArray") {
-				fs.asArray = true
+				fs.AsArray = true
 			}
 			if opt.Contains("omitempty") {
 				omitEmpty = true
@@ -162,9 +167,6 @@ func getFields(typ reflect.Type) *fields {
 			continue
 		}
 
-		if name == "" {
-			name = f.Name
-		}
 		field := &field{
 			name:      name,
 			index:     f.Index,
@@ -173,7 +175,11 @@ func getFields(typ reflect.Type) *fields {
 			decoder:   getDecoder(f.Type),
 		}
 
-		if f.Anonymous && inlineFields(fs, f.Type, field) {
+		if field.name == "" {
+			field.name = f.Name
+		}
+
+		if f.Anonymous && inlineFields(fs, f.Type, field, useJSONTag) {
 			continue
 		}
 
@@ -190,7 +196,7 @@ func init() {
 	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()
 }
 
-func inlineFields(fs *fields, typ reflect.Type, f *field) bool {
+func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
 	var encoder encoderFunc
 	var decoder decoderFunc
 
@@ -215,7 +221,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field) bool {
 		return false
 	}
 
-	inlinedFields := getFields(typ).List
+	inlinedFields := getFields(typ, useJSONTag).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Table[field.name]; ok {
 			// Don't overwrite shadowed fields.

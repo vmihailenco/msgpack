@@ -91,6 +91,38 @@ type CustomEncoderField struct {
 
 //------------------------------------------------------------------------------
 
+type JSONFallbackTest struct {
+	Foo string `json:"foo,omitempty"`
+	Bar string `json:",omitempty" msgpack:"bar"`
+}
+
+func TestUseJsonTag(t *testing.T) {
+	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(&buf).UseJSONTag(true)
+	in := &JSONFallbackTest{Foo: "hello", Bar: "world"}
+	err := enc.Encode(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf).UseJSONTag(true)
+	out := new(JSONFallbackTest)
+	err = dec.Decode(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if out.Foo != in.Foo {
+		t.Fatalf("got %q, wanted %q", out.Foo, in.Foo)
+	}
+	if out.Bar != in.Bar {
+		t.Fatalf("got %q, wanted %q", out.Foo, in.Foo)
+	}
+}
+
+//------------------------------------------------------------------------------
+
 type OmitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`
@@ -155,12 +187,16 @@ var encoderTests = []encoderTest{
 	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
 
 	{&AsArrayTest{}, "92a0a0"},
+
+	{&JSONFallbackTest{Foo: "hello"}, "82a3666f6fa568656c6c6fa3626172a0"},
+	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64"},
+	{&JSONFallbackTest{Foo: "hello", Bar: "world"}, "82a3666f6fa568656c6c6fa3626172a5776f726c64"},
 }
 
 func TestEncoder(t *testing.T) {
 	for _, test := range encoderTests {
 		var buf bytes.Buffer
-		enc := msgpack.NewEncoder(&buf).SortMapKeys(true)
+		enc := msgpack.NewEncoder(&buf).UseJSONTag(true).SortMapKeys(true)
 		if err := enc.Encode(test.in); err != nil {
 			t.Fatal(err)
 		}
