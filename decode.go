@@ -44,6 +44,8 @@ type Decoder struct {
 	extLen int
 	rec    []byte // accumulates read data if not nil
 
+	useLoose bool
+
 	decodeMapFunc func(*Decoder) (interface{}, error)
 }
 
@@ -64,6 +66,10 @@ func NewDecoder(r io.Reader) *Decoder {
 
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 	d.decodeMapFunc = fn
+}
+
+func (d *Decoder) SetLoose(l bool) {
+	d.useLoose = l
 }
 
 func (d *Decoder) Reset(r io.Reader) error {
@@ -194,6 +200,13 @@ func (d *Decoder) decode(dst interface{}) error {
 		return fmt.Errorf("msgpack: Decode(nonsettable %T)", dst)
 	}
 	return d.DecodeValue(v)
+}
+
+func (d *Decoder) decodeInterface() (interface{}, error) {
+	if d.useLoose {
+		return d.DecodeInterfaceLoose()
+	}
+	return d.DecodeInterface()
 }
 
 func (d *Decoder) DecodeValue(v reflect.Value) error {
