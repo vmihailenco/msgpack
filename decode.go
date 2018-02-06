@@ -68,8 +68,10 @@ func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 	d.decodeMapFunc = fn
 }
 
-func (d *Decoder) SetLoose(l bool) {
-	d.useLoose = l
+// UseDecodeInterfaceLoose causes decoder to use DecodeInterfaceLoose
+// to decode msgpack value into Go interface{}.
+func (d *Decoder) UseDecodeInterfaceLoose(flag bool) {
+	d.useLoose = flag
 }
 
 func (d *Decoder) Reset(r io.Reader) error {
