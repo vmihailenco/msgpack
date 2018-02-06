@@ -12,6 +12,7 @@ Supports:
 - Omitting individual empty fields via `msgpack:",omitempty"` tag or all [empty fields in a struct](https://godoc.org/github.com/vmihailenco/msgpack#example-Marshal--OmitEmpty).
 - [Map keys sorting](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.SortMapKeys).
 - Encoding/decoding all [structs as arrays](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.StructAsArray) or [individual structs](https://godoc.org/github.com/vmihailenco/msgpack#example-Marshal--AsArray).
+- [Encoder.UseJSONTag](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.UseJSONTag) with [Decoder.UseJSONTag](https://godoc.org/github.com/vmihailenco/msgpack#Decoder.UseJSONTag) can turn msgpack into drop-in replacement for JSON.
 - Simple but very fast and efficient [queries](https://godoc.org/github.com/vmihailenco/msgpack#example-Decoder-Query).
 
 API docs: https://godoc.org/github.com/vmihailenco/msgpack.
