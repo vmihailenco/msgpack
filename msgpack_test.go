@@ -272,3 +272,25 @@ func (t *MsgpackTest) TestMapStringInterface(c *C) {
 	mm := out["hello"].(map[string]interface{})
 	c.Assert(mm["foo"], Equals, "bar")
 }
+
+type Type1 struct {
+	Name, Address string
+	Type2
+}
+type Type2 struct {
+	Name, Address string
+}
+type T struct {
+	Type1
+	Type2
+}
+
+func (t *MsgpackTest) TestAnonymousFieldsStructs(c *C) {
+	in := T{Type1: Type1{"A", "0", Type2{"C", "2"}}, Type2: Type2{"B", "1"}}
+	var out T
+	c.Assert(t.enc.Encode(in), IsNil)
+	c.Assert(t.dec.Decode(&out), IsNil)
+	c.Assert(out.Type1.Name, Equals, in.Type1.Name)
+	c.Assert(out.Type2.Name, Equals, in.Type2.Name)
+	c.Assert(out.Type1.Type2.Name, Equals, in.Type1.Type2.Name)
+}

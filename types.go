@@ -63,7 +63,7 @@ func (m *structCache) Fields(typ reflect.Type) *fields {
 	m.mu.Lock()
 	fs, ok = m.m[typ]
 	if !ok {
-		fs = getFields(typ, m.useJSONTag)
+		fs = getFields(typ, m.useJSONTag, "")
 		m.m[typ] = fs
 	}
 	m.mu.Unlock()
@@ -136,7 +136,7 @@ func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
 	return fields
 }
 
-func getFields(typ reflect.Type, useJSONTag bool) *fields {
+func getFields(typ reflect.Type, useJSONTag bool, parentTag string) *fields {
 	numField := typ.NumField()
 	fs := newFields(numField)
 
@@ -178,7 +178,9 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 		if field.name == "" {
 			field.name = f.Name
 		}
-
+		if parentTag != "" {
+			field.name = parentTag + "." + field.name
+		}
 		if f.Anonymous && inlineFields(fs, f.Type, field, useJSONTag) {
 			continue
 		}
@@ -221,7 +223,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool 
 		return false
 	}
 
-	inlinedFields := getFields(typ, useJSONTag).List
+	inlinedFields := getFields(typ, useJSONTag, f.name).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Table[field.name]; ok {
 			// Don't overwrite shadowed fields.
