@@ -245,6 +245,41 @@ func TestEmbedding(t *testing.T) {
 	}
 }
 
+type Struct5 struct {
+	Name string
+}
+type Struct6 struct {
+	Name string
+}
+
+type Struct7 struct {
+	Struct5
+	Struct6
+}
+
+func TestEmbeddingWithSameField(t *testing.T) {
+	in := &Struct7{}
+	in.Struct5.Name = "Hello"
+	in.Struct6.Name = "World"
+
+	var out Struct7
+
+	b, err := msgpack.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = msgpack.Unmarshal(b, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Struct5.Name != in.Struct5.Name {
+		t.Fatalf("in: %+v, out: %+v", in, out)
+	}
+	if out.Struct6.Name != in.Struct6.Name {
+		t.Fatalf("in: %+v, out: %+v", in, out)
+	}
+}
 func (t *MsgpackTest) TestSliceNil(c *C) {
 	in := [][]*int{nil}
 	var out [][]*int
