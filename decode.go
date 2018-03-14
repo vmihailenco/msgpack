@@ -265,7 +265,7 @@ func (d *Decoder) bool(c codes.Code) (bool, error) {
 	return false, fmt.Errorf("msgpack: invalid code=%x decoding bool", c)
 }
 
-// DecodeInterface decodes value into interface. Possible value types are:
+// DecodeInterface decodes value into interface. It returns following types:
 //   - nil,
 //   - bool,
 //   - int8, int16, int32, int64,
@@ -275,6 +275,10 @@ func (d *Decoder) bool(c codes.Code) (bool, error) {
 //   - []byte,
 //   - slices of any of the above,
 //   - maps of any of the above.
+//
+// DecodeInterface should be used only when you don't know the type of value
+// you are decoding. For example, if you are decoding number it is better to use
+// DecodeInt64 for negative numbers and DecodeUint64 for positive numbers.
 func (d *Decoder) DecodeInterface() (interface{}, error) {
 	c, err := d.readCode()
 	if err != nil {
@@ -285,7 +289,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return int8(c), nil
 	}
 	if codes.IsFixedMap(c) {
-		d.s.UnreadByte()
+		_ = d.s.UnreadByte()
 		return d.DecodeMap()
 	}
 	if codes.IsFixedArray(c) {
