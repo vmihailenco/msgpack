@@ -77,6 +77,8 @@ func (d *Decoder) int64() (int64, error) {
 	return int64(n), err
 }
 
+// DecodeUint64 decodes msgpack int8/16/32/64 and uint8/16/32/64
+// into Go uint64.
 func (d *Decoder) DecodeUint64() (uint64, error) {
 	c, err := d.readCode()
 	if err != nil {
@@ -117,6 +119,8 @@ func (d *Decoder) uint(c codes.Code) (uint64, error) {
 	return 0, fmt.Errorf("msgpack: invalid code=%x decoding uint64", c)
 }
 
+// DecodeInt64 decodes msgpack int8/16/32/64 and uint8/16/32/64
+// into Go int64.
 func (d *Decoder) DecodeInt64() (int64, error) {
 	c, err := d.readCode()
 	if err != nil {
@@ -182,6 +186,7 @@ func (d *Decoder) float32(c codes.Code) (float32, error) {
 	return float32(n), nil
 }
 
+// DecodeFloat64 decodes msgpack float32/64 into Go float64.
 func (d *Decoder) DecodeFloat64() (float64, error) {
 	c, err := d.readCode()
 	if err != nil {
