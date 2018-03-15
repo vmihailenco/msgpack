@@ -109,6 +109,9 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	decoder := getDecoder(typ.Elem())
 	return func(d *Decoder, v reflect.Value) error {
 		if d.hasNilCode() {
+			if err := mustSet(v); err != nil {
+				return err
+			}
 			v.Set(reflect.Zero(v.Type()))
 			return d.DecodeNil()
 		}
@@ -250,7 +253,16 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		return d.interfaceValue(v)
 	}
-	return d.DecodeValue(v.Elem())
+
+	elem := v.Elem()
+	if !elem.CanAddr() {
+		if d.hasNilCode() {
+			v.Set(reflect.Zero(v.Type()))
+			return d.DecodeNil()
+		}
+	}
+
+	return d.DecodeValue(elem)
 }
 
 func (d *Decoder) interfaceValue(v reflect.Value) error {
@@ -258,6 +270,7 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 	if err != nil {
 		return err
 	}
+
 	if vv != nil {
 		if v.Type() == errorType {
 			if vv, ok := vv.(string); ok {
@@ -268,6 +281,7 @@ func (d *Decoder) interfaceValue(v reflect.Value) error {
 
 		v.Set(reflect.ValueOf(vv))
 	}
+
 	return nil
 }
 

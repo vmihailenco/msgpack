@@ -254,10 +254,12 @@ type EmbeddingPtrTest struct {
 	*Exported
 }
 
-//------------------------------------------------------------------------------
-
 type EmbeddedTime struct {
 	time.Time
+}
+
+type Interface struct {
+	Foo interface{}
 }
 
 type (
@@ -441,6 +443,8 @@ var (
 
 		{in: (*ExtTest)(nil), out: new(*ExtTest)},
 		{in: &ExtTest{"world"}, out: new(ExtTest), wanted: ExtTest{"hello world"}},
+
+		{in: Interface{}, out: &Interface{Foo: "bar"}},
 	}
 )
 
