@@ -183,8 +183,8 @@ var encoderTests = []encoderTest{
 	{OmitEmptyTest{}, "80"},
 	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f"},
 
-	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
-	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
+	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81b14f6d6974456d707479546573742e426172a5776f726c64"},
+	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81b14f6d6974456d707479546573742e426172a5776f726c64"},
 
 	{&AsArrayTest{}, "92a0a0"},
 
