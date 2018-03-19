@@ -179,8 +179,14 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 			field.name = f.Name
 		}
 
-		if f.Anonymous && inlineFields(fs, f.Type, field, useJSONTag) {
-			continue
+		if f.Anonymous {
+			if opt.Contains("inline") {
+				inlineFields(fs, f.Type, field, useJSONTag)
+				continue
+			}
+			if autoinlineFields(fs, f.Type, field, useJSONTag) {
+				continue
+			}
 		}
 
 		fs.Add(field)
@@ -196,7 +202,19 @@ func init() {
 	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()
 }
 
-func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
+func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) {
+	inlinedFields := getFields(typ, useJSONTag).List
+	for _, field := range inlinedFields {
+		if _, ok := fs.Table[field.name]; ok {
+			// Don't inline shadowed fields.
+			continue
+		}
+		field.index = append(f.index, field.index...)
+		fs.Add(field)
+	}
+}
+
+func autoinlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
 	var encoder encoderFunc
 	var decoder decoderFunc
 
@@ -224,9 +242,12 @@ func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool 
 	inlinedFields := getFields(typ, useJSONTag).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Table[field.name]; ok {
-			// Don't overwrite shadowed fields.
-			continue
+			// Don't inline shadowed fields.
+			return false
 		}
+	}
+
+	for _, field := range inlinedFields {
 		field.index = append(f.index, field.index...)
 		fs.Add(field)
 	}

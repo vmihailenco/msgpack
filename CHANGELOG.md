@@ -1,3 +1,7 @@
+## v3.3
+
+- `msgpack:",inline"` tag is restored to force inlining structs.
+
 ## v3.2
 
 - Decoding extension types returns pointer to the value instead of the value. Fixes #153

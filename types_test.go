@@ -136,6 +136,17 @@ type InlinePtrTest struct {
 	*OmitEmptyTest
 }
 
+type FooTest struct {
+	Foo string
+}
+
+type FooDupTest FooTest
+
+type InlineDupTest struct {
+	FooTest
+	FooDupTest
+}
+
 type AsArrayTest struct {
 	_msgpack struct{} `msgpack:",asArray"`
 
@@ -445,6 +456,17 @@ var (
 		{in: &ExtTest{"world"}, out: new(ExtTest), wanted: ExtTest{"hello world"}},
 
 		{in: Interface{}, out: &Interface{Foo: "bar"}},
+
+		{
+			in:  &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}},
+			out: new(InlineTest),
+		}, {
+			in:  &InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}},
+			out: new(InlinePtrTest),
+		}, {
+			in:  InlineDupTest{FooTest{"foo"}, FooDupTest{"foo dup"}},
+			out: new(InlineDupTest),
+		},
 	}
 )
 
