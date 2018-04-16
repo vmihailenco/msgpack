@@ -31,6 +31,24 @@ func (o *Object) UnmarshalMsgpack(b []byte) error {
 
 //------------------------------------------------------------------------------
 
+type CustomTime time.Time
+
+func (t CustomTime) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.Encode(time.Time(t))
+}
+
+func (t *CustomTime) DecodeMsgpack(dec *msgpack.Decoder) error {
+	var tm time.Time
+	err := dec.Decode(&tm)
+	if err != nil {
+		return err
+	}
+	*t = CustomTime(tm)
+	return nil
+}
+
+//------------------------------------------------------------------------------
+
 type IntSet map[int]struct{}
 
 var _ msgpack.CustomEncoder = (*IntSet)(nil)
@@ -425,6 +443,7 @@ var (
 		{in: time.Unix(1, 1), out: new(time.Time)},
 		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(EmbeddedTime)},
 		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(*EmbeddedTime)},
+		{in: CustomTime(time.Unix(0, 0)), out: new(CustomTime)},
 
 		{in: nil, out: new(*CustomEncoder), wantnil: true},
 		{in: nil, out: &CustomEncoder{str: "a"}, wantzero: true},
