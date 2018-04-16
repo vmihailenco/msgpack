@@ -144,7 +144,7 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 			return err
 		}
 
-		_, err = d.parseExtLen(c)
+		extLen, err := d.parseExtLen(c)
 		if err != nil {
 			return err
 		}
@@ -158,6 +158,8 @@ func decodeCustomValue(d *Decoder, v reflect.Value) error {
 		if err != nil {
 			return err
 		}
+
+		d.extLen = extLen
 	}
 
 	if c == codes.Nil {
