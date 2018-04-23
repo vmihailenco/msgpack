@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -176,64 +177,143 @@ type AsArrayTest struct {
 type encoderTest struct {
 	in     interface{}
 	wanted string
+	// Canonical encoding
+	wantedCan string
 }
 
 var encoderTests = []encoderTest{
-	{nil, "c0"},
+	{nil, "c0", ""},
 
-	{[]byte(nil), "c0"},
-	{[]byte{1, 2, 3}, "c403010203"},
-	{[3]byte{1, 2, 3}, "c403010203"},
+	{[]byte(nil), "c0", ""},
+	{[]byte{1, 2, 3}, "c403010203", ""},
+	{[3]byte{1, 2, 3}, "c403010203", ""},
 
-	{time.Unix(0, 0), "d6ff00000000"},
-	{time.Unix(1, 1), "d7ff0000000400000001"},
-	{time.Time{}, "c70cff00000000fffffff1886e0900"},
+	{time.Unix(0, 0), "d6ff00000000", ""},
+	{time.Unix(1, 1), "d7ff0000000400000001", ""},
+	{time.Time{}, "c70cff00000000fffffff1886e0900", ""},
 
-	{IntSet{}, "90"},
-	{IntSet{8: struct{}{}}, "9108"},
+	{IntSet{}, "90", ""},
+	{IntSet{8: struct{}{}}, "9108", ""},
 
-	{map[string]string(nil), "c0"},
+	{map[string]string(nil), "c0", ""},
 	{
 		map[string]string{"a": "", "b": "", "c": "", "d": "", "e": ""},
 		"85a161a0a162a0a163a0a164a0a165a0",
+		"85a161a0a162a0a163a0a164a0a165a0",
 	},
 
-	{(*Object)(nil), "c0"},
-	{&Object{}, "00"},
-	{&Object{42}, "2a"},
-	{[]*Object{nil, nil}, "92c0c0"},
+	{(*Object)(nil), "c0", ""},
+	{&Object{}, "00", ""},
+	{&Object{42}, "2a", ""},
+	{[]*Object{nil, nil}, "92c0c0", ""},
 
-	{&CustomEncoder{}, "a0c000"},
+	{&CustomEncoder{}, "a0c000", ""},
 	{
 		&CustomEncoder{"a", &CustomEncoder{"b", nil, 7}, 6},
 		"a161a162c00706",
+		"",
 	},
 
-	{OmitEmptyTest{}, "80"},
-	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f"},
+	{OmitEmptyTest{}, "80", ""},
+	{&OmitEmptyTest{Foo: "hello"}, "81a3466f6fa568656c6c6f", ""},
 
-	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
-	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
+	{&InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64", ""},
+	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64", ""},
 
-	{&AsArrayTest{}, "92a0a0"},
+	{&AsArrayTest{}, "92a0a0", ""},
 
-	{&JSONFallbackTest{Foo: "hello"}, "82a3666f6fa568656c6c6fa3626172a0"},
-	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64"},
-	{&JSONFallbackTest{Foo: "hello", Bar: "world"}, "82a3666f6fa568656c6c6fa3626172a5776f726c64"},
+	{
+		&JSONFallbackTest{Foo: "hello"},
+		"82a3666f6fa568656c6c6fa3626172a0",
+		"82a3626172a0a3666f6fa568656c6c6f",
+	},
+	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64", ""},
+	{
+		&JSONFallbackTest{Foo: "hello", Bar: "world"},
+		"82a3666f6fa568656c6c6fa3626172a5776f726c64",
+		"82a3626172a5776f726c64a3666f6fa568656c6c6f",
+	},
+
+	{
+		struct {
+			Val uint64
+			Str string
+		}{
+			Val: 4,
+			Str: "Hello",
+		},
+		"82a356616c04a3537472a548656c6c6f",
+		"82a3537472a548656c6c6fa356616c04",
+	},
+	{
+		struct {
+			Str string
+			Val uint64
+		}{
+			Val: 4,
+			Str: "Hello",
+		},
+		"82a3537472a548656c6c6fa356616c04",
+		"82a3537472a548656c6c6fa356616c04",
+	},
+	{
+		map[string]interface{}{"Val": uint64(4), "Str": "Hello"},
+		"82a3537472a548656c6c6fa356616c04",
+		"82a3537472a548656c6c6fa356616c04",
+	},
+
+	{map[int32]string(nil), "c0", ""},
+	{
+		map[int32]string{2: "hello", -4324: "world"},
+		"",
+		"8202a568656c6c6fd1ef1ca5776f726c64",
+	},
+	{
+		map[struct {
+			Val uint64
+			Str string
+		}]int64{
+			{Val: 3, Str: "hello"}:         453265436,
+			{Val: 234543546, Str: "world"}: -543564536,
+		},
+		"",
+		"8282a3537472a568656c6c6fa356616c03ce1b04481c82a3537472a5776f726c64a356616cce0dfad9bad2df99dd08",
+	},
 }
 
 func TestEncoder(t *testing.T) {
-	for _, test := range encoderTests {
-		var buf bytes.Buffer
-		enc := msgpack.NewEncoder(&buf).UseJSONTag(true).SortMapKeys(true)
-		if err := enc.Encode(test.in); err != nil {
-			t.Fatal(err)
-		}
+	for i, test := range encoderTests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var buf bytes.Buffer
+			var bufCan bytes.Buffer
+			enc := msgpack.NewEncoder(&buf).UseJSONTag(true).SortMapKeys(true)
+			encCan := msgpack.NewEncoder(&bufCan).UseJSONTag(true).Canonical(true)
 
-		s := hex.EncodeToString(buf.Bytes())
-		if s != test.wanted {
-			t.Fatalf("%s != %s (in=%#v)", s, test.wanted, test.in)
-		}
+			// Test encoder
+			if len(test.wanted) > 0 {
+				if err := enc.Encode(test.in); err != nil {
+					t.Fatal(err)
+				}
+
+				s := hex.EncodeToString(buf.Bytes())
+				if s != test.wanted {
+					t.Fatalf("%s != %s (in=%#v)", s, test.wanted, test.in)
+				}
+			}
+
+			if test.wantedCan == "" {
+				test.wantedCan = test.wanted
+			}
+			// Test canonical encoder
+			if err := encCan.Encode(test.in); err != nil {
+				t.Fatal(err)
+			}
+
+			s := hex.EncodeToString(bufCan.Bytes())
+			if s != test.wantedCan {
+				t.Fatalf("%s != %s (in=%#v)", s, test.wantedCan, test.in)
+			}
+		})
 	}
 }
 
