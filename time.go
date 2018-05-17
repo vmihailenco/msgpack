@@ -76,11 +76,21 @@ func (d *Decoder) decodeTime() (time.Time, error) {
 			if err != nil {
 				return time.Time{}, err
 			}
+
 			nsec, err := d.DecodeInt64()
 			if err != nil {
 				return time.Time{}, err
 			}
+
 			return time.Unix(sec, nsec), nil
+		}
+
+		if codes.IsString(c) {
+			s, err := d.string(c)
+			if err != nil {
+				return time.Time{}, err
+			}
+			return time.Parse(time.RFC3339Nano, s)
 		}
 
 		extLen, err = d.parseExtLen(c)
