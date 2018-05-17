@@ -441,6 +441,11 @@ var (
 		{in: time.Unix(0, 1), out: new(time.Time)},
 		{in: time.Unix(1, 0), out: new(time.Time)},
 		{in: time.Unix(1, 1), out: new(time.Time)},
+		{
+			in:     time.Unix(0, 0).Format(time.RFC3339),
+			out:    new(time.Time),
+			wanted: mustParseTime(time.RFC3339, time.Unix(0, 0).Format(time.RFC3339)),
+		},
 		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(EmbeddedTime)},
 		{in: EmbeddedTime{Time: time.Unix(1, 1)}, out: new(*EmbeddedTime)},
 		{in: CustomTime(time.Unix(0, 0)), out: new(CustomTime)},
@@ -1002,4 +1007,12 @@ func TestFloat64(t *testing.T) {
 	if !math.IsNaN(out) {
 		t.Fatal("not NaN")
 	}
+}
+
+func mustParseTime(format, s string) time.Time {
+	tm, err := time.Parse(format, s)
+	if err != nil {
+		panic(err)
+	}
+	return tm
 }

@@ -73,6 +73,14 @@ func IsFixedString(c Code) bool {
 	return c >= FixedStrLow && c <= FixedStrHigh
 }
 
+func IsString(c Code) bool {
+	return IsFixedString(c) || c == Str8 || c == Str16 || c == Str32
+}
+
+func IsFixedExt(c Code) bool {
+	return c >= FixExt1 && c <= FixExt16
+}
+
 func IsExt(c Code) bool {
-	return (c >= FixExt1 && c <= FixExt16) || (c >= Ext8 && c <= Ext32)
+	return IsFixedExt(c) || c == Ext8 || c == Ext16 || c == Ext32
 }
