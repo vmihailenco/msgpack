@@ -50,6 +50,16 @@ func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 	}
 }
 
+func (e *Encoder) EncodeExtHeader(typeId byte, length int) error {
+	if err := e.encodeExtLen(length); err != nil {
+		return err
+	}
+	if err := e.w.WriteByte(typeId); err != nil {
+		return err
+	}
+	return nil
+}
+
 func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 	return func(e *Encoder, v reflect.Value) error {
 		buf := bufferPool.Get().(*bytes.Buffer)
@@ -65,10 +75,7 @@ func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 			return err
 		}
 
-		if err := e.encodeExtLen(buf.Len()); err != nil {
-			return err
-		}
-		if err := e.w.WriteByte(byte(typeId)); err != nil {
+		if err := e.EncodeExtHeader(byte(typeId), buf.Len()); err != nil {
 			return err
 		}
 		return e.write(buf.Bytes())
