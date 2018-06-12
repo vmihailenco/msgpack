@@ -1,6 +1,7 @@
 package msgpack_test
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -42,6 +43,68 @@ func (ext *ExtTest) DecodeMsgpack(d *msgpack.Decoder) error {
 	var err error
 	ext.S, err = d.DecodeString()
 	return err
+}
+
+func TestEncodeDecodeExtHeader(t *testing.T) {
+	v := &ExtTest{"world"}
+
+	// Marshal using EncodeExtHeader
+	var b bytes.Buffer
+	e := msgpack.NewEncoder(&b)
+	if err := v.EncodeMsgpack(e); err != nil {
+		t.Fatal(err)
+	}
+
+	payload := make([]byte, len(b.Bytes()))
+	copy(payload, b.Bytes())
+
+	b.Reset()
+	e = msgpack.NewEncoder(&b)
+	if err := e.EncodeExtHeader(9, len(payload)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.Write(payload); err != nil {
+		t.Fatal(err)
+	}
+
+	// Unmarshal using generic function
+	var dst interface{}
+	if err := msgpack.Unmarshal(b.Bytes(), &dst); err != nil {
+		t.Fatal(err)
+	}
+
+	v, ok := dst.(*ExtTest)
+	if !ok {
+		t.Fatalf("got %#v, wanted ExtTest", dst)
+	}
+
+	wanted := "hello world"
+	if v.S != wanted {
+		t.Fatalf("got %q, wanted %q", v.S, wanted)
+	}
+
+	// Unmarshal using DecodeExtHeader
+	d := msgpack.NewDecoder(&b)
+	typeId, length, err := d.DecodeExtHeader()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if typeId != 9 {
+		t.Fatalf("got %d, wanted 9", 9)
+	}
+	if length != len(payload) {
+		t.Fatalf("got %d, wanted %d", length, len(payload))
+	}
+
+	v = &ExtTest{}
+	if err := v.DecodeMsgpack(d); err != nil {
+		t.Fatal(err)
+	}
+
+	if v.S != wanted {
+		t.Fatalf("got %q, wanted %q", v.S, wanted)
+	}
 }
 
 func TestExt(t *testing.T) {

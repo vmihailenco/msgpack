@@ -130,20 +130,38 @@ func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 	}
 }
 
+func (d *Decoder) decodeExtHeader(c codes.Code) (typeId int8, length int, err error) {
+	length, err = d.parseExtLen(c)
+	if err != nil {
+		return
+	}
+
+	c, err = d.readCode()
+	if err != nil {
+		return
+	}
+
+	typeId = int8(c)
+	return
+}
+
+func (d *Decoder) DecodeExtHeader() (typeId int8, length int, err error) {
+	c, err := d.readCode()
+	if err != nil {
+		return
+	}
+	return d.decodeExtHeader(c)
+}
+
 func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
-	extLen, err := d.parseExtLen(c)
+	extId, extLen, err := d.decodeExtHeader(c)
 	if err != nil {
 		return nil, err
 	}
 
-	extId, err := d.readCode()
-	if err != nil {
-		return nil, err
-	}
-
-	typ, ok := extTypes[int8(extId)]
+	typ, ok := extTypes[extId]
 	if !ok {
-		return nil, fmt.Errorf("msgpack: unregistered ext id=%d", int8(extId))
+		return nil, fmt.Errorf("msgpack: unregistered ext id=%d", extId)
 	}
 
 	v := reflect.New(typ)
