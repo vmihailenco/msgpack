@@ -50,11 +50,11 @@ func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 	}
 }
 
-func (e *Encoder) EncodeExtHeader(typeId byte, length int) error {
+func (e *Encoder) EncodeExtHeader(typeId int8, length int) error {
 	if err := e.encodeExtLen(length); err != nil {
 		return err
 	}
-	if err := e.w.WriteByte(typeId); err != nil {
+	if err := e.w.WriteByte(byte(typeId)); err != nil {
 		return err
 	}
 	return nil
@@ -75,7 +75,7 @@ func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 			return err
 		}
 
-		if err := e.EncodeExtHeader(byte(typeId), buf.Len()); err != nil {
+		if err := e.EncodeExtHeader(typeId, buf.Len()); err != nil {
 			return err
 		}
 		return e.write(buf.Bytes())
@@ -130,19 +130,18 @@ func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 	}
 }
 
-func (d *Decoder) decodeExtHeader(c codes.Code) (typeId int8, length int, err error) {
-	length, err = d.parseExtLen(c)
+func (d *Decoder) decodeExtHeader(c codes.Code) (int8, int, error) {
+	length, err := d.parseExtLen(c)
 	if err != nil {
-		return
+		return 0, 0, err
 	}
 
-	c, err = d.readCode()
+	typeId, err := d.readCode()
 	if err != nil {
-		return
+		return 0, 0, err
 	}
 
-	typeId = int8(c)
-	return
+	return int8(typeId), length, nil
 }
 
 func (d *Decoder) DecodeExtHeader() (typeId int8, length int, err error) {
