@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"bytes"
 	"reflect"
 	"sort"
 
@@ -16,11 +17,53 @@ func encodeMapValue(e *Encoder, v reflect.Value) error {
 		return err
 	}
 
+	if e.canonical {
+		return encodeCanonicalMapValue(e, v)
+
+	}
+
 	for _, key := range v.MapKeys() {
 		if err := e.EncodeValue(key); err != nil {
 			return err
 		}
 		if err := e.EncodeValue(v.MapIndex(key)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func encodeCanonicalMapValue(e *Encoder, v reflect.Value) error {
+	// Hack to reuse the currently instantiated encoding with the
+	// provided options
+	realWriter := e.w
+	defer func() { e.w = realWriter }()
+
+	keys := v.MapKeys()
+
+	// Creates a slice which will be sorted before we write to the real writer.
+	values := make([][]byte, len(keys))
+
+	for i, key := range v.MapKeys() {
+		buf := &bytes.Buffer{}
+		e.w = buf
+		if err := e.EncodeValue(key); err != nil {
+			return err
+		}
+		if err := e.EncodeValue(v.MapIndex(key)); err != nil {
+			return err
+		}
+		values[i] = buf.Bytes()
+	}
+
+	// We sort the serialized []byte representation of the (keys+values)
+	sortBytesArray(values)
+
+	// Write sorted map
+	for _, v := range values {
+		_, err := realWriter.Write(v)
+		if err != nil {
 			return err
 		}
 	}
@@ -35,6 +78,10 @@ func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
 
 	if err := e.EncodeMapLen(v.Len()); err != nil {
 		return err
+	}
+
+	if e.canonical {
+		return encodeCanonicalMapValue(e, v)
 	}
 
 	m := v.Convert(mapStringStringType).Interface().(map[string]string)
@@ -61,6 +108,10 @@ func encodeMapStringInterfaceValue(e *Encoder, v reflect.Value) error {
 
 	if err := e.EncodeMapLen(v.Len()); err != nil {
 		return err
+	}
+
+	if e.canonical {
+		return encodeCanonicalMapValue(e, v)
 	}
 
 	m := v.Convert(mapStringInterfaceType).Interface().(map[string]interface{})
@@ -147,11 +198,50 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 		return err
 	}
 
+	if e.canonical {
+		return encodeCanonicalStructValue(e, strct, fields)
+	}
+
 	for _, f := range fields {
 		if err := e.EncodeString(f.name); err != nil {
 			return err
 		}
 		if err := f.EncodeValue(e, strct); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func encodeCanonicalStructValue(e *Encoder, strct reflect.Value, fields []*field) error {
+	// Hack to reuse the currently instantiated encoding with the
+	// provided options
+	realWriter := e.w
+	defer func() { e.w = realWriter }()
+
+	// Creates a slice which will be sorted before we write to the real writer.
+	values := make([][]byte, len(fields))
+
+	for i, f := range fields {
+		buf := &bytes.Buffer{}
+		e.w = buf
+		if err := e.EncodeString(f.name); err != nil {
+			return err
+		}
+		if err := f.EncodeValue(e, strct); err != nil {
+			return err
+		}
+		values[i] = buf.Bytes()
+	}
+
+	// We sort the serialized []byte representation of the (keys+values)
+	sortBytesArray(values)
+
+	// Write sorted map
+	for _, v := range values {
+		_, err := realWriter.Write(v)
+		if err != nil {
 			return err
 		}
 	}

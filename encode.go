@@ -56,6 +56,7 @@ type Encoder struct {
 	sortMapKeys   bool
 	structAsArray bool
 	useJSONTag    bool
+	canonical     bool
 }
 
 // NewEncoder returns a new encoder that writes to w.
@@ -74,8 +75,22 @@ func NewEncoder(w io.Writer) *Encoder {
 // Supported map types are:
 //   - map[string]string
 //   - map[string]interface{}
+// SortMapKeys and Canonical are exclusive. Canonical flag takes precedence.
 func (e *Encoder) SortMapKeys(v bool) *Encoder {
 	e.sortMapKeys = v
+	return e
+}
+
+// Canonical causes the Encoder to encode map keys and structs in increasing order.
+// This flag ensures same encoding for all the maps of any kind as well as structs
+// (For structs, the field name is used for ordering).
+// SortMapKeys and Canonical are exclusive. Canonical flag takes precedence.
+// As a result of using this flag, the two types map[string]string and map[string]interface{}
+// will be ordered as well, but the ordering done by this flag might differ from the one done
+// by the flag SortMapKeys.
+// Setting this flag to true might have an important impact on speed and memory usage.
+func (e *Encoder) Canonical(v bool) *Encoder {
+	e.canonical = v
 	return e
 }
 
