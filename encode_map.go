@@ -143,11 +143,11 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	}
 	fields := structFields.OmitEmpty(strct)
 
-	if err := e.EncodeMapLen(len(fields)); err != nil {
+	if err := e.EncodeMapLen(len(fields.List)); err != nil {
 		return err
 	}
 
-	for _, f := range fields {
+	for _, f := range fields.List {
 		if err := e.EncodeString(f.name); err != nil {
 			return err
 		}
