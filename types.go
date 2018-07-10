@@ -122,18 +122,18 @@ func (fs *fields) Add(field *field) {
 	}
 }
 
-func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
+func (fs *fields) OmitEmpty(strct reflect.Value) *fields {
 	if !fs.hasOmitEmpty {
-		return fs.List
+		return fs
 	}
 
-	fields := make([]*field, 0, len(fs.List))
+	result := newFields(len(fs.List))
 	for _, f := range fs.List {
 		if !f.Omit(strct) {
-			fields = append(fields, f)
+			result.Add(f)
 		}
 	}
-	return fields
+	return result
 }
 
 func getFields(typ reflect.Type, useJSONTag bool) *fields {

@@ -165,6 +165,12 @@ type InlineDupTest struct {
 	FooDupTest
 }
 
+type SortStructFieldsTest struct {
+	A string
+	B string
+	OmitEmptyTest
+}
+
 type AsArrayTest struct {
 	_msgpack struct{} `msgpack:",asArray"`
 
@@ -217,15 +223,17 @@ var encoderTests = []encoderTest{
 
 	{&AsArrayTest{}, "92a0a0"},
 
-	{&JSONFallbackTest{Foo: "hello"}, "82a3666f6fa568656c6c6fa3626172a0"},
+	{&SortStructFieldsTest{A: "a", B: "b"}, "82a141a161a142a162"},
+
+	{&JSONFallbackTest{Foo: "hello"}, "82a3626172a0a3666f6fa568656c6c6f"},
 	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64"},
-	{&JSONFallbackTest{Foo: "hello", Bar: "world"}, "82a3666f6fa568656c6c6fa3626172a5776f726c64"},
+	{&JSONFallbackTest{Foo: "hello", Bar: "world"}, "82a3626172a5776f726c64a3666f6fa568656c6c6f"},
 }
 
 func TestEncoder(t *testing.T) {
 	for _, test := range encoderTests {
 		var buf bytes.Buffer
-		enc := msgpack.NewEncoder(&buf).UseJSONTag(true).SortMapKeys(true)
+		enc := msgpack.NewEncoder(&buf).UseJSONTag(true).SortMapKeys(true).SortStructFields(true)
 		if err := enc.Encode(test.in); err != nil {
 			t.Fatal(err)
 		}

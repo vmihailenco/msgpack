@@ -53,9 +53,10 @@ type Encoder struct {
 	w   writer
 	buf []byte
 
-	sortMapKeys   bool
-	structAsArray bool
-	useJSONTag    bool
+	sortMapKeys      bool
+	sortStructFields bool
+	structAsArray    bool
+	useJSONTag       bool
 }
 
 // NewEncoder returns a new encoder that writes to w.
@@ -76,6 +77,13 @@ func NewEncoder(w io.Writer) *Encoder {
 //   - map[string]interface{}
 func (e *Encoder) SortMapKeys(v bool) *Encoder {
 	e.sortMapKeys = v
+	return e
+}
+
+// SortStructFields causes the Encoder to encode struct fields in increasing
+// order.
+func (e *Encoder) SortStructFields(v bool) *Encoder {
+	e.sortStructFields = true
 	return e
 }
 
