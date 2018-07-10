@@ -139,9 +139,15 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	}
 
 	if e.structAsArray || structFields.AsArray {
+		if e.sortStructFields {
+			return encodeSortedStructValue(e, strct, structFields, true)
+		}
 		return encodeStructValueAsArray(e, strct, structFields.List)
 	}
 	fields := structFields.OmitEmpty(strct)
+	if e.sortStructFields {
+		return encodeSortedStructValue(e, strct, fields, false)
+	}
 
 	if err := e.EncodeMapLen(len(fields.List)); err != nil {
 		return err
@@ -156,6 +162,34 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 		}
 	}
 
+	return nil
+}
+
+func encodeSortedStructValue(e *Encoder, strct reflect.Value, fields *fields, asArray bool) error {
+	var err error
+	if asArray {
+		err = e.EncodeArrayLen(len(fields.Table))
+	} else {
+		err = e.EncodeMapLen(len(fields.Table))
+	}
+	if err != nil {
+		return err
+	}
+	fns := make([]string, 0, len(fields.Table))
+	for fn := range fields.Table {
+		fns = append(fns, fn)
+	}
+	sort.Strings(fns)
+	for _, fn := range fns {
+		if !asArray {
+			if err = e.EncodeString(fn); err != nil {
+				return err
+			}
+		}
+		if err = fields.Table[fn].EncodeValue(e, strct); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
