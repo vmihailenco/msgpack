@@ -57,8 +57,6 @@ type Decoder struct {
 // by passing a reader that implements io.ByteScanner interface.
 func NewDecoder(r io.Reader) *Decoder {
 	d := &Decoder{
-		decodeMapFunc: decodeMap,
-
 		buf: makeBuffer(),
 	}
 	d.resetReader(r)
@@ -212,7 +210,7 @@ func (d *Decoder) decode(dst interface{}) error {
 	return d.DecodeValue(v)
 }
 
-func (d *Decoder) decodeInterface() (interface{}, error) {
+func (d *Decoder) decodeInterfaceCond() (interface{}, error) {
 	if d.useLoose {
 		return d.DecodeInterfaceLoose()
 	}

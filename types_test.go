@@ -410,6 +410,7 @@ var (
 		{in: map[stringAlias]stringAlias{"foo": "bar"}, out: new(map[stringAlias]stringAlias)},
 		{in: mapStringInterface{"foo": "bar"}, out: new(mapStringInterface)},
 		{in: map[stringAlias]interfaceAlias{"foo": "bar"}, out: new(map[stringAlias]interfaceAlias)},
+		{in: map[int]string{1: "string"}, out: new(map[int]string)},
 
 		{in: (*Object)(nil), out: new(*Object)},
 		{in: &Object{42}, out: new(Object)},
