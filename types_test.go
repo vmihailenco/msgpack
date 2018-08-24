@@ -96,11 +96,11 @@ func (s *CustomEncoder) EncodeMsgpack(enc *msgpack.Encoder) error {
 	if s == nil {
 		return enc.EncodeNil()
 	}
-	return enc.Encode(s.str, s.ref, s.num)
+	return enc.EncodeMulti(s.str, s.ref, s.num)
 }
 
 func (s *CustomEncoder) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.Decode(&s.str, &s.ref, &s.num)
+	return dec.DecodeMulti(&s.str, &s.ref, &s.num)
 }
 
 type CustomEncoderField struct {
@@ -199,8 +199,8 @@ var encoderTests = []encoderTest{
 	},
 
 	{(*Object)(nil), "c0"},
-	{&Object{}, "00"},
-	{&Object{42}, "2a"},
+	{&Object{}, "d30000000000000000"},
+	{&Object{42}, "d3000000000000002a"},
 	{[]*Object{nil, nil}, "92c0c0"},
 
 	{&CustomEncoder{}, "a0c000"},
@@ -223,10 +223,17 @@ var encoderTests = []encoderTest{
 }
 
 func TestEncoder(t *testing.T) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf).
+		UseJSONTag(true).
+		SortMapKeys(true).
+		UseCompactEncoding(true)
+
 	for _, test := range encoderTests {
-		var buf bytes.Buffer
-		enc := msgpack.NewEncoder(&buf).UseJSONTag(true).SortMapKeys(true)
-		if err := enc.Encode(test.in); err != nil {
+		buf.Reset()
+
+		err := enc.Encode(test.in)
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -747,18 +754,22 @@ func TestUint64(t *testing.T) {
 		{math.MaxInt64 - 1, "cf7ffffffffffffffe"},
 		{math.MaxInt64, "cf7fffffffffffffff"},
 	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf).UseCompactEncoding(true)
+
 	for _, test := range tests {
-		b, err := msgpack.Marshal(test.in)
+		err := enc.Encode(test.in)
 		if err != nil {
 			t.Fatal(err)
 		}
-		s := hex.EncodeToString(b)
+		s := hex.EncodeToString(buf.Bytes())
 		if s != test.wanted {
 			t.Fatalf("%.32s != %.32s", s, test.wanted)
 		}
 
 		var out uint64
-		err = msgpack.Unmarshal(b, &out)
+		err = msgpack.Unmarshal(buf.Bytes(), &out)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -767,7 +778,7 @@ func TestUint64(t *testing.T) {
 		}
 
 		var out2 int64
-		err = msgpack.Unmarshal(b, &out2)
+		err = msgpack.Unmarshal(buf.Bytes(), &out2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -775,17 +786,21 @@ func TestUint64(t *testing.T) {
 			t.Fatalf("%d != %d", out2, int64(test.in))
 		}
 
-		dec := msgpack.NewDecoder(bytes.NewReader(b))
+		var out3 interface{}
+		out3 = uint64(0)
+		err = msgpack.Unmarshal(buf.Bytes(), &out3)
+		if err.Error() != "msgpack: Decode(nonsettable uint64)" {
+			t.Fatal(err)
+		}
+
+		dec := msgpack.NewDecoder(&buf)
 		_, err = dec.DecodeInterface()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		var dst interface{}
-		dst = uint64(0)
-		err = msgpack.Unmarshal(b, &dst)
-		if err.Error() != "msgpack: Decode(nonsettable uint64)" {
-			t.Fatal(err)
+		if buf.Len() != 0 {
+			panic("buffer is not empty")
 		}
 	}
 }
@@ -826,18 +841,22 @@ func TestInt64(t *testing.T) {
 		{math.MaxInt64 - 1, "cf7ffffffffffffffe"},
 		{math.MaxInt64, "cf7fffffffffffffff"},
 	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf).UseCompactEncoding(true)
+
 	for _, test := range tests {
-		b, err := msgpack.Marshal(test.in)
+		err := enc.Encode(test.in)
 		if err != nil {
 			t.Fatal(err)
 		}
-		s := hex.EncodeToString(b)
+		s := hex.EncodeToString(buf.Bytes())
 		if s != test.wanted {
 			t.Fatalf("%.32s != %.32s", s, test.wanted)
 		}
 
 		var out int64
-		err = msgpack.Unmarshal(b, &out)
+		err = msgpack.Unmarshal(buf.Bytes(), &out)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -846,7 +865,7 @@ func TestInt64(t *testing.T) {
 		}
 
 		var out2 uint64
-		err = msgpack.Unmarshal(b, &out2)
+		err = msgpack.Unmarshal(buf.Bytes(), &out2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -854,17 +873,21 @@ func TestInt64(t *testing.T) {
 			t.Fatalf("%d != %d", out2, uint64(test.in))
 		}
 
-		dec := msgpack.NewDecoder(bytes.NewReader(b))
+		var out3 interface{}
+		out3 = int64(0)
+		err = msgpack.Unmarshal(buf.Bytes(), &out3)
+		if err.Error() != "msgpack: Decode(nonsettable int64)" {
+			t.Fatal(err)
+		}
+
+		dec := msgpack.NewDecoder(&buf)
 		_, err = dec.DecodeInterface()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		var dst interface{}
-		dst = int64(0)
-		err = msgpack.Unmarshal(b, &dst)
-		if err.Error() != "msgpack: Decode(nonsettable int64)" {
-			t.Fatal(err)
+		if buf.Len() != 0 {
+			panic("buffer is not empty")
 		}
 	}
 }

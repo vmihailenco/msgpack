@@ -32,8 +32,8 @@ func makeBuffer() []byte {
 
 // Unmarshal decodes the MessagePack-encoded data and stores the result
 // in the value pointed to by v.
-func Unmarshal(data []byte, v ...interface{}) error {
-	return NewDecoder(bytes.NewReader(data)).Decode(v...)
+func Unmarshal(data []byte, v interface{}) error {
+	return NewDecoder(bytes.NewReader(data)).Decode(v)
 }
 
 type Decoder struct {
@@ -91,18 +91,9 @@ func (d *Decoder) resetReader(r io.Reader) {
 	d.s = reader
 }
 
-func (d *Decoder) Decode(v ...interface{}) error {
-	for _, vv := range v {
-		if err := d.decode(vv); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (d *Decoder) decode(dst interface{}) error {
+func (d *Decoder) Decode(v interface{}) error {
 	var err error
-	switch v := dst.(type) {
+	switch v := v.(type) {
 	case *string:
 		if v != nil {
 			*v, err = d.DecodeString()
@@ -196,18 +187,27 @@ func (d *Decoder) decode(dst interface{}) error {
 		}
 	}
 
-	v := reflect.ValueOf(dst)
-	if !v.IsValid() {
+	vv := reflect.ValueOf(v)
+	if !vv.IsValid() {
 		return errors.New("msgpack: Decode(nil)")
 	}
-	if v.Kind() != reflect.Ptr {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", dst)
+	if vv.Kind() != reflect.Ptr {
+		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v)
 	}
-	v = v.Elem()
-	if !v.IsValid() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", dst)
+	vv = vv.Elem()
+	if !vv.IsValid() {
+		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v)
 	}
-	return d.DecodeValue(v)
+	return d.DecodeValue(vv)
+}
+
+func (d *Decoder) DecodeMulti(v ...interface{}) error {
+	for _, vv := range v {
+		if err := d.Decode(vv); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *Decoder) decodeInterfaceCond() (interface{}, error) {
