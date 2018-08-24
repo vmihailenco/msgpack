@@ -177,7 +177,7 @@ var _ msgpack.CustomEncoder = (*benchmarkStruct2)(nil)
 var _ msgpack.CustomDecoder = (*benchmarkStruct2)(nil)
 
 func (s *benchmarkStruct2) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.Encode(
+	return enc.EncodeMulti(
 		s.Name,
 		s.Colors,
 		s.Age,
@@ -188,7 +188,7 @@ func (s *benchmarkStruct2) EncodeMsgpack(enc *msgpack.Encoder) error {
 }
 
 func (s *benchmarkStruct2) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.Decode(
+	return dec.DecodeMulti(
 		&s.Name,
 		&s.Colors,
 		&s.Age,

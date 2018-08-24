@@ -172,7 +172,7 @@ func TestDecodeExtWithMap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wanted := map[string]interface{}{"I": int8(42)}
+	wanted := map[string]interface{}{"I": int64(42)}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Fatalf("got %#v, but wanted %#v", got, wanted)
 	}
