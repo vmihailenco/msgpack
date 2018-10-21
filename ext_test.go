@@ -50,8 +50,9 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 
 	// Marshal using EncodeExtHeader
 	var b bytes.Buffer
-	e := msgpack.NewEncoder(&b)
-	if err := v.EncodeMsgpack(e); err != nil {
+	enc := msgpack.NewEncoder(&b)
+	err := v.EncodeMsgpack(enc)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,8 +60,9 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 	copy(payload, b.Bytes())
 
 	b.Reset()
-	e = msgpack.NewEncoder(&b)
-	if err := e.EncodeExtHeader(9, len(payload)); err != nil {
+	enc = msgpack.NewEncoder(&b)
+	err = enc.EncodeExtHeader(9, len(payload))
+	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := b.Write(payload); err != nil {
@@ -69,7 +71,8 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 
 	// Unmarshal using generic function
 	var dst interface{}
-	if err := msgpack.Unmarshal(b.Bytes(), &dst); err != nil {
+	err = msgpack.Unmarshal(b.Bytes(), &dst)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -98,7 +101,8 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 	}
 
 	v = &ExtTest{}
-	if err := v.DecodeMsgpack(d); err != nil {
+	err = v.DecodeMsgpack(d)
+	if err != nil {
 		t.Fatal(err)
 	}
 

@@ -171,6 +171,10 @@ type AsArrayTest struct {
 	OmitEmptyTest
 }
 
+type ExtTestField struct {
+	ExtTest ExtTest
+}
+
 //------------------------------------------------------------------------------
 
 type encoderTest struct {
@@ -486,6 +490,11 @@ var (
 
 		{in: (*ExtTest)(nil), out: new(*ExtTest)},
 		{in: &ExtTest{"world"}, out: new(ExtTest), wanted: ExtTest{"hello world"}},
+		{
+			in:     ExtTestField{ExtTest{"world"}},
+			out:    new(ExtTestField),
+			wanted: ExtTestField{ExtTest{"hello world"}},
+		},
 
 		{in: Interface{}, out: &Interface{Foo: "bar"}},
 
