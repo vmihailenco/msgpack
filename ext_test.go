@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/vmihailenco/msgpack"
 	"github.com/vmihailenco/msgpack/codes"
@@ -179,5 +180,25 @@ func TestDecodeExtWithMap(t *testing.T) {
 	wanted := map[string]interface{}{"I": int64(42)}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Fatalf("got %#v, but wanted %#v", got, wanted)
+	}
+}
+
+func TestSliceOfTime(t *testing.T) {
+	in := []interface{}{time.Now()}
+	b, err := msgpack.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out []interface{}
+	err = msgpack.Unmarshal(b, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	outTime := *out[0].(*time.Time)
+	inTime := in[0].(time.Time)
+	if outTime.Unix() != inTime.Unix() {
+		t.Fatalf("got %v, wanted %v", outTime, inTime)
 	}
 }
