@@ -192,7 +192,7 @@ func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
 
 	info, ok := extTypes[extId]
 	if !ok {
-		return nil, fmt.Errorf("msgpack: unregistered ext id=%d", extId)
+		return nil, fmt.Errorf("msgpack: unknown ext id=%d", extId)
 	}
 
 	v := reflect.New(info.Type)
