@@ -338,7 +338,7 @@ func BenchmarkQuery(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		if values[0].(int8) != 10 {
+		if values[0].(int64) != 10 {
 			b.Fatalf("%v != %d", values[0], 10)
 		}
 	}
