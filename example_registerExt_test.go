@@ -28,6 +28,9 @@ func (tm *EventTime) MarshalMsgpack() ([]byte, error) {
 }
 
 func (tm *EventTime) UnmarshalMsgpack(b []byte) error {
+	if len(b) == 1 && b[0] == 0xc0 {
+		return nil
+	}
 	if len(b) != 8 {
 		return fmt.Errorf("invalid data length: got %d, wanted 8", len(b))
 	}

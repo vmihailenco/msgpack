@@ -485,7 +485,7 @@ var (
 			wanted: unexported{Foo: "foo"},
 		},
 
-		{in: (*EventTime)(nil), out: new(*EventTime)},
+		{in: (*EventTime)(nil), out: new(*EventTime), wanted: EventTime{}},
 		{in: &EventTime{time.Unix(0, 0)}, out: new(EventTime)},
 
 		{in: (*ExtTest)(nil), out: new(*ExtTest)},
