@@ -28,15 +28,8 @@ func (o tagOptions) Contains(name string) bool {
 }
 
 func parseTag(tag string) (string, tagOptions) {
-	if idx := strings.IndexByte(tag, ','); idx != -1 {
-		name := tag[:idx]
-		if strings.IndexByte(name, ':') == -1 {
-			return name, tagOptions(tag[idx+1:])
-		}
+	if idx := strings.Index(tag, ","); idx != -1 {
+		return tag[:idx], tagOptions(tag[idx+1:])
 	}
-
-	if strings.IndexByte(tag, ':') == -1 {
-		return tag, ""
-	}
-	return "", tagOptions(tag)
+	return tag, tagOptions("")
 }
