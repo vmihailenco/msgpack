@@ -156,7 +156,7 @@ func encodeInterfaceValue(e *Encoder, v reflect.Value) error {
 }
 
 func encodeErrorValue(e *Encoder, v reflect.Value) error {
-	if v.IsNil() {
+	if v.IsNil() || !v.CanInterface() {
 		return e.EncodeNil()
 	}
 	return e.EncodeString(v.Interface().(error).Error())

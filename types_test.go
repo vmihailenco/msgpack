@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"net/url"
@@ -343,7 +344,24 @@ func (t *typeTest) assertErr(err error, s string) {
 	}
 }
 
+type incidentallyAnError struct {
+	Foo int64
+}
+
+func (i *incidentallyAnError) Error() string {
+	return "whoops"
+}
+
+type interfaceEmbedder struct {
+	interfaceAlias
+}
+
+func errPtr(err error) *error {
+	return &err
+}
+
 var (
+	testErr    = errors.New("hi")
 	intSlice   = make([]int, 0, 3)
 	repoURL, _ = url.Parse("https://github.com/vmihailenco/msgpack")
 	typeTests  = []typeTest{
@@ -507,6 +525,20 @@ var (
 		}, {
 			in:  InlineDupTest{FooTest{"foo"}, FooDupTest{"foo dup"}},
 			out: new(InlineDupTest),
+		},
+
+		{in: &incidentallyAnError{Foo: 5}, out: new(incidentallyAnError)},
+
+		{in: errPtr(testErr), out: new(error)},
+		{in: errPtr(testErr), out: new(string), wanted: "hi"},
+		{in: "hi", out: new(error), wanted: testErr},
+
+		// This peculiar situation has caused a reflect panic in the past.
+		// We can't see the value of interfaceAlias.
+		{
+			in:     interfaceEmbedder{interfaceAlias: errPtr(testErr)},
+			out:    new(interfaceEmbedder),
+			wanted: interfaceEmbedder{},
 		},
 	}
 )
