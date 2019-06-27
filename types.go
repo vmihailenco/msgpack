@@ -3,6 +3,8 @@ package msgpack
 import (
 	"reflect"
 	"sync"
+
+	"github.com/vmihailenco/tagparser"
 )
 
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
@@ -144,21 +146,21 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 	for i := 0; i < numField; i++ {
 		f := typ.Field(i)
 
-		tag := f.Tag.Get("msgpack")
-		if useJSONTag && tag == "" {
-			tag = f.Tag.Get("json")
+		tagStr := f.Tag.Get("msgpack")
+		if useJSONTag && tagStr == "" {
+			tagStr = f.Tag.Get("json")
 		}
 
-		name, opt := parseTag(tag)
-		if name == "-" {
+		tag := tagparser.Parse(tagStr)
+		if tag.Name == "-" {
 			continue
 		}
 
 		if f.Name == "_msgpack" {
-			if opt.Contains("asArray") {
+			if tag.HasOption("asArray") {
 				fs.AsArray = true
 			}
-			if opt.Contains("omitempty") {
+			if tag.HasOption("omitempty") {
 				omitEmpty = true
 			}
 		}
@@ -168,9 +170,9 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 		}
 
 		field := &field{
-			name:      name,
+			name:      tag.Name,
 			index:     f.Index,
-			omitEmpty: omitEmpty || opt.Contains("omitempty"),
+			omitEmpty: omitEmpty || tag.HasOption("omitempty"),
 			encoder:   getEncoder(f.Type),
 			decoder:   getDecoder(f.Type),
 		}
@@ -179,8 +181,8 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 			field.name = f.Name
 		}
 
-		if f.Anonymous && !opt.Contains("noinline") {
-			inline := opt.Contains("inline")
+		if f.Anonymous && !tag.HasOption("noinline") {
+			inline := tag.HasOption("inline")
 			if inline {
 				inlineFields(fs, f.Type, field, useJSONTag)
 			} else {
