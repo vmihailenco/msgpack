@@ -40,36 +40,24 @@ var structs = newStructCache(false)
 var jsonStructs = newStructCache(true)
 
 type structCache struct {
-	mu sync.RWMutex
-	m  map[reflect.Type]*fields
+	m sync.Map
 
 	useJSONTag bool
 }
 
 func newStructCache(useJSONTag bool) *structCache {
 	return &structCache{
-		m: make(map[reflect.Type]*fields),
-
 		useJSONTag: useJSONTag,
 	}
 }
 
 func (m *structCache) Fields(typ reflect.Type) *fields {
-	m.mu.RLock()
-	fs, ok := m.m[typ]
-	m.mu.RUnlock()
-	if ok {
-		return fs
+	if v, ok := m.m.Load(typ); ok {
+		return v.(*fields)
 	}
 
-	m.mu.Lock()
-	fs, ok = m.m[typ]
-	if !ok {
-		fs = getFields(typ, m.useJSONTag)
-		m.m[typ] = fs
-	}
-	m.mu.Unlock()
-
+	fs := getFields(typ, m.useJSONTag)
+	m.m.Store(typ, fs)
 	return fs
 }
 
