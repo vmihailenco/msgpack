@@ -92,6 +92,7 @@ func (d *Decoder) resetReader(r io.Reader) {
 	d.s = reader
 }
 
+//nolint:gocyclo
 func (d *Decoder) Decode(v interface{}) error {
 	var err error
 	switch v := v.(type) {
@@ -413,11 +414,14 @@ func (d *Decoder) Skip() error {
 
 	if codes.IsFixedNum(c) {
 		return nil
-	} else if codes.IsFixedMap(c) {
+	}
+	if codes.IsFixedMap(c) {
 		return d.skipMap(c)
-	} else if codes.IsFixedArray(c) {
+	}
+	if codes.IsFixedArray(c) {
 		return d.skipSlice(c)
-	} else if codes.IsFixedString(c) {
+	}
+	if codes.IsFixedString(c) {
 		return d.skipBytes(c)
 	}
 
@@ -539,7 +543,7 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 	return b, nil
 }
 
-func min(a, b int) int {
+func min(a, b int) int { //nolint:unparam
 	if a <= b {
 		return a
 	}
