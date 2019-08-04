@@ -56,7 +56,7 @@ var _ msgpack.CustomDecoder = (*IntSet)(nil)
 
 func (set IntSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 	slice := make([]int, 0, len(set))
-	for n, _ := range set {
+	for n := range set {
 		slice = append(slice, n)
 	}
 	return enc.Encode(slice)

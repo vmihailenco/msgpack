@@ -15,8 +15,8 @@ var customDecoderType = reflect.TypeOf((*CustomDecoder)(nil)).Elem()
 var marshalerType = reflect.TypeOf((*Marshaler)(nil)).Elem()
 var unmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 
-type encoderFunc func(*Encoder, reflect.Value) error
-type decoderFunc func(*Decoder, reflect.Value) error
+type encoderFunc = func(*Encoder, reflect.Value) error
+type decoderFunc = func(*Decoder, reflect.Value) error
 
 var typeEncMap sync.Map
 var typeDecMap sync.Map
