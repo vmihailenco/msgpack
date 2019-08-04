@@ -41,7 +41,12 @@ func getEncoder(typ reflect.Type) encoderFunc {
 	if v, ok := typeEncMap.Load(typ); ok {
 		return v.(encoderFunc)
 	}
+	fn := _getEncoder(typ)
+	typeEncMap.Store(typ, fn)
+	return fn
+}
 
+func _getEncoder(typ reflect.Type) encoderFunc {
 	if typ.Implements(customEncoderType) {
 		return encodeCustomValue
 	}
