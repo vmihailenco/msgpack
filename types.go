@@ -190,6 +190,7 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 var encodeStructValuePtr uintptr
 var decodeStructValuePtr uintptr
 
+//nolint:gochecknoinits
 func init() {
 	encodeStructValuePtr = reflect.ValueOf(encodeStructValue).Pointer()
 	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()

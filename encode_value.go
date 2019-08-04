@@ -7,6 +7,7 @@ import (
 
 var valueEncoders []encoderFunc
 
+//nolint:gochecknoinits
 func init() {
 	valueEncoders = []encoderFunc{
 		reflect.Bool:          encodeBoolValue,
@@ -75,8 +76,12 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 	case reflect.Ptr:
 		return ptrEncoderFunc(typ)
 	case reflect.Slice:
-		if typ.Elem().Kind() == reflect.Uint8 {
+		elem := typ.Elem()
+		if elem.Kind() == reflect.Uint8 {
 			return encodeByteSliceValue
+		}
+		if elem == stringType {
+			return encodeStringSliceValue
 		}
 	case reflect.Array:
 		if typ.Elem().Kind() == reflect.Uint8 {

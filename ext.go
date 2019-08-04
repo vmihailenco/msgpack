@@ -56,17 +56,17 @@ func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 	}
 }
 
-func (e *Encoder) EncodeExtHeader(typeId int8, length int) error {
+func (e *Encoder) EncodeExtHeader(typeID int8, length int) error {
 	if err := e.encodeExtLen(length); err != nil {
 		return err
 	}
-	if err := e.w.WriteByte(byte(typeId)); err != nil {
+	if err := e.w.WriteByte(byte(typeID)); err != nil {
 		return err
 	}
 	return nil
 }
 
-func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
+func makeExtEncoder(typeID int8, enc encoderFunc) encoderFunc {
 	return func(e *Encoder, v reflect.Value) error {
 		buf := bufferPool.Get().(*bytes.Buffer)
 		defer bufferPool.Put(buf)
@@ -81,7 +81,7 @@ func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 			return err
 		}
 
-		err = e.EncodeExtHeader(typeId, buf.Len())
+		err = e.EncodeExtHeader(typeID, buf.Len())
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func makeExtEncoder(typeId int8, enc encoderFunc) encoderFunc {
 	}
 }
 
-func makeExtDecoder(typeId int8, dec decoderFunc) decoderFunc {
+func makeExtDecoder(typeID int8, dec decoderFunc) decoderFunc {
 	return func(d *Decoder, v reflect.Value) error {
 		c, err := d.PeekCode()
 		if err != nil {
@@ -105,8 +105,8 @@ func makeExtDecoder(typeId int8, dec decoderFunc) decoderFunc {
 			return err
 		}
 
-		if int8(id) != typeId {
-			return fmt.Errorf("msgpack: got ext type=%d, wanted %d", int8(id), typeId)
+		if id != typeID {
+			return fmt.Errorf("msgpack: got ext type=%d, wanted %d", id, typeID)
 		}
 
 		d.extLen = extLen
@@ -168,15 +168,15 @@ func (d *Decoder) decodeExtHeader(c codes.Code) (int8, int, error) {
 		return 0, 0, err
 	}
 
-	typeId, err := d.readCode()
+	typeID, err := d.readCode()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return int8(typeId), length, nil
+	return int8(typeID), length, nil
 }
 
-func (d *Decoder) DecodeExtHeader() (typeId int8, length int, err error) {
+func (d *Decoder) DecodeExtHeader() (typeID int8, length int, err error) {
 	c, err := d.readCode()
 	if err != nil {
 		return
@@ -185,14 +185,14 @@ func (d *Decoder) DecodeExtHeader() (typeId int8, length int, err error) {
 }
 
 func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
-	extId, extLen, err := d.decodeExtHeader(c)
+	extID, extLen, err := d.decodeExtHeader(c)
 	if err != nil {
 		return nil, err
 	}
 
-	info, ok := extTypes[extId]
+	info, ok := extTypes[extID]
 	if !ok {
-		return nil, fmt.Errorf("msgpack: unknown ext id=%d", extId)
+		return nil, fmt.Errorf("msgpack: unknown ext id=%d", extID)
 	}
 
 	v := reflect.New(info.Type)
