@@ -174,7 +174,7 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 		}
 		d.rec = b
 	} else {
-		d.rec = makeBuffer()
+		d.rec = make([]byte, 0, 64)
 		if err := d.Skip(); err != nil {
 			return err
 		}
