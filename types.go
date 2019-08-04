@@ -18,8 +18,8 @@ var unmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 type encoderFunc func(*Encoder, reflect.Value) error
 type decoderFunc func(*Decoder, reflect.Value) error
 
-var typEncMap = make(map[reflect.Type]encoderFunc)
-var typDecMap = make(map[reflect.Type]decoderFunc)
+var typeEncMap sync.Map
+var typeDecMap sync.Map
 
 // Register registers encoder and decoder functions for a value.
 // This is low level API and in most cases you should prefer implementing
@@ -27,10 +27,10 @@ var typDecMap = make(map[reflect.Type]decoderFunc)
 func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
 	typ := reflect.TypeOf(value)
 	if enc != nil {
-		typEncMap[typ] = enc
+		typeEncMap.Store(typ, enc)
 	}
 	if dec != nil {
-		typDecMap[typ] = dec
+		typeDecMap.Store(typ, dec)
 	}
 }
 

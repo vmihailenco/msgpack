@@ -38,8 +38,8 @@ func init() {
 }
 
 func getEncoder(typ reflect.Type) encoderFunc {
-	if encoder, ok := typEncMap[typ]; ok {
-		return encoder
+	if v, ok := typeEncMap.Load(typ); ok {
+		return v.(encoderFunc)
 	}
 
 	if typ.Implements(customEncoderType) {

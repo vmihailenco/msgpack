@@ -51,9 +51,8 @@ func mustSet(v reflect.Value) error {
 func getDecoder(typ reflect.Type) decoderFunc {
 	kind := typ.Kind()
 
-	decoder, ok := typDecMap[typ]
-	if ok {
-		return decoder
+	if v, ok := typeDecMap.Load(typ); ok {
+		return v.(decoderFunc)
 	}
 
 	if typ.Implements(customDecoderType) {

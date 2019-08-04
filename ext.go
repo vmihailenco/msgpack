@@ -45,14 +45,14 @@ func RegisterExt(id int8, value interface{}) {
 
 func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 	if enc != nil {
-		typEncMap[typ] = makeExtEncoder(id, enc)
+		typeEncMap.Store(typ, makeExtEncoder(id, enc))
 	}
 	if dec != nil {
 		extTypes[id] = extInfo{
 			Type:    typ,
 			Decoder: dec,
 		}
-		typDecMap[typ] = makeExtDecoder(id, dec)
+		typeDecMap.Store(typ, makeExtDecoder(id, dec))
 	}
 }
 
