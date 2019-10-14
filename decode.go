@@ -350,7 +350,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 	}
 
 	if codes.IsFixedNum(c) {
-		return int64(c), nil
+		return int64(int8(c)), nil
 	}
 	if codes.IsFixedMap(c) {
 		err = d.s.UnreadByte()
