@@ -22,13 +22,14 @@ Examples: https://godoc.org/github.com/vmihailenco/msgpack#pkg-examples.
 
 This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and semantic import versioning since v4:
 
-```shell
-go get -u github.com/vmihailenco/msgpack/v4
+``` shell
+go mod init github.com/my/repo
+go get github.com/vmihailenco/msgpack/v4
 ```
 
 ## Quickstart
 
-```go
+``` go
 import "github.com/vmihailenco/msgpack/v4"
 
 func ExampleMarshal() {

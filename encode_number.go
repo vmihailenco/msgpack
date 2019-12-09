@@ -122,7 +122,7 @@ func (e *Encoder) EncodeUint(n uint64) error {
 }
 
 // EncodeNumber encodes an int64 in 1, 2, 3, 5, or 9 bytes.
-// Type of number is lost during encoding.
+// Type of the number is lost during encoding.
 func (e *Encoder) EncodeInt(n int64) error {
 	if n >= 0 {
 		return e.EncodeUint(uint64(n))
