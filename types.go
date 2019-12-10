@@ -71,20 +71,25 @@ type field struct {
 	decoder   decoderFunc
 }
 
-func (f *field) value(v reflect.Value) reflect.Value {
-	return fieldByIndex(v, f.index)
-}
-
 func (f *field) Omit(strct reflect.Value) bool {
-	return f.omitEmpty && isEmptyValue(f.value(strct))
+	v, isNil := fieldByIndex(strct, f.index)
+	if isNil {
+		return true
+	}
+	return f.omitEmpty && isEmptyValue(v)
 }
 
 func (f *field) EncodeValue(e *Encoder, strct reflect.Value) error {
-	return f.encoder(e, f.value(strct))
+	v, isNil := fieldByIndex(strct, f.index)
+	if isNil {
+		return e.EncodeNil()
+	}
+	return f.encoder(e, v)
 }
 
 func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
-	return f.decoder(d, f.value(strct))
+	v := fieldByIndexNewIfNil(strct, f.index)
+	return f.decoder(d, v)
 }
 
 //------------------------------------------------------------------------------
@@ -118,11 +123,13 @@ func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
 	}
 
 	fields := make([]*field, 0, len(fs.List))
+
 	for _, f := range fs.List {
 		if !f.Omit(strct) {
 			fields = append(fields, f)
 		}
 	}
+
 	return fields
 }
 
@@ -266,11 +273,32 @@ func isEmptyValue(v reflect.Value) bool {
 	return false
 }
 
-func fieldByIndex(v reflect.Value, index []int) reflect.Value {
+func fieldByIndex(v reflect.Value, index []int) (_ reflect.Value, isNil bool) {
+	if len(index) == 1 {
+		return v.Field(index[0]), false
+	}
+
+	for i, idx := range index {
+		if i > 0 {
+			if v.Kind() == reflect.Ptr {
+				if v.IsNil() {
+					return v, true
+				}
+				v = v.Elem()
+			}
+		}
+		v = v.Field(idx)
+	}
+
+	return v, false
+}
+
+func fieldByIndexNewIfNil(v reflect.Value, index []int) reflect.Value {
 	if len(index) == 1 {
 		return v.Field(index[0])
 	}
-	for i, x := range index {
+
+	for i, idx := range index {
 		if i > 0 {
 			var ok bool
 			v, ok = indirectNew(v)
@@ -278,8 +306,9 @@ func fieldByIndex(v reflect.Value, index []int) reflect.Value {
 				return v
 			}
 		}
-		v = v.Field(x)
+		v = v.Field(idx)
 	}
+
 	return v
 }
 
