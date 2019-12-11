@@ -202,6 +202,23 @@ func TestSliceOfTime(t *testing.T) {
 	if outTime.Unix() != inTime.Unix() {
 		t.Fatalf("got %v, wanted %v", outTime, inTime)
 	}
+	if outTime.Location() != inTime.Location() {
+		t.Fatalf("got %v, wanted %v", outTime.Location(), inTime.Location())
+	}
+
+	msgpack.DecodeTimeInUTC = true
+	err = msgpack.Unmarshal(b, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outTime = *out[0].(*time.Time)
+	if outTime.Unix() != inTime.Unix() {
+		t.Fatalf("got %v, wanted %v", outTime, inTime)
+	}
+	if outTime.Location() != time.UTC {
+		t.Fatalf("got %v, wanted %v", outTime.Location(), inTime.Location())
+	}
+	msgpack.DecodeTimeInUTC = false
 }
 
 type customPayload struct {

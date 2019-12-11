@@ -10,6 +10,7 @@ import (
 )
 
 var timeExtID int8 = -1
+var DecodeTimeInUTC bool
 
 //nolint:gochecknoinits
 func init() {
@@ -143,6 +144,9 @@ func decodeTimeValue(d *Decoder, v reflect.Value) error {
 	tm, err := d.DecodeTime()
 	if err != nil {
 		return err
+	}
+	if DecodeTimeInUTC {
+		tm = tm.UTC()
 	}
 	v.Set(reflect.ValueOf(tm))
 	return nil
