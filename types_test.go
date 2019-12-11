@@ -440,6 +440,11 @@ var (
 			out:    new(EmbeddingPtrTest),
 			wanted: EmbeddingPtrTest{Exported: new(Exported)},
 		},
+		{
+			in:     EmbeddingPtrTest{},
+			out:    new(EmbeddingPtrTest),
+			wanted: EmbeddingPtrTest{Exported: new(Exported)},
+		},
 		{in: EmbeddingTest{}, out: new(*EmbeddingTest)},
 		{
 			in: EmbeddingTest{
