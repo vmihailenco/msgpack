@@ -324,7 +324,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 		if err != nil {
 			return err
 		}
-		if f := fields.Table[name]; f != nil {
+		if f := fields.Map[name]; f != nil {
 			if err := f.DecodeValue(d, v); err != nil {
 				return err
 			}

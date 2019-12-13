@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"log"
 	"reflect"
 	"sync"
 
@@ -95,22 +96,28 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 //------------------------------------------------------------------------------
 
 type fields struct {
-	Table   map[string]*field
+	Type    reflect.Type
+	Map     map[string]*field
 	List    []*field
 	AsArray bool
 
 	hasOmitEmpty bool
 }
 
-func newFields(numField int) *fields {
+func newFields(typ reflect.Type) *fields {
 	return &fields{
-		Table: make(map[string]*field, numField),
-		List:  make([]*field, 0, numField),
+		Type: typ,
+		Map:  make(map[string]*field, typ.NumField()),
+		List: make([]*field, 0, typ.NumField()),
 	}
 }
 
 func (fs *fields) Add(field *field) {
-	fs.Table[field.name] = field
+	if _, ok := fs.Map[field.name]; ok {
+		log.Printf("msgpack: %s already has field=%s", fs.Type, field.name)
+	}
+
+	fs.Map[field.name] = field
 	fs.List = append(fs.List, field)
 	if field.omitEmpty {
 		fs.hasOmitEmpty = true
@@ -134,11 +141,10 @@ func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
 }
 
 func getFields(typ reflect.Type, useJSONTag bool) *fields {
-	numField := typ.NumField()
-	fs := newFields(numField)
+	fs := newFields(typ)
 
 	var omitEmpty bool
-	for i := 0; i < numField; i++ {
+	for i := 0; i < typ.NumField(); i++ {
 		f := typ.Field(i)
 
 		tagStr := f.Tag.Get("msgpack")
@@ -181,10 +187,14 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 			if inline {
 				inlineFields(fs, f.Type, field, useJSONTag)
 			} else {
-				inline = autoinlineFields(fs, f.Type, field, useJSONTag)
+				inline = shouldInline(fs, f.Type, field, useJSONTag)
 			}
+
 			if inline {
-				fs.Table[field.name] = field
+				if _, ok := fs.Map[field.name]; ok {
+					log.Printf("msgpack: %s already has field=%s", fs.Type, field.name)
+				}
+				fs.Map[field.name] = field
 				continue
 			}
 		}
@@ -206,7 +216,7 @@ func init() {
 func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) {
 	inlinedFields := getFields(typ, useJSONTag).List
 	for _, field := range inlinedFields {
-		if _, ok := fs.Table[field.name]; ok {
+		if _, ok := fs.Map[field.name]; ok {
 			// Don't inline shadowed fields.
 			continue
 		}
@@ -215,7 +225,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) {
 	}
 }
 
-func autoinlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
+func shouldInline(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
 	var encoder encoderFunc
 	var decoder decoderFunc
 
@@ -242,7 +252,7 @@ func autoinlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) b
 
 	inlinedFields := getFields(typ, useJSONTag).List
 	for _, field := range inlinedFields {
-		if _, ok := fs.Table[field.name]; ok {
+		if _, ok := fs.Map[field.name]; ok {
 			// Don't auto inline if there are shadowed fields.
 			return false
 		}
