@@ -30,6 +30,7 @@ func Unmarshal(data []byte, v interface{}) error {
 	return NewDecoder(bytes.NewReader(data)).Decode(v)
 }
 
+// A Decoder reads and decodes MessagePack values from an input stream.
 type Decoder struct {
 	r   io.Reader
 	s   io.ByteScanner
@@ -71,6 +72,12 @@ func (d *Decoder) UseDecodeInterfaceLoose(flag bool) *Decoder {
 func (d *Decoder) UseJSONTag(v bool) *Decoder {
 	d.useJSONTag = v
 	return d
+}
+
+// Buffered returns a reader of the data remaining in the Decoder's buffer.
+// The reader is valid until the next call to Decode.
+func (d *Decoder) Buffered() io.Reader {
+	return d.r
 }
 
 func (d *Decoder) Reset(r io.Reader) error {
