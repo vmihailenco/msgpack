@@ -101,7 +101,7 @@ func (e *Encoder) UseJSONTag(flag bool) *Encoder {
 }
 
 // UseCompactEncoding causes the Encoder to chose the most compact encoding.
-// For example, it allows to encode Go int64 as msgpack int8 saving 7 bytes.
+// For example, it allows to encode small Go int64 as msgpack int8 saving 7 bytes.
 func (e *Encoder) UseCompactEncoding(flag bool) *Encoder {
 	e.useCompact = flag
 	return e
