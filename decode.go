@@ -69,8 +69,8 @@ func (d *Decoder) UseDecodeInterfaceLoose(flag bool) *Decoder {
 
 // UseJSONTag causes the Decoder to use json struct tag as fallback option
 // if there is no msgpack tag.
-func (d *Decoder) UseJSONTag(v bool) *Decoder {
-	d.useJSONTag = v
+func (d *Decoder) UseJSONTag(flag bool) *Decoder {
+	d.useJSONTag = flag
 	return d
 }
 

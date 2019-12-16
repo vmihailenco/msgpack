@@ -117,14 +117,14 @@ func ExampleDecoder_Query() {
 	// 2nd phone is 54321
 }
 
-func ExampleEncoder_StructAsArray() {
+func ExampleEncoder_UseArrayForStructs() {
 	type Item struct {
 		Foo string
 		Bar string
 	}
 
 	var buf bytes.Buffer
-	enc := msgpack.NewEncoder(&buf).StructAsArray(true)
+	enc := msgpack.NewEncoder(&buf).UseArrayForStructs(true)
 	err := enc.Encode(&Item{Foo: "foo", Bar: "bar"})
 	if err != nil {
 		panic(err)
