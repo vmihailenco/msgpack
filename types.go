@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"encoding"
 	"log"
 	"reflect"
 	"sync"
@@ -10,17 +11,30 @@ import (
 
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
-var customEncoderType = reflect.TypeOf((*CustomEncoder)(nil)).Elem()
-var customDecoderType = reflect.TypeOf((*CustomDecoder)(nil)).Elem()
+var (
+	customEncoderType = reflect.TypeOf((*CustomEncoder)(nil)).Elem()
+	customDecoderType = reflect.TypeOf((*CustomDecoder)(nil)).Elem()
+)
 
-var marshalerType = reflect.TypeOf((*Marshaler)(nil)).Elem()
-var unmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+var (
+	marshalerType   = reflect.TypeOf((*Marshaler)(nil)).Elem()
+	unmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+)
 
-type encoderFunc = func(*Encoder, reflect.Value) error
-type decoderFunc = func(*Decoder, reflect.Value) error
+var (
+	binaryMarshalerType   = reflect.TypeOf((*encoding.BinaryMarshaler)(nil)).Elem()
+	binaryUnmarshalerType = reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
+)
 
-var typeEncMap sync.Map
-var typeDecMap sync.Map
+type (
+	encoderFunc = func(*Encoder, reflect.Value) error
+	decoderFunc = func(*Decoder, reflect.Value) error
+)
+
+var (
+	typeEncMap sync.Map
+	typeDecMap sync.Map
+)
 
 // Register registers encoder and decoder functions for a value.
 // This is low level API and in most cases you should prefer implementing
