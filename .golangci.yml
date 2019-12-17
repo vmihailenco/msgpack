@@ -6,3 +6,7 @@ linters:
   enable-all: true
   disable:
     - gochecknoglobals
+    - gocognit
+    - godox
+    - wsl
+    - funlen
