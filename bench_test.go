@@ -2,6 +2,7 @@ package msgpack_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"math"
 	"testing"
@@ -29,6 +30,23 @@ func benchmarkEncodeDecode(b *testing.B, src, dst interface{}) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	dec := msgpack.NewDecoder(&buf)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if err := enc.Encode(src); err != nil {
+			b.Fatal(err)
+		}
+		if err := dec.Decode(dst); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func benchmarkJSONEncodeDecode(b *testing.B, src, dst interface{}) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	dec := json.NewDecoder(&buf)
 
 	b.ResetTimer()
 
@@ -119,18 +137,30 @@ func BenchmarkMapStringStringPtr(b *testing.B) {
 		"hello": "world",
 		"foo":   "bar",
 	}
-	var dst map[string]string
-	dstptr := &dst
-	benchmarkEncodeDecode(b, src, &dstptr)
+	dst := new(map[string]string)
+	benchmarkEncodeDecode(b, src, &dst)
 }
 
-func BenchmarkMapStringInterface(b *testing.B) {
+func BenchmarkMapStringInterfaceMsgpack(b *testing.B) {
 	src := map[string]interface{}{
 		"hello": "world",
 		"foo":   "bar",
+		"one":   1111111,
+		"two":   2222222,
 	}
 	var dst map[string]interface{}
 	benchmarkEncodeDecode(b, src, &dst)
+}
+
+func BenchmarkMapStringInterfaceJSON(b *testing.B) {
+	src := map[string]interface{}{
+		"hello": "world",
+		"foo":   "bar",
+		"one":   1111111,
+		"two":   2222222,
+	}
+	var dst map[string]interface{}
+	benchmarkJSONEncodeDecode(b, src, &dst)
 }
 
 func BenchmarkMapIntInt(b *testing.B) {
