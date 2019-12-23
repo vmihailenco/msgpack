@@ -175,23 +175,25 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
 
+	var b []byte
+
 	if d.extLen != 0 {
-		b, err := d.readN(d.extLen)
+		var err error
+		b, err = d.readN(d.extLen)
 		if err != nil {
 			return err
 		}
-		d.rec = b
 	} else {
 		d.rec = make([]byte, 0, 64)
 		if err := d.Skip(); err != nil {
 			return err
 		}
+		b = d.rec
+		d.rec = nil
 	}
 
 	unmarshaler := v.Interface().(Unmarshaler)
-	err := unmarshaler.UnmarshalMsgpack(d.rec)
-	d.rec = nil
-	return err
+	return unmarshaler.UnmarshalMsgpack(b)
 }
 
 func decodeBoolValue(d *Decoder, v reflect.Value) error {

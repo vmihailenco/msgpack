@@ -533,10 +533,7 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 
 	var pos int
 	for {
-		alloc := n - len(b)
-		if alloc > bytesAllocLimit {
-			alloc = bytesAllocLimit
-		}
+		alloc := min(n-len(b), bytesAllocLimit)
 		b = append(b, make([]byte, alloc)...)
 
 		_, err := io.ReadFull(r, b[pos:])
