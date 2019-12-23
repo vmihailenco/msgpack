@@ -10,9 +10,12 @@ import (
 func (d *Decoder) bytesLen(c codes.Code) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
-	} else if codes.IsFixedString(c) {
+	}
+
+	if codes.IsFixedString(c) {
 		return int(c & codes.FixedStrMask), nil
 	}
+
 	switch c {
 	case codes.Str8, codes.Bin8:
 		n, err := d.uint8()
@@ -24,6 +27,7 @@ func (d *Decoder) bytesLen(c codes.Code) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
+
 	return 0, fmt.Errorf("msgpack: invalid code=%x decoding bytes length", c)
 }
 
@@ -40,6 +44,10 @@ func (d *Decoder) string(c codes.Code) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return d.stringWithLen(n)
+}
+
+func (d *Decoder) stringWithLen(n int) (string, error) {
 	if n <= 0 {
 		return "", nil
 	}
@@ -48,13 +56,15 @@ func (d *Decoder) string(c codes.Code) (string, error) {
 }
 
 func decodeStringValue(d *Decoder, v reflect.Value) error {
+	if err := mustSet(v); err != nil {
+		return err
+	}
+
 	s, err := d.DecodeString()
 	if err != nil {
 		return err
 	}
-	if err = mustSet(v); err != nil {
-		return err
-	}
+
 	v.SetString(s)
 	return nil
 }
@@ -135,6 +145,10 @@ func (d *Decoder) skipBytes(c codes.Code) error {
 }
 
 func decodeBytesValue(d *Decoder, v reflect.Value) error {
+	if err := mustSet(v); err != nil {
+		return err
+	}
+
 	c, err := d.readCode()
 	if err != nil {
 		return err
@@ -145,9 +159,6 @@ func decodeBytesValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	if err = mustSet(v); err != nil {
-		return err
-	}
 	v.SetBytes(b)
 
 	return nil
