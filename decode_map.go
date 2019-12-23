@@ -8,15 +8,15 @@ import (
 	"github.com/vmihailenco/msgpack/v4/codes"
 )
 
-const mapElemsAllocLimit = 1e4
+var (
+	mapStringStringPtrType = reflect.TypeOf((*map[string]string)(nil))
+	mapStringStringType    = mapStringStringPtrType.Elem()
+)
 
-var mapStringStringPtrType = reflect.TypeOf((*map[string]string)(nil))
-var mapStringStringType = mapStringStringPtrType.Elem()
-
-var mapStringInterfacePtrType = reflect.TypeOf((*map[string]interface{})(nil))
-var mapStringInterfaceType = mapStringInterfacePtrType.Elem()
-
-var errInvalidCode = errors.New("invalid code")
+var (
+	mapStringInterfacePtrType = reflect.TypeOf((*map[string]interface{})(nil))
+	mapStringInterfaceType    = mapStringInterfacePtrType.Elem()
+)
 
 func decodeMapValue(d *Decoder, v reflect.Value) error {
 	size, err := d.DecodeMapLen()
@@ -106,6 +106,8 @@ func (d *Decoder) _mapLen(c codes.Code) (int, error) {
 	return 0, errInvalidCode
 }
 
+var errInvalidCode = errors.New("invalid code")
+
 func expandInvalidCodeMapLenError(c codes.Code, err error) error {
 	if err == errInvalidCode {
 		return fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
@@ -130,7 +132,7 @@ func (d *Decoder) decodeMapStringStringPtr(ptr *map[string]string) error {
 
 	m := *ptr
 	if m == nil {
-		*ptr = make(map[string]string, min(size, mapElemsAllocLimit))
+		*ptr = make(map[string]string, min(size, maxMapSize))
 		m = *ptr
 	}
 
@@ -166,7 +168,7 @@ func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error
 
 	m := *ptr
 	if m == nil {
-		*ptr = make(map[string]interface{}, min(n, mapElemsAllocLimit))
+		*ptr = make(map[string]interface{}, min(n, maxMapSize))
 		m = *ptr
 	}
 
@@ -238,7 +240,7 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 }
 
 func (d *Decoder) decodeMapStringInterfaceSize(size int) (map[string]interface{}, error) {
-	m := make(map[string]interface{}, min(size, mapElemsAllocLimit))
+	m := make(map[string]interface{}, min(size, maxMapSize))
 	for i := 0; i < size; i++ {
 		mk, err := d.DecodeString()
 		if err != nil {

@@ -40,7 +40,7 @@ func (d *Decoder) string(c codes.Code) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if n == -1 {
+	if n <= 0 {
 		return "", nil
 	}
 	b, err := d.readN(n)
@@ -128,7 +128,7 @@ func (d *Decoder) skipBytes(c codes.Code) error {
 	if err != nil {
 		return err
 	}
-	if n == -1 {
+	if n <= 0 {
 		return nil
 	}
 	return d.skipN(n)

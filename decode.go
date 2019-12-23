@@ -12,6 +12,12 @@ import (
 	"github.com/vmihailenco/msgpack/v4/codes"
 )
 
+const (
+	bytesAllocLimit = 1e6 // 1mb
+	sliceAllocLimit = 1e4
+	maxMapSize      = 1e6
+)
+
 type bufReader interface {
 	io.Reader
 	io.ByteScanner
@@ -484,27 +490,26 @@ func (d *Decoder) readFull(b []byte) error {
 		return err
 	}
 	if d.rec != nil {
+		//TODO: read directly into d.rec?
 		d.rec = append(d.rec, b...)
 	}
 	return nil
 }
 
 func (d *Decoder) readN(n int) ([]byte, error) {
-	buf, err := readN(d.r, d.buf, n)
+	var err error
+	d.buf, err = readN(d.r, d.buf, n)
 	if err != nil {
 		return nil, err
 	}
-	d.buf = buf
 	if d.rec != nil {
 		//TODO: read directly into d.rec?
-		d.rec = append(d.rec, buf...)
+		d.rec = append(d.rec, d.buf...)
 	}
-	return buf, nil
+	return d.buf, nil
 }
 
 func readN(r io.Reader, b []byte, n int) ([]byte, error) {
-	const bytesAllocLimit = 1024 * 1024 // 1mb
-
 	if b == nil {
 		if n == 0 {
 			return make([]byte, 0), nil
@@ -536,7 +541,7 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 
 		_, err := io.ReadFull(r, b[pos:])
 		if err != nil {
-			return nil, err
+			return b, err
 		}
 
 		if len(b) == n {

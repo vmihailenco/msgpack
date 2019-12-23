@@ -87,15 +87,10 @@ func (e *Encoder) SortMapKeys(flag bool) *Encoder {
 	return e
 }
 
-// UseArrayForStructs causes the Encoder to encode Go structs as msgpack arrays.
-func (e *Encoder) UseArrayForStructs(flag bool) *Encoder {
+// StructAsArray causes the Encoder to encode Go structs as msgpack arrays.
+func (e *Encoder) StructAsArray(flag bool) *Encoder {
 	e.structAsArray = flag
 	return e
-}
-
-// DEPRECATED. Use UseArrayForStructs instead.
-func (e *Encoder) StructAsArray(flag bool) *Encoder {
-	return e.UseArrayForStructs(flag)
 }
 
 // UseJSONTag causes the Encoder to use json struct tag as fallback option

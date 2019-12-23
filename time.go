@@ -144,6 +144,9 @@ func decodeTimeValue(d *Decoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	v.Set(reflect.ValueOf(tm))
+
+	ptr := v.Addr().Interface().(*time.Time)
+	*ptr = tm
+
 	return nil
 }
