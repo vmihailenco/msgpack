@@ -14,7 +14,7 @@ type extInfo struct {
 	Decoder decoderFunc
 }
 
-var extTypes = make(map[int8]extInfo)
+var extTypes = make(map[int8]*extInfo)
 
 var bufferPool = &sync.Pool{
 	New: func() interface{} {
@@ -48,7 +48,7 @@ func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
 		typeEncMap.Store(typ, makeExtEncoder(id, enc))
 	}
 	if dec != nil {
-		extTypes[id] = extInfo{
+		extTypes[id] = &extInfo{
 			Type:    typ,
 			Decoder: dec,
 		}
@@ -162,7 +162,7 @@ func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 	}
 }
 
-func (d *Decoder) decodeExtHeader(c codes.Code) (int8, int, error) {
+func (d *Decoder) extHeader(c codes.Code) (int8, int, error) {
 	length, err := d.parseExtLen(c)
 	if err != nil {
 		return 0, 0, err
@@ -181,11 +181,11 @@ func (d *Decoder) DecodeExtHeader() (typeID int8, length int, err error) {
 	if err != nil {
 		return
 	}
-	return d.decodeExtHeader(c)
+	return d.extHeader(c)
 }
 
 func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
-	extID, extLen, err := d.decodeExtHeader(c)
+	extID, extLen, err := d.extHeader(c)
 	if err != nil {
 		return nil, err
 	}

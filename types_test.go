@@ -510,7 +510,7 @@ var (
 			in:  &InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}},
 			out: new(InlinePtrTest),
 		}, {
-			in:  InlineDupTest{FooTest{"foo"}, FooDupTest{"foo dup"}},
+			in:  InlineDupTest{FooTest{"foo"}, FooDupTest{"foo"}},
 			out: new(InlineDupTest),
 		},
 	}
@@ -594,13 +594,13 @@ func TestTypes(t *testing.T) {
 		var dst interface{}
 		err = msgpack.Unmarshal(b, &dst)
 		if err != nil {
-			t.Fatalf("Decode failed: %s (%s)", err, test)
+			t.Fatalf("Unmarshal into interface{} failed: %s (%s)", err, test)
 		}
 
 		dec := msgpack.NewDecoder(bytes.NewReader(b))
 		_, err = dec.DecodeInterface()
 		if err != nil {
-			t.Fatalf("Decode failed: %s (%s)", err, test)
+			t.Fatalf("DecodeInterface failed: %s (%s)", err, test)
 		}
 	}
 }

@@ -42,6 +42,8 @@ func (w *byteWriter) WriteString(s string) (int, error) {
 	return w.Write(w.buf)
 }
 
+//------------------------------------------------------------------------------
+
 // Marshal returns the MessagePack encoding of v.
 func Marshal(v interface{}) ([]byte, error) {
 	var buf bytes.Buffer
@@ -54,11 +56,13 @@ type Encoder struct {
 
 	buf []byte
 	// timeBuf is lazily allocated in encodeTime() to
-	// avoid allocations when time.Time value are encoded
+	// avoid allocations when time.Time value are encoded.
 	//
 	// buf can't be reused for time encoding, as buf is used
-	// to encode msgpack extLen
+	// to encode msgpack extLen.
 	timeBuf []byte
+
+	intern map[string]int
 
 	sortMapKeys   bool
 	structAsArray bool
@@ -68,13 +72,22 @@ type Encoder struct {
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
+	e := &Encoder{
+		buf: make([]byte, 9),
+	}
+	e.Reset(w)
+	return e
+}
+
+func (e *Encoder) Reset(w io.Writer) {
 	bw, ok := w.(writer)
 	if !ok {
 		bw = newByteWriter(w)
 	}
-	return &Encoder{
-		w:   bw,
-		buf: make([]byte, 9),
+	e.w = bw
+
+	for k := range e.intern {
+		delete(e.intern, k)
 	}
 }
 

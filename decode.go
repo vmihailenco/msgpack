@@ -45,6 +45,8 @@ type Decoder struct {
 	extLen int
 	rec    []byte // accumulates read data if not nil
 
+	intern []string
+
 	useLoose   bool
 	useJSONTag bool
 
@@ -58,7 +60,7 @@ type Decoder struct {
 // by passing a reader that implements io.ByteScanner interface.
 func NewDecoder(r io.Reader) *Decoder {
 	d := new(Decoder)
-	d.resetReader(r)
+	d.Reset(r)
 	return d
 }
 
@@ -86,15 +88,13 @@ func (d *Decoder) Buffered() io.Reader {
 	return d.r
 }
 
-func (d *Decoder) Reset(r io.Reader) error {
-	d.resetReader(r)
-	return nil
-}
-
-func (d *Decoder) resetReader(r io.Reader) {
-	reader := newBufReader(r)
-	d.r = reader
-	d.s = reader
+func (d *Decoder) Reset(r io.Reader) {
+	br := newBufReader(r)
+	d.r = br
+	d.s = br
+	if d.intern != nil {
+		d.intern = d.intern[:0]
+	}
 }
 
 //nolint:gocyclo
