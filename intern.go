@@ -2,6 +2,7 @@ package msgpack
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -10,6 +11,8 @@ import (
 )
 
 var internStringExtID int8 = -128
+
+var errUnexpectedCode = errors.New("msgpack: unexpected code")
 
 func encodeInternInterfaceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
@@ -96,13 +99,13 @@ func decodeInternInterfaceValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	s, err, ok := d.internString(c)
-	if ok {
-		if err != nil {
-			return err
-		}
+	s, err := d.internString(c)
+	if err == nil {
 		v.Set(reflect.ValueOf(s))
 		return nil
+	}
+	if err != nil && err != errUnexpectedCode {
+		return err
 	}
 
 	if err := d.s.UnreadByte(); err != nil {
@@ -122,11 +125,11 @@ func decodeInternStringValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	s, err, ok := d.internString(c)
-	if !ok {
-		return fmt.Errorf("msgpack: invalid code=%x decoding intern string", c)
-	}
+	s, err := d.internString(c)
 	if err != nil {
+		if err == errUnexpectedCode {
+			return fmt.Errorf("msgpack: invalid code=%x decoding intern string", c)
+		}
 		return err
 	}
 
@@ -134,11 +137,7 @@ func decodeInternStringValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) internString(c codes.Code) (string, error, bool) { //nolint:golint,stylecheck
-	if c == codes.Nil {
-		return "", nil, false
-	}
-
+func (d *Decoder) internString(c codes.Code) (string, error) {
 	if codes.IsFixedString(c) {
 		n := int(c & codes.FixedStrMask)
 		return d.internStringWithLen(n)
@@ -148,41 +147,41 @@ func (d *Decoder) internString(c codes.Code) (string, error, bool) { //nolint:go
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4:
 		typeID, length, err := d.extHeader(c)
 		if err != nil {
-			return "", err, true
+			return "", err
 		}
 		if typeID != internStringExtID {
 			err := fmt.Errorf("msgpack: got ext type=%d, wanted %d",
 				typeID, internStringExtID)
-			return "", err, true
+			return "", err
 		}
 
 		idx, err := d.internStringIndex(length)
 		if err != nil {
-			return "", err, true
+			return "", err
 		}
 
 		return d.internStringAtIndex(idx)
 	case codes.Str8, codes.Bin8:
 		n, err := d.uint8()
 		if err != nil {
-			return "", err, true
+			return "", err
 		}
 		return d.internStringWithLen(int(n))
 	case codes.Str16, codes.Bin16:
 		n, err := d.uint16()
 		if err != nil {
-			return "", err, true
+			return "", err
 		}
 		return d.internStringWithLen(int(n))
 	case codes.Str32, codes.Bin32:
 		n, err := d.uint32()
 		if err != nil {
-			return "", err, true
+			return "", err
 		}
 		return d.internStringWithLen(int(n))
 	}
 
-	return "", nil, false
+	return "", errUnexpectedCode
 }
 
 func (d *Decoder) internStringIndex(length int) (int, error) {
@@ -213,25 +212,25 @@ func (d *Decoder) internStringIndex(length int) (int, error) {
 	return 0, err
 }
 
-func (d *Decoder) internStringAtIndex(idx int) (string, error, bool) { //nolint:golint,stylecheck
+func (d *Decoder) internStringAtIndex(idx int) (string, error) {
 	if idx >= len(d.intern) {
 		err := fmt.Errorf("msgpack: intern string with index=%d does not exist", idx)
-		return "", err, true
+		return "", err
 	}
-	return d.intern[idx], nil, true
+	return d.intern[idx], nil
 }
 
-func (d *Decoder) internStringWithLen(n int) (string, error, bool) { //nolint:golint,stylecheck
+func (d *Decoder) internStringWithLen(n int) (string, error) {
 	if n <= 0 {
-		return "", nil, true
+		return "", nil
 	}
 
 	s, err := d.stringWithLen(n)
 	if err != nil {
-		return "", err, true
+		return "", err
 	}
 
 	d.intern = append(d.intern, s)
 
-	return s, nil, true
+	return s, nil
 }
