@@ -88,10 +88,16 @@ func (d *Decoder) Buffered() io.Reader {
 	return d.r
 }
 
+// Reset discards any buffered data, resets all state, and switches the buffered
+// reader to read from r.
 func (d *Decoder) Reset(r io.Reader) {
-	br := newBufReader(r)
-	d.r = br
-	d.s = br
+	if br, ok := d.r.(*bufio.Reader); ok {
+		br.Reset(r)
+	} else {
+		br := newBufReader(r)
+		d.r = br
+		d.s = br
+	}
 	if d.intern != nil {
 		d.intern = d.intern[:0]
 	}
