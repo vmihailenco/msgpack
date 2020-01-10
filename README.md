@@ -8,7 +8,7 @@ Supports:
 - Appengine *datastore.Key and datastore.Cursor.
 - [CustomEncoder](https://godoc.org/github.com/vmihailenco/msgpack#example-CustomEncoder)/CustomDecoder interfaces for custom encoding.
 - [Extensions](https://godoc.org/github.com/vmihailenco/msgpack#example-RegisterExt) to encode type information.
-- Renaming fields via `msgpack:"my_field_name"`.
+- Renaming fields via `msgpack:"my_field_name"` and alias via `msgpack:"alias:another_name"`.
 - Omitting individual empty fields via `msgpack:",omitempty"` tag or all [empty fields in a struct](https://godoc.org/github.com/vmihailenco/msgpack#example-Marshal--OmitEmpty).
 - [Map keys sorting](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.SortMapKeys).
 - Encoding/decoding all [structs as arrays](https://godoc.org/github.com/vmihailenco/msgpack#Encoder.UseArrayForStructs) or [individual structs](https://godoc.org/github.com/vmihailenco/msgpack#example-Marshal--AsArray).
