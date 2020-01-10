@@ -86,9 +86,8 @@ func (d *Decoder) UseJSONTag(flag bool) *Decoder {
 // DisallowUnknownFields causes the Decoder to return an error when the destination
 // is a struct and the input contains object keys which do not match any
 // non-ignored, exported fields in the destination.
-func (d *Decoder) DisallowUnknownFields(flag bool) *Decoder {
-	d.disallowUnknownFields = flag
-	return d
+func (d *Decoder) DisallowUnknownFields() {
+	d.disallowUnknownFields = true
 }
 
 // Buffered returns a reader of the data remaining in the Decoder's buffer.
