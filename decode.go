@@ -47,8 +47,9 @@ type Decoder struct {
 
 	intern []string
 
-	useLoose   bool
-	useJSONTag bool
+	useLoose              bool
+	useJSONTag            bool
+	disallowUnknownFields bool
 
 	decodeMapFunc func(*Decoder) (interface{}, error)
 }
@@ -79,6 +80,14 @@ func (d *Decoder) UseDecodeInterfaceLoose(flag bool) *Decoder {
 // if there is no msgpack tag.
 func (d *Decoder) UseJSONTag(flag bool) *Decoder {
 	d.useJSONTag = flag
+	return d
+}
+
+// DisallowUnknownFields causes the Decoder to return an error when the destination
+// is a struct and the input contains object keys which do not match any
+// non-ignored, exported fields in the destination.
+func (d *Decoder) DisallowUnknownFields(flag bool) *Decoder {
+	d.disallowUnknownFields = flag
 	return d
 }
 

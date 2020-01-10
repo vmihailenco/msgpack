@@ -312,12 +312,14 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 				return err
 			}
 		}
+
 		// Skip extra values.
 		for i := len(fields.List); i < n; i++ {
 			if err := d.Skip(); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	}
 
@@ -326,14 +328,15 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 		if err != nil {
 			return err
 		}
+
 		if f := fields.Map[name]; f != nil {
 			if err := f.DecodeValue(d, v); err != nil {
 				return err
 			}
-		} else {
-			if err := d.Skip(); err != nil {
-				return err
-			}
+		} else if d.disallowUnknownFields {
+			return fmt.Errorf("msgpack: unknown field %q", name)
+		} else if err := d.Skip(); err != nil {
+			return err
 		}
 	}
 
