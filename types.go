@@ -130,14 +130,17 @@ func newFields(typ reflect.Type) *fields {
 }
 
 func (fs *fields) Add(field *field) {
-	if _, ok := fs.Map[field.name]; ok {
-		log.Printf("msgpack: %s already has field=%s", fs.Type, field.name)
-	}
-
+	fs.warnIfFieldExists(field.name)
 	fs.Map[field.name] = field
 	fs.List = append(fs.List, field)
 	if field.omitEmpty {
 		fs.hasOmitEmpty = true
+	}
+}
+
+func (fs *fields) warnIfFieldExists(name string) {
+	if _, ok := fs.Map[name]; ok {
+		log.Printf("msgpack: %s already has field=%s", fs.Type, name)
 	}
 }
 
@@ -232,6 +235,11 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 		}
 
 		fs.Add(field)
+
+		if alias, ok := tag.Options["alias"]; ok {
+			fs.warnIfFieldExists(alias)
+			fs.Map[alias] = field
+		}
 	}
 	return fs
 }
