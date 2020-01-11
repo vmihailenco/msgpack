@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/vmihailenco/msgpack/v4/codes"
@@ -30,10 +31,25 @@ func newBufReader(r io.Reader) bufReader {
 	return bufio.NewReader(r)
 }
 
+//------------------------------------------------------------------------------
+
+var decPool = sync.Pool{
+	New: func() interface{} {
+		return NewDecoder(nil)
+	},
+}
+
 // Unmarshal decodes the MessagePack-encoded data and stores the result
 // in the value pointed to by v.
 func Unmarshal(data []byte, v interface{}) error {
-	return NewDecoder(bytes.NewReader(data)).Decode(v)
+	dec := decPool.Get().(*Decoder)
+
+	dec.Reset(bytes.NewReader(data))
+	err := dec.Decode(v)
+
+	decPool.Put(dec)
+
+	return err
 }
 
 // A Decoder reads and decodes MessagePack values from an input stream.

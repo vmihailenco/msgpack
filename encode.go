@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/vmihailenco/msgpack/v4/codes"
@@ -38,11 +39,25 @@ func (bw *byteWriter) WriteByte(c byte) error {
 
 //------------------------------------------------------------------------------
 
+var encPool = sync.Pool{
+	New: func() interface{} {
+		return NewEncoder(nil)
+	},
+}
+
 // Marshal returns the MessagePack encoding of v.
 func Marshal(v interface{}) ([]byte, error) {
+	enc := encPool.Get().(*Encoder)
+
 	var buf bytes.Buffer
+	enc.Reset(&buf)
+
 	err := NewEncoder(&buf).Encode(v)
-	return buf.Bytes(), err
+	b := buf.Bytes()
+
+	encPool.Put(enc)
+
+	return b, err
 }
 
 type Encoder struct {
