@@ -29,10 +29,6 @@ func (e *Encoder) EncodeTime(tm time.Time) error {
 }
 
 func (e *Encoder) encodeTime(tm time.Time) []byte {
-	if e.timeBuf == nil {
-		e.timeBuf = make([]byte, 12)
-	}
-
 	secs := uint64(tm.Unix())
 	if secs>>34 == 0 {
 		data := uint64(tm.Nanosecond())<<34 | secs

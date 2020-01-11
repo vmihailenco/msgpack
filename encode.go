@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/vmihailenco/msgpack/v4/codes"
@@ -12,55 +13,59 @@ import (
 type writer interface {
 	io.Writer
 	WriteByte(byte) error
-	WriteString(string) (int, error)
 }
 
 type byteWriter struct {
 	io.Writer
 
-	buf       []byte
-	bootstrap [64]byte
+	buf [1]byte
 }
 
 func newByteWriter(w io.Writer) *byteWriter {
-	bw := &byteWriter{
-		Writer: w,
-	}
-	bw.buf = bw.bootstrap[:]
+	bw := new(byteWriter)
+	bw.Reset(w)
 	return bw
 }
 
-func (w *byteWriter) WriteByte(c byte) error {
-	w.buf = w.buf[:1]
-	w.buf[0] = c
-	_, err := w.Write(w.buf)
-	return err
+func (bw *byteWriter) Reset(w io.Writer) {
+	bw.Writer = w
 }
 
-func (w *byteWriter) WriteString(s string) (int, error) {
-	w.buf = append(w.buf[:0], s...)
-	return w.Write(w.buf)
+func (bw *byteWriter) WriteByte(c byte) error {
+	bw.buf[0] = c
+	_, err := bw.Write(bw.buf[:])
+	return err
 }
 
 //------------------------------------------------------------------------------
 
+var encPool = sync.Pool{
+	New: func() interface{} {
+		return NewEncoder(nil)
+	},
+}
+
 // Marshal returns the MessagePack encoding of v.
 func Marshal(v interface{}) ([]byte, error) {
+	enc := encPool.Get().(*Encoder)
+
 	var buf bytes.Buffer
+	enc.Reset(&buf)
+
 	err := NewEncoder(&buf).Encode(v)
-	return buf.Bytes(), err
+	b := buf.Bytes()
+
+	encPool.Put(enc)
+
+	return b, err
 }
 
 type Encoder struct {
 	w writer
 
-	buf []byte
-	// timeBuf is lazily allocated in encodeTime() to
-	// avoid allocations when time.Time value are encoded.
-	//
-	// buf can't be reused for time encoding, as buf is used
-	// to encode msgpack extLen.
-	timeBuf []byte
+	buf       []byte
+	timeBuf   []byte
+	bootstrap [9 + 12]byte
 
 	intern map[string]int
 
@@ -72,19 +77,21 @@ type Encoder struct {
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	e := &Encoder{
-		buf: make([]byte, 9),
-	}
+	e := new(Encoder)
+	e.buf = e.bootstrap[:9]
+	e.timeBuf = e.bootstrap[9 : 9+12]
 	e.Reset(w)
 	return e
 }
 
 func (e *Encoder) Reset(w io.Writer) {
-	bw, ok := w.(writer)
-	if !ok {
-		bw = newByteWriter(w)
+	if bw, ok := w.(writer); ok {
+		e.w = bw
+	} else if bw, ok := e.w.(*byteWriter); ok {
+		bw.Reset(w)
+	} else {
+		e.w = newByteWriter(w)
 	}
-	e.w = bw
 
 	for k := range e.intern {
 		delete(e.intern, k)
@@ -185,6 +192,6 @@ func (e *Encoder) write(b []byte) error {
 }
 
 func (e *Encoder) writeString(s string) error {
-	_, err := e.w.WriteString(s)
+	_, err := e.w.Write(stringToBytes(s))
 	return err
 }
