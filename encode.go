@@ -85,8 +85,8 @@ func NewEncoder(w io.Writer) *Encoder {
 }
 
 func (e *Encoder) Reset(w io.Writer) {
-	if v, ok := w.(writer); ok {
-		e.w = v
+	if bw, ok := w.(writer); ok {
+		e.w = bw
 	} else if bw, ok := e.w.(*byteWriter); ok {
 		bw.Reset(w)
 	} else {

@@ -24,13 +24,6 @@ type bufReader interface {
 	io.ByteScanner
 }
 
-func newBufReader(r io.Reader) bufReader {
-	if br, ok := r.(bufReader); ok {
-		return br
-	}
-	return bufio.NewReader(r)
-}
-
 //------------------------------------------------------------------------------
 
 var decPool = sync.Pool{
@@ -81,6 +74,25 @@ func NewDecoder(r io.Reader) *Decoder {
 	return d
 }
 
+// Reset discards any buffered data, resets all state, and switches the buffered
+// reader to read from r.
+func (d *Decoder) Reset(r io.Reader) {
+	if br, ok := r.(bufReader); ok {
+		d.r = br
+		d.s = br
+	} else if br, ok := d.r.(*bufio.Reader); ok {
+		br.Reset(r)
+	} else {
+		br := bufio.NewReader(r)
+		d.r = br
+		d.s = br
+	}
+
+	if d.intern != nil {
+		d.intern = d.intern[:0]
+	}
+}
+
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 	d.decodeMapFunc = fn
 }
@@ -110,21 +122,6 @@ func (d *Decoder) DisallowUnknownFields() {
 // The reader is valid until the next call to Decode.
 func (d *Decoder) Buffered() io.Reader {
 	return d.r
-}
-
-// Reset discards any buffered data, resets all state, and switches the buffered
-// reader to read from r.
-func (d *Decoder) Reset(r io.Reader) {
-	if br, ok := d.r.(*bufio.Reader); ok {
-		br.Reset(r)
-	} else {
-		br := newBufReader(r)
-		d.r = br
-		d.s = br
-	}
-	if d.intern != nil {
-		d.intern = d.intern[:0]
-	}
 }
 
 //nolint:gocyclo
