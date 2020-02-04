@@ -52,11 +52,14 @@ func Marshal(v interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc.Reset(&buf)
 
-	err := NewEncoder(&buf).Encode(v)
+	err := enc.Encode(v)
 	b := buf.Bytes()
 
 	encPool.Put(enc)
 
+	if err != nil {
+		return nil, err
+	}
 	return b, err
 }
 
