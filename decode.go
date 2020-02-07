@@ -37,7 +37,11 @@ var decPool = sync.Pool{
 func Unmarshal(data []byte, v interface{}) error {
 	dec := decPool.Get().(*Decoder)
 
-	dec.Reset(bytes.NewReader(data))
+	if r, ok := dec.r.(*bytes.Reader); ok {
+		r.Reset(data)
+	} else {
+		dec.Reset(bytes.NewReader(data))
+	}
 	err := dec.Decode(v)
 
 	decPool.Put(dec)
