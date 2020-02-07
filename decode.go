@@ -95,6 +95,12 @@ func (d *Decoder) Reset(r io.Reader) {
 	if d.intern != nil {
 		d.intern = d.intern[:0]
 	}
+
+	//TODO:
+	//d.useLoose = false
+	//d.useJSONTag = false
+	//d.disallowUnknownFields = false
+	//d.decodeMapFunc = nil
 }
 
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {

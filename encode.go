@@ -99,6 +99,12 @@ func (e *Encoder) Reset(w io.Writer) {
 	for k := range e.intern {
 		delete(e.intern, k)
 	}
+
+	//TODO:
+	//e.sortMapKeys = false
+	//e.structAsArray = false
+	//e.useJSONTag = false
+	//e.useCompact = false
 }
 
 // SortMapKeys causes the Encoder to encode map keys in increasing order.
