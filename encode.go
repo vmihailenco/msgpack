@@ -72,10 +72,11 @@ type Encoder struct {
 
 	intern map[string]int
 
-	sortMapKeys   bool
-	structAsArray bool
-	useJSONTag    bool
-	useCompact    bool
+	sortMapKeys   	 bool
+	structAsArray 	 bool
+	useJSONTag    	 bool
+	useCompact    	 bool
+	useCompactFloats bool
 }
 
 // NewEncoder returns a new encoder that writes to w.
@@ -133,6 +134,13 @@ func (e *Encoder) UseJSONTag(flag bool) *Encoder {
 // For example, it allows to encode small Go int64 as msgpack int8 saving 7 bytes.
 func (e *Encoder) UseCompactEncoding(flag bool) *Encoder {
 	e.useCompact = flag
+	return e
+}
+
+// UseCompactFloats causes the Encoder to chose a compact integer encoding for integer floating
+// point values.
+func (e *Encoder) UseCompactFloatEncoding(flag bool) *Encoder {
+	e.useCompactFloats = flag
 	return e
 }
 
