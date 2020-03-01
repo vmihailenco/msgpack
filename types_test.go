@@ -228,11 +228,10 @@ var encoderTests = []encoderTest{
 
 func TestEncoder(t *testing.T) {
 	var buf bytes.Buffer
-	enc := msgpack.NewEncoder(&buf).
-		UseJSONTag(true).
-		SortMapKeys(true).
-		UseCompactEncoding(true).
-		UseCompactFloatEncoding(false)
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseJSONTag(true)
+	enc.SortMapKeys(true)
+	enc.UseCompactEncoding(true)
 
 	for _, test := range encoderTests {
 		buf.Reset()
@@ -249,11 +248,9 @@ func TestEncoder(t *testing.T) {
 	}
 }
 
-
-
 type floatEncoderTest struct {
-	in     interface{}
-	wanted string
+	in      interface{}
+	wanted  string
 	compact bool
 }
 
@@ -273,7 +270,6 @@ var floatEncoderTests = []floatEncoderTest{
 	{math.Inf(1), "cb7ff0000000000000", true},
 }
 
-
 func TestFloatEncoding(t *testing.T) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf).
@@ -284,7 +280,7 @@ func TestFloatEncoding(t *testing.T) {
 	for _, test := range floatEncoderTests {
 		buf.Reset()
 
-		enc.UseCompactFloatEncoding(test.compact)
+		enc.UseCompactFloats(test.compact)
 
 		err := enc.Encode(test.in)
 		if err != nil {

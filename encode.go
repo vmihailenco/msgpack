@@ -72,10 +72,10 @@ type Encoder struct {
 
 	intern map[string]int
 
-	sortMapKeys   	 bool
-	structAsArray 	 bool
-	useJSONTag    	 bool
-	useCompact    	 bool
+	sortMapKeys      bool
+	structAsArray    bool
+	useJSONTag       bool
+	useCompact       bool
 	useCompactFloats bool
 }
 
@@ -137,11 +137,10 @@ func (e *Encoder) UseCompactEncoding(flag bool) *Encoder {
 	return e
 }
 
-// UseCompactFloats causes the Encoder to chose a compact integer encoding for integer floating
-// point values.
-func (e *Encoder) UseCompactFloatEncoding(flag bool) *Encoder {
+// UseCompactFloats causes the Encoder to chose a compact integer encoding
+// for floats that can be represented as integers.
+func (e *Encoder) UseCompactFloats(flag bool) {
 	e.useCompactFloats = flag
-	return e
 }
 
 func (e *Encoder) Encode(v interface{}) error {
