@@ -13,7 +13,7 @@ func (e *Encoder) EncodeUint8(n uint8) error {
 }
 
 func (e *Encoder) encodeUint8Cond(n uint8) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeUint(uint64(n))
 	}
 	return e.EncodeUint8(n)
@@ -25,7 +25,7 @@ func (e *Encoder) EncodeUint16(n uint16) error {
 }
 
 func (e *Encoder) encodeUint16Cond(n uint16) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeUint(uint64(n))
 	}
 	return e.EncodeUint16(n)
@@ -37,7 +37,7 @@ func (e *Encoder) EncodeUint32(n uint32) error {
 }
 
 func (e *Encoder) encodeUint32Cond(n uint32) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeUint(uint64(n))
 	}
 	return e.EncodeUint32(n)
@@ -49,7 +49,7 @@ func (e *Encoder) EncodeUint64(n uint64) error {
 }
 
 func (e *Encoder) encodeUint64Cond(n uint64) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeUint(n)
 	}
 	return e.EncodeUint64(n)
@@ -61,7 +61,7 @@ func (e *Encoder) EncodeInt8(n int8) error {
 }
 
 func (e *Encoder) encodeInt8Cond(n int8) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeInt(int64(n))
 	}
 	return e.EncodeInt8(n)
@@ -73,7 +73,7 @@ func (e *Encoder) EncodeInt16(n int16) error {
 }
 
 func (e *Encoder) encodeInt16Cond(n int16) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeInt(int64(n))
 	}
 	return e.EncodeInt16(n)
@@ -85,7 +85,7 @@ func (e *Encoder) EncodeInt32(n int32) error {
 }
 
 func (e *Encoder) encodeInt32Cond(n int32) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeInt(int64(n))
 	}
 	return e.EncodeInt32(n)
@@ -97,7 +97,7 @@ func (e *Encoder) EncodeInt64(n int64) error {
 }
 
 func (e *Encoder) encodeInt64Cond(n int64) error {
-	if e.useCompact {
+	if e.flags&useCompactIntsFlag != 0 {
 		return e.EncodeInt(n)
 	}
 	return e.EncodeInt64(n)
@@ -143,7 +143,7 @@ func (e *Encoder) EncodeInt(n int64) error {
 }
 
 func (e *Encoder) EncodeFloat32(n float32) error {
-	if e.useCompactFloats {
+	if e.flags&useCompactFloatsFlag != 0 {
 		if float32(int64(n)) == n {
 			return e.EncodeInt(int64(n))
 		}
@@ -152,7 +152,7 @@ func (e *Encoder) EncodeFloat32(n float32) error {
 }
 
 func (e *Encoder) EncodeFloat64(n float64) error {
-	if e.useCompactFloats {
+	if e.flags&useCompactFloatsFlag != 0 {
 		// Both NaN and Inf convert to int64(-0x8000000000000000)
 		// If n is NaN then it never compares true with any other value
 		// If n is Inf then it doesn't convert from int64 back to +/-Inf

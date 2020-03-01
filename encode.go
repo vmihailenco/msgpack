@@ -10,6 +10,14 @@ import (
 	"github.com/vmihailenco/msgpack/v4/codes"
 )
 
+const (
+	sortMapKeysFlag uint32 = 1 << iota
+	structAsArrayFlag
+	encodeUsingJSONFlag
+	useCompactIntsFlag
+	useCompactFloatsFlag
+)
+
 type writer interface {
 	io.Writer
 	WriteByte(byte) error
@@ -72,11 +80,7 @@ type Encoder struct {
 
 	intern map[string]int
 
-	sortMapKeys      bool
-	structAsArray    bool
-	useJSONTag       bool
-	useCompact       bool
-	useCompactFloats bool
+	flags uint32
 }
 
 // NewEncoder returns a new encoder that writes to w.
@@ -112,35 +116,55 @@ func (e *Encoder) Reset(w io.Writer) {
 // Supported map types are:
 //   - map[string]string
 //   - map[string]interface{}
-func (e *Encoder) SortMapKeys(flag bool) *Encoder {
-	e.sortMapKeys = flag
+func (e *Encoder) SortMapKeys(on bool) *Encoder {
+	if on {
+		e.flags |= sortMapKeysFlag
+	} else {
+		e.flags &= ^sortMapKeysFlag
+	}
 	return e
 }
 
 // StructAsArray causes the Encoder to encode Go structs as msgpack arrays.
-func (e *Encoder) StructAsArray(flag bool) *Encoder {
-	e.structAsArray = flag
+func (e *Encoder) StructAsArray(on bool) *Encoder {
+	if on {
+		e.flags |= structAsArrayFlag
+	} else {
+		e.flags &= ^structAsArrayFlag
+	}
 	return e
 }
 
 // UseJSONTag causes the Encoder to use json struct tag as fallback option
 // if there is no msgpack tag.
-func (e *Encoder) UseJSONTag(flag bool) *Encoder {
-	e.useJSONTag = flag
+func (e *Encoder) UseJSONTag(on bool) *Encoder {
+	if on {
+		e.flags |= encodeUsingJSONFlag
+	} else {
+		e.flags &= ^encodeUsingJSONFlag
+	}
 	return e
 }
 
 // UseCompactEncoding causes the Encoder to chose the most compact encoding.
 // For example, it allows to encode small Go int64 as msgpack int8 saving 7 bytes.
-func (e *Encoder) UseCompactEncoding(flag bool) *Encoder {
-	e.useCompact = flag
+func (e *Encoder) UseCompactEncoding(on bool) *Encoder {
+	if on {
+		e.flags |= useCompactIntsFlag
+	} else {
+		e.flags &= ^useCompactIntsFlag
+	}
 	return e
 }
 
 // UseCompactFloats causes the Encoder to chose a compact integer encoding
 // for floats that can be represented as integers.
-func (e *Encoder) UseCompactFloats(flag bool) {
-	e.useCompactFloats = flag
+func (e *Encoder) UseCompactFloats(on bool) {
+	if on {
+		e.flags |= useCompactFloatsFlag
+	} else {
+		e.flags &= ^useCompactFloatsFlag
+	}
 }
 
 func (e *Encoder) Encode(v interface{}) error {

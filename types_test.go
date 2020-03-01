@@ -272,10 +272,8 @@ var floatEncoderTests = []floatEncoderTest{
 
 func TestFloatEncoding(t *testing.T) {
 	var buf bytes.Buffer
-	enc := msgpack.NewEncoder(&buf).
-		UseJSONTag(true).
-		SortMapKeys(true).
-		UseCompactEncoding(true)
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseCompactEncoding(true)
 
 	for _, test := range floatEncoderTests {
 		buf.Reset()

@@ -14,6 +14,12 @@ import (
 )
 
 const (
+	looseIfaceFlag uint32 = 1 << iota
+	decodeUsingJSONFlag
+	disallowUnknownFieldsFlag
+)
+
+const (
 	bytesAllocLimit = 1e6 // 1mb
 	sliceAllocLimit = 1e4
 	maxMapSize      = 1e6
@@ -58,12 +64,8 @@ type Decoder struct {
 	extLen int
 	rec    []byte // accumulates read data if not nil
 
-	intern []string
-
-	useLoose              bool
-	useJSONTag            bool
-	disallowUnknownFields bool
-
+	intern        []string
+	flags         uint32
 	decodeMapFunc func(*Decoder) (interface{}, error)
 }
 
@@ -109,15 +111,23 @@ func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 
 // UseDecodeInterfaceLoose causes decoder to use DecodeInterfaceLoose
 // to decode msgpack value into Go interface{}.
-func (d *Decoder) UseDecodeInterfaceLoose(flag bool) *Decoder {
-	d.useLoose = flag
+func (d *Decoder) UseDecodeInterfaceLoose(on bool) *Decoder {
+	if on {
+		d.flags |= looseIfaceFlag
+	} else {
+		d.flags &= ^looseIfaceFlag
+	}
 	return d
 }
 
 // UseJSONTag causes the Decoder to use json struct tag as fallback option
 // if there is no msgpack tag.
-func (d *Decoder) UseJSONTag(flag bool) *Decoder {
-	d.useJSONTag = flag
+func (d *Decoder) UseJSONTag(on bool) *Decoder {
+	if on {
+		d.flags |= decodeUsingJSONFlag
+	} else {
+		d.flags &= ^decodeUsingJSONFlag
+	}
 	return d
 }
 
@@ -125,7 +135,11 @@ func (d *Decoder) UseJSONTag(flag bool) *Decoder {
 // is a struct and the input contains object keys which do not match any
 // non-ignored, exported fields in the destination.
 func (d *Decoder) DisallowUnknownFields() {
-	d.disallowUnknownFields = true
+	if true {
+		d.flags |= disallowUnknownFieldsFlag
+	} else {
+		d.flags &= ^disallowUnknownFieldsFlag
+	}
 }
 
 // Buffered returns a reader of the data remaining in the Decoder's buffer.
@@ -255,7 +269,7 @@ func (d *Decoder) DecodeMulti(v ...interface{}) error {
 }
 
 func (d *Decoder) decodeInterfaceCond() (interface{}, error) {
-	if d.useLoose {
+	if d.flags&looseIfaceFlag != 0 {
 		return d.DecodeInterfaceLoose()
 	}
 	return d.DecodeInterface()
