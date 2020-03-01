@@ -231,10 +231,60 @@ func TestEncoder(t *testing.T) {
 	enc := msgpack.NewEncoder(&buf).
 		UseJSONTag(true).
 		SortMapKeys(true).
-		UseCompactEncoding(true)
+		UseCompactEncoding(true).
+		UseCompactFloatEncoding(false)
 
 	for _, test := range encoderTests {
 		buf.Reset()
+
+		err := enc.Encode(test.in)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		s := hex.EncodeToString(buf.Bytes())
+		if s != test.wanted {
+			t.Fatalf("%s != %s (in=%#v)", s, test.wanted, test.in)
+		}
+	}
+}
+
+
+
+type floatEncoderTest struct {
+	in     interface{}
+	wanted string
+	compact bool
+}
+
+var floatEncoderTests = []floatEncoderTest{
+	{float32(3.0), "ca40400000", false},
+	{float32(3.0), "03", true},
+
+	{float64(3.0), "cb4008000000000000", false},
+	{float64(3.0), "03", true},
+
+	{float64(-3.0), "cbc008000000000000", false},
+	{float64(-3.0), "fd", true},
+
+	{math.NaN(), "cb7ff8000000000001", false},
+	{math.NaN(), "cb7ff8000000000001", true},
+	{math.Inf(1), "cb7ff0000000000000", false},
+	{math.Inf(1), "cb7ff0000000000000", true},
+}
+
+
+func TestFloatEncoding(t *testing.T) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf).
+		UseJSONTag(true).
+		SortMapKeys(true).
+		UseCompactEncoding(true)
+
+	for _, test := range floatEncoderTests {
+		buf.Reset()
+
+		enc.UseCompactFloatEncoding(test.compact)
 
 		err := enc.Encode(test.in)
 		if err != nil {

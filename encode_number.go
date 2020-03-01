@@ -143,10 +143,24 @@ func (e *Encoder) EncodeInt(n int64) error {
 }
 
 func (e *Encoder) EncodeFloat32(n float32) error {
+	if e.useCompactFloats {
+		if float32(int64(n)) == n {
+			return e.EncodeInt(int64(n))
+		}
+	}
 	return e.write4(codes.Float, math.Float32bits(n))
 }
 
 func (e *Encoder) EncodeFloat64(n float64) error {
+	if e.useCompactFloats {
+		// Both NaN and Inf convert to int64(-0x8000000000000000)
+		// If n is NaN then it never compares true with any other value
+		// If n is Inf then it doesn't convert from int64 back to +/-Inf
+		// In both cases the comparison works.
+		if float64(int64(n)) == n {
+			return e.EncodeInt(int64(n))
+		}
+	}
 	return e.write8(codes.Double, math.Float64bits(n))
 }
 
