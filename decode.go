@@ -321,6 +321,14 @@ func (d *Decoder) bool(c codes.Code) (bool, error) {
 	return false, fmt.Errorf("msgpack: invalid code=%x decoding bool", c)
 }
 
+func (d *Decoder) DecodeDuration() (time.Duration, error) {
+	n, err := d.DecodeInt64()
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(n), nil
+}
+
 // DecodeInterface decodes value into interface. It returns following types:
 //   - nil,
 //   - bool,
