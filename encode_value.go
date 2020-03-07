@@ -49,6 +49,14 @@ func getEncoder(typ reflect.Type) encoderFunc {
 }
 
 func _getEncoder(typ reflect.Type) encoderFunc {
+	kind := typ.Kind()
+
+	if kind == reflect.Ptr {
+		if _, ok := typeEncMap.Load(typ.Elem()); ok {
+			return ptrEncoderFunc(typ)
+		}
+	}
+
 	if typ.Implements(customEncoderType) {
 		return encodeCustomValue
 	}
@@ -58,8 +66,6 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 	if typ.Implements(binaryMarshalerType) {
 		return marshalBinaryValue
 	}
-
-	kind := typ.Kind()
 
 	// Addressable struct field value.
 	if kind != reflect.Ptr {
