@@ -499,6 +499,7 @@ var (
 		},
 
 		{in: time.Unix(0, 0), out: new(time.Time)},
+		{in: new(time.Time), out: new(time.Time)},
 		{in: time.Unix(0, 1), out: new(time.Time)},
 		{in: time.Unix(1, 0), out: new(time.Time)},
 		{in: time.Unix(1, 1), out: new(time.Time)},

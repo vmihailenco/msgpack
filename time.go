@@ -11,10 +11,11 @@ import (
 
 var timeExtID int8 = -1
 
+var timePtrType = reflect.TypeOf((*time.Time)(nil))
+
 //nolint:gochecknoinits
 func init() {
-	timeType := reflect.TypeOf((*time.Time)(nil)).Elem()
-	registerExt(timeExtID, timeType, encodeTimeValue, decodeTimeValue)
+	registerExt(timeExtID, timePtrType.Elem(), encodeTimeValue, decodeTimeValue)
 }
 
 func (e *Encoder) EncodeTime(tm time.Time) error {
