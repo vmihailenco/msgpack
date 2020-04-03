@@ -38,10 +38,20 @@ var decPool = sync.Pool{
 	},
 }
 
+func GetDecoder() *Decoder {
+	return decPool.Get().(*Decoder)
+}
+
+func PutDecoder(dec *Decoder) {
+	decPool.Put(dec)
+}
+
+//------------------------------------------------------------------------------
+
 // Unmarshal decodes the MessagePack-encoded data and stores the result
 // in the value pointed to by v.
 func Unmarshal(data []byte, v interface{}) error {
-	dec := decPool.Get().(*Decoder)
+	dec := GetDecoder()
 
 	if r, ok := dec.r.(*bytes.Reader); ok {
 		r.Reset(data)
@@ -50,7 +60,7 @@ func Unmarshal(data []byte, v interface{}) error {
 	}
 	err := dec.Decode(v)
 
-	decPool.Put(dec)
+	PutDecoder(dec)
 
 	return err
 }
@@ -98,11 +108,8 @@ func (d *Decoder) Reset(r io.Reader) {
 		d.intern = d.intern[:0]
 	}
 
-	//TODO:
-	//d.useLoose = false
-	//d.useJSONTag = false
-	//d.disallowUnknownFields = false
-	//d.decodeMapFunc = nil
+	d.flags = 0
+	d.decodeMapFunc = nil
 }
 
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
@@ -111,24 +118,22 @@ func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 
 // UseDecodeInterfaceLoose causes decoder to use DecodeInterfaceLoose
 // to decode msgpack value into Go interface{}.
-func (d *Decoder) UseDecodeInterfaceLoose(on bool) *Decoder {
+func (d *Decoder) UseDecodeInterfaceLoose(on bool) {
 	if on {
 		d.flags |= looseIfaceFlag
 	} else {
 		d.flags &= ^looseIfaceFlag
 	}
-	return d
 }
 
 // UseJSONTag causes the Decoder to use json struct tag as fallback option
 // if there is no msgpack tag.
-func (d *Decoder) UseJSONTag(on bool) *Decoder {
+func (d *Decoder) UseJSONTag(on bool) {
 	if on {
 		d.flags |= decodeUsingJSONFlag
 	} else {
 		d.flags &= ^decodeUsingJSONFlag
 	}
-	return d
 }
 
 // DisallowUnknownFields causes the Decoder to return an error when the destination

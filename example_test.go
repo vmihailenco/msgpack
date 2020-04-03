@@ -124,7 +124,9 @@ func ExampleEncoder_UseArrayForStructs() {
 	}
 
 	var buf bytes.Buffer
-	enc := msgpack.NewEncoder(&buf).StructAsArray(true)
+	enc := msgpack.NewEncoder(&buf)
+	enc.StructAsArray(true)
+
 	err := enc.Encode(&Item{Foo: "foo", Bar: "bar"})
 	if err != nil {
 		panic(err)

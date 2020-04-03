@@ -117,14 +117,18 @@ type JSONFallbackTest struct {
 func TestUseJsonTag(t *testing.T) {
 	var buf bytes.Buffer
 
-	enc := msgpack.NewEncoder(&buf).UseJSONTag(true)
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseJSONTag(true)
+
 	in := &JSONFallbackTest{Foo: "hello", Bar: "world"}
 	err := enc.Encode(in)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	dec := msgpack.NewDecoder(&buf).UseJSONTag(true)
+	dec := msgpack.NewDecoder(&buf)
+	dec.UseJSONTag(true)
+
 	out := new(JSONFallbackTest)
 	err = dec.Decode(out)
 	if err != nil {
@@ -231,7 +235,7 @@ func TestEncoder(t *testing.T) {
 	enc := msgpack.NewEncoder(&buf)
 	enc.UseJSONTag(true)
 	enc.SortMapKeys(true)
-	enc.UseCompactEncoding(true)
+	enc.UseCompactInts(true)
 
 	for _, test := range encoderTests {
 		buf.Reset()
@@ -273,7 +277,7 @@ var floatEncoderTests = []floatEncoderTest{
 func TestFloatEncoding(t *testing.T) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
-	enc.UseCompactEncoding(true)
+	enc.UseCompactInts(true)
 
 	for _, test := range floatEncoderTests {
 		buf.Reset()
@@ -816,7 +820,8 @@ func TestUint64(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	enc := msgpack.NewEncoder(&buf).UseCompactEncoding(true)
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseCompactInts(true)
 
 	for _, test := range tests {
 		err := enc.Encode(test.in)
@@ -903,7 +908,8 @@ func TestInt64(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	enc := msgpack.NewEncoder(&buf).UseCompactEncoding(true)
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseCompactInts(true)
 
 	for _, test := range tests {
 		err := enc.Encode(test.in)

@@ -53,9 +53,17 @@ var encPool = sync.Pool{
 	},
 }
 
+func GetEncoder() *Encoder {
+	return encPool.Get().(*Encoder)
+}
+
+func PutEncoder(enc *Encoder) {
+	encPool.Put(enc)
+}
+
 // Marshal returns the MessagePack encoding of v.
 func Marshal(v interface{}) ([]byte, error) {
-	enc := encPool.Get().(*Encoder)
+	enc := GetEncoder()
 
 	var buf bytes.Buffer
 	enc.Reset(&buf)
@@ -63,7 +71,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	err := enc.Encode(v)
 	b := buf.Bytes()
 
-	encPool.Put(enc)
+	PutEncoder(enc)
 
 	if err != nil {
 		return nil, err
@@ -104,11 +112,7 @@ func (e *Encoder) Reset(w io.Writer) {
 		delete(e.intern, k)
 	}
 
-	//TODO:
-	//e.sortMapKeys = false
-	//e.structAsArray = false
-	//e.useJSONTag = false
-	//e.useCompact = false
+	e.flags = 0
 }
 
 // SortMapKeys causes the Encoder to encode map keys in increasing order.
@@ -125,35 +129,32 @@ func (e *Encoder) SortMapKeys(on bool) *Encoder {
 }
 
 // StructAsArray causes the Encoder to encode Go structs as msgpack arrays.
-func (e *Encoder) StructAsArray(on bool) *Encoder {
+func (e *Encoder) StructAsArray(on bool) {
 	if on {
 		e.flags |= structAsArrayFlag
 	} else {
 		e.flags &= ^structAsArrayFlag
 	}
-	return e
 }
 
 // UseJSONTag causes the Encoder to use json struct tag as fallback option
 // if there is no msgpack tag.
-func (e *Encoder) UseJSONTag(on bool) *Encoder {
+func (e *Encoder) UseJSONTag(on bool) {
 	if on {
 		e.flags |= encodeUsingJSONFlag
 	} else {
 		e.flags &= ^encodeUsingJSONFlag
 	}
-	return e
 }
 
 // UseCompactEncoding causes the Encoder to chose the most compact encoding.
 // For example, it allows to encode small Go int64 as msgpack int8 saving 7 bytes.
-func (e *Encoder) UseCompactEncoding(on bool) *Encoder {
+func (e *Encoder) UseCompactInts(on bool) {
 	if on {
 		e.flags |= useCompactIntsFlag
 	} else {
 		e.flags &= ^useCompactIntsFlag
 	}
-	return e
 }
 
 // UseCompactFloats causes the Encoder to chose a compact integer encoding
