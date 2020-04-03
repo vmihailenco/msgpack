@@ -53,11 +53,7 @@ func PutDecoder(dec *Decoder) {
 func Unmarshal(data []byte, v interface{}) error {
 	dec := GetDecoder()
 
-	if r, ok := dec.r.(*bytes.Reader); ok {
-		r.Reset(data)
-	} else {
-		dec.Reset(bytes.NewReader(data))
-	}
+	dec.ResetBytes(data)
 	err := dec.Decode(v)
 
 	PutDecoder(dec)
@@ -88,6 +84,14 @@ func NewDecoder(r io.Reader) *Decoder {
 	d := new(Decoder)
 	d.Reset(r)
 	return d
+}
+
+func (d *Decoder) ResetBytes(data []byte) {
+	if r, ok := d.r.(*bytes.Reader); ok {
+		r.Reset(data)
+	} else {
+		d.Reset(bytes.NewReader(data))
+	}
 }
 
 // Reset discards any buffered data, resets all state, and switches the buffered
