@@ -86,8 +86,12 @@ func NewDecoder(r io.Reader) *Decoder {
 	return d
 }
 
+type resetter interface {
+	Reset([]byte)
+}
+
 func (d *Decoder) ResetBytes(data []byte) {
-	if r, ok := d.r.(*bytes.Reader); ok {
+	if r, ok := d.r.(resetter); ok {
 		r.Reset(data)
 	} else {
 		d.Reset(bytes.NewReader(data))
@@ -143,8 +147,8 @@ func (d *Decoder) UseJSONTag(on bool) {
 // DisallowUnknownFields causes the Decoder to return an error when the destination
 // is a struct and the input contains object keys which do not match any
 // non-ignored, exported fields in the destination.
-func (d *Decoder) DisallowUnknownFields() {
-	if true {
+func (d *Decoder) DisallowUnknownFields(on bool) {
+	if on {
 		d.flags |= disallowUnknownFieldsFlag
 	} else {
 		d.flags &= ^disallowUnknownFieldsFlag
