@@ -58,6 +58,7 @@ func GetEncoder() *Encoder {
 }
 
 func PutEncoder(enc *Encoder) {
+	enc.w = nil
 	encPool.Put(enc)
 }
 
@@ -97,6 +98,11 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 	e.Reset(w)
 	return e
+}
+
+// Writer returns the Encoder's writer.
+func (e *Encoder) Writer() io.Writer {
+	return e.w
 }
 
 func (e *Encoder) Reset(w io.Writer) {

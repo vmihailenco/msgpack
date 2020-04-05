@@ -43,6 +43,8 @@ func GetDecoder() *Decoder {
 }
 
 func PutDecoder(dec *Decoder) {
+	dec.r = nil
+	dec.s = nil
 	decPool.Put(dec)
 }
 
