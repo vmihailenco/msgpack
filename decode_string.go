@@ -96,7 +96,7 @@ func (d *Decoder) bytes(c codes.Code, b []byte) ([]byte, error) {
 	return readN(d.r, b, n)
 }
 
-func (d *Decoder) bytesNoCopy() ([]byte, error) {
+func (d *Decoder) bytesTemp() ([]byte, error) {
 	c, err := d.readCode()
 	if err != nil {
 		return nil, err

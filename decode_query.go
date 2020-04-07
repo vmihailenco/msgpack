@@ -77,12 +77,12 @@ func (d *Decoder) queryMapKey(q *queryResult) error {
 	}
 
 	for i := 0; i < n; i++ {
-		k, err := d.bytesNoCopy()
+		key, err := d.bytesTemp()
 		if err != nil {
 			return err
 		}
 
-		if string(k) == q.key {
+		if string(key) == q.key {
 			if err := d.query(q); err != nil {
 				return err
 			}
