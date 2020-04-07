@@ -532,13 +532,19 @@ func (d *Decoder) Skip() error {
 }
 
 // PeekCode returns the next MessagePack code without advancing the reader.
-// Subpackage msgpack/codes contains list of available codes.
+// Subpackage msgpack/codes defines list of available codes.
 func (d *Decoder) PeekCode() (codes.Code, error) {
 	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err
 	}
 	return codes.Code(c), d.s.UnreadByte()
+}
+
+// ReadFull reads exactly len(buf) bytes into the buf.
+func (d *Decoder) ReadFull(buf []byte) error {
+	_, err := readN(d.r, buf, len(buf))
+	return err
 }
 
 func (d *Decoder) hasNilCode() bool {
