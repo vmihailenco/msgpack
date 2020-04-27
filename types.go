@@ -90,16 +90,16 @@ type field struct {
 }
 
 func (f *field) Omit(strct reflect.Value) bool {
-	v, isNil := fieldByIndex(strct, f.index)
-	if isNil {
+	v, ok := fieldByIndex(strct, f.index)
+	if !ok {
 		return true
 	}
 	return f.omitEmpty && isEmptyValue(v)
 }
 
 func (f *field) EncodeValue(e *Encoder, strct reflect.Value) error {
-	v, isNil := fieldByIndex(strct, f.index)
-	if isNil {
+	v, ok := fieldByIndex(strct, f.index)
+	if !ok {
 		return e.EncodeNil()
 	}
 	return f.encoder(e, v)
@@ -325,16 +325,16 @@ func isEmptyValue(v reflect.Value) bool {
 	return false
 }
 
-func fieldByIndex(v reflect.Value, index []int) (_ reflect.Value, isNil bool) {
+func fieldByIndex(v reflect.Value, index []int) (_ reflect.Value, ok bool) {
 	if len(index) == 1 {
-		return v.Field(index[0]), false
+		return v.Field(index[0]), true
 	}
 
 	for i, idx := range index {
 		if i > 0 {
 			if v.Kind() == reflect.Ptr {
 				if v.IsNil() {
-					return v, true
+					return v, false
 				}
 				v = v.Elem()
 			}
@@ -342,7 +342,7 @@ func fieldByIndex(v reflect.Value, index []int) (_ reflect.Value, isNil bool) {
 		v = v.Field(idx)
 	}
 
-	return v, false
+	return v, true
 }
 
 func fieldByIndexAlloc(v reflect.Value, index []int) reflect.Value {
@@ -353,7 +353,7 @@ func fieldByIndexAlloc(v reflect.Value, index []int) reflect.Value {
 	for i, idx := range index {
 		if i > 0 {
 			var ok bool
-			v, ok = indirectNew(v)
+			v, ok = indirectNil(v)
 			if !ok {
 				return v
 			}
@@ -364,7 +364,7 @@ func fieldByIndexAlloc(v reflect.Value, index []int) reflect.Value {
 	return v
 }
 
-func indirectNew(v reflect.Value) (reflect.Value, bool) {
+func indirectNil(v reflect.Value) (reflect.Value, bool) {
 	if v.Kind() == reflect.Ptr {
 		if v.IsNil() {
 			if !v.CanSet() {
