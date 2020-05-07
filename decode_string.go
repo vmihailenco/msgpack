@@ -56,15 +56,10 @@ func (d *Decoder) stringWithLen(n int) (string, error) {
 }
 
 func decodeStringValue(d *Decoder, v reflect.Value) error {
-	if err := mustSet(v); err != nil {
-		return err
-	}
-
 	s, err := d.DecodeString()
 	if err != nil {
 		return err
 	}
-
 	v.SetString(s)
 	return nil
 }
@@ -145,10 +140,6 @@ func (d *Decoder) skipBytes(c codes.Code) error {
 }
 
 func decodeBytesValue(d *Decoder, v reflect.Value) error {
-	if err := mustSet(v); err != nil {
-		return err
-	}
-
 	c, err := d.readCode()
 	if err != nil {
 		return err

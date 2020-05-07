@@ -43,13 +43,6 @@ func init() {
 	}
 }
 
-func mustSet(v reflect.Value) error {
-	if !v.CanSet() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %s)", v.Type())
-	}
-	return nil
-}
-
 func getDecoder(typ reflect.Type) decoderFunc {
 	if v, ok := typeDecMap.Load(typ); ok {
 		return v.(decoderFunc)
@@ -125,18 +118,12 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	decoder := getDecoder(typ.Elem())
 	return func(d *Decoder, v reflect.Value) error {
 		if d.hasNilCode() {
-			if err := mustSet(v); err != nil {
-				return err
-			}
 			if !v.IsNil() {
 				v.Set(reflect.Zero(v.Type()))
 			}
 			return d.DecodeNil()
 		}
 		if v.IsNil() {
-			if err := mustSet(v); err != nil {
-				return err
-			}
 			v.Set(reflect.New(v.Type().Elem()))
 		}
 		return decoder(d, v.Elem())
@@ -207,9 +194,6 @@ func decodeBoolValue(d *Decoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	if err = mustSet(v); err != nil {
-		return err
-	}
 	v.SetBool(flag)
 	return nil
 }
@@ -220,11 +204,8 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 	}
 
 	elem := v.Elem()
-	if !elem.CanAddr() {
-		if d.hasNilCode() {
-			v.Set(reflect.Zero(v.Type()))
-			return d.DecodeNil()
-		}
+	if !elem.CanSet() {
+		return d.interfaceValue(v)
 	}
 
 	return d.DecodeValue(elem)

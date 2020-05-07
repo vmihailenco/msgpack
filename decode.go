@@ -264,13 +264,20 @@ func (d *Decoder) Decode(v interface{}) error {
 	if !vv.IsValid() {
 		return errors.New("msgpack: Decode(nil)")
 	}
-	if vv.Kind() != reflect.Ptr {
+	if vv.Kind() != reflect.Ptr || vv.IsNil() {
 		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v)
 	}
+
 	vv = vv.Elem()
-	if !vv.IsValid() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v)
+	if vv.Kind() == reflect.Interface {
+		if !vv.IsNil() {
+			vv = vv.Elem()
+			if vv.Kind() != reflect.Ptr {
+				return fmt.Errorf("msgpack: Decode(nonsettable %s)", vv.Type().String())
+			}
+		}
 	}
+
 	return d.DecodeValue(vv)
 }
 
@@ -570,7 +577,6 @@ func (d *Decoder) readFull(b []byte) error {
 		return err
 	}
 	if d.rec != nil {
-		//TODO: read directly into d.rec?
 		d.rec = append(d.rec, b...)
 	}
 	return nil

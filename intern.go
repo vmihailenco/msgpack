@@ -116,10 +116,6 @@ func decodeInternInterfaceValue(d *Decoder, v reflect.Value) error {
 }
 
 func decodeInternStringValue(d *Decoder, v reflect.Value) error {
-	if err := mustSet(v); err != nil {
-		return err
-	}
-
 	c, err := d.readCode()
 	if err != nil {
 		return err

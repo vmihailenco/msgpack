@@ -551,7 +551,7 @@ var (
 			wanted: ExtTestField{ExtTest{"hello world"}},
 		},
 
-		{in: Interface{}, out: &Interface{Foo: "bar"}},
+		{in: Interface{Foo: "foo"}, out: &Interface{Foo: "bar"}},
 
 		{
 			in:  &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}},
