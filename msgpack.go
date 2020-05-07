@@ -28,11 +28,10 @@ func (m RawMessage) EncodeMsgpack(enc *Encoder) error {
 }
 
 func (m *RawMessage) DecodeMsgpack(dec *Decoder) error {
-	dec.rec = make([]byte, 0)
-	if err := dec.Skip(); err != nil {
+	msg, err := dec.DecodeRaw()
+	if err != nil {
 		return err
 	}
-	*m = dec.rec
-	dec.rec = nil
+	*m = msg
 	return nil
 }

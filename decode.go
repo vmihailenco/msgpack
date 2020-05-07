@@ -538,6 +538,16 @@ func (d *Decoder) Skip() error {
 	return fmt.Errorf("msgpack: unknown code %x", c)
 }
 
+func (d *Decoder) DecodeRaw() (RawMessage, error) {
+	d.rec = make([]byte, 0)
+	if err := d.Skip(); err != nil {
+		return nil, err
+	}
+	msg := RawMessage(d.rec)
+	d.rec = nil
+	return msg, nil
+}
+
 // PeekCode returns the next MessagePack code without advancing the reader.
 // Subpackage msgpack/codes defines list of available codes.
 func (d *Decoder) PeekCode() (codes.Code, error) {
