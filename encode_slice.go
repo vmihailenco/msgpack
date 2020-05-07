@@ -6,7 +6,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
 
-var sliceStringType = reflect.TypeOf(([]string)(nil))
+var stringSliceType = reflect.TypeOf(([]string)(nil))
 
 func encodeStringValue(e *Encoder, v reflect.Value) error {
 	return e.EncodeString(v.String())
@@ -91,7 +91,7 @@ func (e *Encoder) EncodeArrayLen(l int) error {
 }
 
 func encodeStringSliceValue(e *Encoder, v reflect.Value) error {
-	ss := v.Convert(sliceStringType).Interface().([]string)
+	ss := v.Convert(stringSliceType).Interface().([]string)
 	return e.encodeStringSlice(ss)
 }
 

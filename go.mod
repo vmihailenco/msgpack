@@ -4,6 +4,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/stretchr/testify v1.5.1
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	github.com/vmihailenco/tagparser v0.1.1
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect

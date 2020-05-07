@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
@@ -691,38 +692,29 @@ func TestStringsBin(t *testing.T) {
 
 	for _, test := range tests {
 		b, err := msgpack.Marshal(test.in)
-		if err != nil {
-			t.Fatal(err)
-		}
+		assert.Nil(t, err)
 		s := hex.EncodeToString(b)
-		if s != test.wanted {
-			t.Fatalf("%.32s != %.32s", s, test.wanted)
-		}
+		assert.Equal(t, s, test.wanted)
 
 		var out string
 		err = msgpack.Unmarshal(b, &out)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if out != test.in {
-			t.Fatalf("%s != %s", out, test.in)
-		}
+		assert.Nil(t, err)
+		assert.Equal(t, out, test.in)
+
+		var msg msgpack.RawMessage
+		err = msgpack.Unmarshal(b, &msg)
+		assert.Nil(t, err)
+		assert.Equal(t, []byte(msg), b)
 
 		dec := msgpack.NewDecoder(bytes.NewReader(b))
 		v, err := dec.DecodeInterface()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if v.(string) != test.in {
-			t.Fatalf("%s != %s", v, test.in)
-		}
+		assert.Nil(t, err)
+		assert.Equal(t, v.(string), test.in)
 
 		var dst interface{}
 		dst = ""
 		err = msgpack.Unmarshal(b, &dst)
-		if err.Error() != "msgpack: Decode(nonsettable string)" {
-			t.Fatal(err)
-		}
+		assert.EqualError(t, err, "msgpack: Decode(nonsettable string)")
 	}
 }
 

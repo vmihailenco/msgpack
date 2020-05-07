@@ -15,3 +15,24 @@ type CustomEncoder interface {
 type CustomDecoder interface {
 	DecodeMsgpack(*Decoder) error
 }
+
+//------------------------------------------------------------------------------
+
+type RawMessage []byte
+
+var _ CustomEncoder = (RawMessage)(nil)
+var _ CustomDecoder = (*RawMessage)(nil)
+
+func (m RawMessage) EncodeMsgpack(enc *Encoder) error {
+	return enc.write(m)
+}
+
+func (m *RawMessage) DecodeMsgpack(dec *Decoder) error {
+	dec.rec = make([]byte, 0)
+	if err := dec.Skip(); err != nil {
+		return err
+	}
+	*m = dec.rec
+	dec.rec = nil
+	return nil
+}
