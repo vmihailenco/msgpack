@@ -399,7 +399,7 @@ var (
 		{in: make(chan bool), encErr: "msgpack: Encode(unsupported chan bool)"},
 
 		{in: nil, out: nil, decErr: "msgpack: Decode(nil)"},
-		{in: nil, out: 0, decErr: "msgpack: Decode(nonsettable int)"},
+		{in: nil, out: 0, decErr: "msgpack: Decode(non-pointer int)"},
 		{in: nil, out: (*int)(nil), decErr: "msgpack: Decode(nonsettable *int)"},
 		{in: nil, out: new(chan bool), decErr: "msgpack: Decode(unsupported chan bool)"},
 
@@ -714,7 +714,7 @@ func TestStringsBin(t *testing.T) {
 		var dst interface{}
 		dst = ""
 		err = msgpack.Unmarshal(b, &dst)
-		assert.EqualError(t, err, "msgpack: Decode(nonsettable string)")
+		assert.EqualError(t, err, "msgpack: Decode(non-pointer string)")
 	}
 }
 
@@ -782,7 +782,7 @@ func TestBin(t *testing.T) {
 		var dst interface{}
 		dst = make([]byte, 0)
 		err = msgpack.Unmarshal(b, &dst)
-		if err.Error() != "msgpack: Decode(nonsettable []uint8)" {
+		if err.Error() != "msgpack: Decode(non-pointer []uint8)" {
 			t.Fatal(err)
 		}
 	}
@@ -846,7 +846,7 @@ func TestUint64(t *testing.T) {
 		var out3 interface{}
 		out3 = uint64(0)
 		err = msgpack.Unmarshal(buf.Bytes(), &out3)
-		if err.Error() != "msgpack: Decode(nonsettable uint64)" {
+		if err.Error() != "msgpack: Decode(non-pointer uint64)" {
 			t.Fatal(err)
 		}
 
@@ -934,7 +934,7 @@ func TestInt64(t *testing.T) {
 		var out3 interface{}
 		out3 = int64(0)
 		err = msgpack.Unmarshal(buf.Bytes(), &out3)
-		if err.Error() != "msgpack: Decode(nonsettable int64)" {
+		if err.Error() != "msgpack: Decode(non-pointer int64)" {
 			t.Fatal(err)
 		}
 
@@ -1004,7 +1004,7 @@ func TestFloat32(t *testing.T) {
 		var dst interface{}
 		dst = float32(0)
 		err = msgpack.Unmarshal(b, &dst)
-		if err.Error() != "msgpack: Decode(nonsettable float32)" {
+		if err.Error() != "msgpack: Decode(non-pointer float32)" {
 			t.Fatal(err)
 		}
 	}
@@ -1070,7 +1070,7 @@ func TestFloat64(t *testing.T) {
 		var dst interface{}
 		dst = float64(0)
 		err = msgpack.Unmarshal(b, &dst)
-		if err.Error() != "msgpack: Decode(nonsettable float64)" {
+		if err.Error() != "msgpack: Decode(non-pointer float64)" {
 			t.Fatal(err)
 		}
 	}

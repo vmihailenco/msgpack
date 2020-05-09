@@ -264,7 +264,10 @@ func (d *Decoder) Decode(v interface{}) error {
 	if !vv.IsValid() {
 		return errors.New("msgpack: Decode(nil)")
 	}
-	if vv.Kind() != reflect.Ptr || vv.IsNil() {
+	if vv.Kind() != reflect.Ptr {
+		return fmt.Errorf("msgpack: Decode(non-pointer %T)", v)
+	}
+	if vv.IsNil() {
 		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v)
 	}
 
@@ -273,7 +276,7 @@ func (d *Decoder) Decode(v interface{}) error {
 		if !vv.IsNil() {
 			vv = vv.Elem()
 			if vv.Kind() != reflect.Ptr {
-				return fmt.Errorf("msgpack: Decode(nonsettable %s)", vv.Type().String())
+				return fmt.Errorf("msgpack: Decode(non-pointer %s)", vv.Type().String())
 			}
 		}
 	}
