@@ -268,7 +268,7 @@ func (d *Decoder) Decode(v interface{}) error {
 		return fmt.Errorf("msgpack: Decode(non-pointer %T)", v)
 	}
 	if vv.IsNil() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v)
+		return fmt.Errorf("msgpack: Decode(non-settable %T)", v)
 	}
 
 	vv = vv.Elem()

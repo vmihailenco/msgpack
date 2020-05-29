@@ -400,7 +400,7 @@ var (
 
 		{in: nil, out: nil, decErr: "msgpack: Decode(nil)"},
 		{in: nil, out: 0, decErr: "msgpack: Decode(non-pointer int)"},
-		{in: nil, out: (*int)(nil), decErr: "msgpack: Decode(nonsettable *int)"},
+		{in: nil, out: (*int)(nil), decErr: "msgpack: Decode(non-settable *int)"},
 		{in: nil, out: new(chan bool), decErr: "msgpack: Decode(unsupported chan bool)"},
 
 		{in: true, out: new(bool)},
