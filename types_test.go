@@ -146,6 +146,40 @@ func TestUseJsonTag(t *testing.T) {
 
 //------------------------------------------------------------------------------
 
+type CustomFallbackTest struct {
+	Foo string `custom:"foo,omitempty"`
+	Bar string `custom:",omitempty" msgpack:"bar"`
+}
+
+func TestUseCustomTag(t *testing.T) {
+	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseCustomStructTag("custom")
+	in := &CustomFallbackTest{Foo: "hello", Bar: "world"}
+	err := enc.Encode(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	dec.UseCustomStructTag("custom")
+	out := new(CustomFallbackTest)
+	err = dec.Decode(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if out.Foo != in.Foo || out.Foo != "hello" {
+		t.Fatalf("got %q, wanted %q", out.Foo, in.Foo)
+	}
+	if out.Bar != in.Bar || out.Bar != "world" {
+		t.Fatalf("got %q, wanted %q", out.Foo, in.Foo)
+	}
+}
+
+//------------------------------------------------------------------------------
+
 type OmitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`

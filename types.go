@@ -53,29 +53,36 @@ func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
 //------------------------------------------------------------------------------
 
 var (
-	structs     = newStructCache(false)
-	jsonStructs = newStructCache(true)
+	structs = newStructCache()
 )
+
+const defaultStructTag = "msgpack"
 
 type structCache struct {
 	m sync.Map
-
-	useJSONTag bool
 }
 
-func newStructCache(useJSONTag bool) *structCache {
-	return &structCache{
-		useJSONTag: useJSONTag,
-	}
+type structCacheKey struct {
+	tag string
+	typ reflect.Type
 }
 
-func (m *structCache) Fields(typ reflect.Type) *fields {
-	if v, ok := m.m.Load(typ); ok {
+func newStructCache() *structCache {
+	return &structCache{}
+}
+
+func (m *structCache) Fields(tag string, typ reflect.Type) *fields {
+	key := structCacheKey{tag: tag, typ: typ}
+	if v, ok := m.m.Load(key); ok {
 		return v.(*fields)
 	}
 
-	fs := getFields(typ, m.useJSONTag)
-	m.m.Store(typ, fs)
+	fallbackTag := ""
+	if tag != defaultStructTag {
+		fallbackTag = tag
+	}
+	fs := getFields(typ, fallbackTag)
+	m.m.Store(key, fs)
 	return fs
 }
 
@@ -160,16 +167,16 @@ func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
 	return fields
 }
 
-func getFields(typ reflect.Type, useJSONTag bool) *fields {
+func getFields(typ reflect.Type, fallbackTag string) *fields {
 	fs := newFields(typ)
 
 	var omitEmpty bool
 	for i := 0; i < typ.NumField(); i++ {
 		f := typ.Field(i)
 
-		tagStr := f.Tag.Get("msgpack")
-		if useJSONTag && tagStr == "" {
-			tagStr = f.Tag.Get("json")
+		tagStr := f.Tag.Get(defaultStructTag)
+		if fallbackTag != "" && tagStr == "" {
+			tagStr = f.Tag.Get(fallbackTag)
 		}
 
 		tag := tagparser.Parse(tagStr)
@@ -220,9 +227,9 @@ func getFields(typ reflect.Type, useJSONTag bool) *fields {
 		if f.Anonymous && !tag.HasOption("noinline") {
 			inline := tag.HasOption("inline")
 			if inline {
-				inlineFields(fs, f.Type, field, useJSONTag)
+				inlineFields(fs, f.Type, field, fallbackTag)
 			} else {
-				inline = shouldInline(fs, f.Type, field, useJSONTag)
+				inline = shouldInline(fs, f.Type, field, fallbackTag)
 			}
 
 			if inline {
@@ -255,8 +262,8 @@ func init() {
 	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()
 }
 
-func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) {
-	inlinedFields := getFields(typ, useJSONTag).List
+func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
+	inlinedFields := getFields(typ, tag).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't inline shadowed fields.
@@ -267,7 +274,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field, useJSONTag bool) {
 	}
 }
 
-func shouldInline(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool {
+func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 	var encoder encoderFunc
 	var decoder decoderFunc
 
@@ -292,7 +299,7 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, useJSONTag bool) bool 
 		return false
 	}
 
-	inlinedFields := getFields(typ, useJSONTag).List
+	inlinedFields := getFields(typ, tag).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't auto inline if there are shadowed fields.
