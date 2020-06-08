@@ -13,7 +13,6 @@ import (
 const (
 	sortMapKeysFlag uint32 = 1 << iota
 	structAsArrayFlag
-	encodeUsingJSONFlag
 	useCompactIntsFlag
 	useCompactFloatsFlag
 )
@@ -88,7 +87,8 @@ type Encoder struct {
 
 	intern map[string]int
 
-	flags uint32
+	flags     uint32
+	structTag string
 }
 
 // NewEncoder returns a new encoder that writes to w.
@@ -96,6 +96,7 @@ func NewEncoder(w io.Writer) *Encoder {
 	e := &Encoder{
 		buf: make([]byte, 9),
 	}
+	e.structTag = defaultStructTag
 	e.Reset(w)
 	return e
 }
@@ -146,11 +147,17 @@ func (e *Encoder) StructAsArray(on bool) {
 // UseJSONTag causes the Encoder to use json struct tag as fallback option
 // if there is no msgpack tag.
 func (e *Encoder) UseJSONTag(on bool) {
+	tag := defaultStructTag
 	if on {
-		e.flags |= encodeUsingJSONFlag
-	} else {
-		e.flags &= ^encodeUsingJSONFlag
+		tag = "json"
 	}
+	e.UseCustomStructTag(tag)
+}
+
+// UseCustomStructTag causes the Encoder to use a custom struct tag as
+// fallback option if there is no msgpack tag.
+func (e *Encoder) UseCustomStructTag(tag string) {
+	e.structTag = tag
 }
 
 // UseCompactEncoding causes the Encoder to chose the most compact encoding.

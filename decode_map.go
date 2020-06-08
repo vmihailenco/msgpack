@@ -293,13 +293,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 		return nil
 	}
 
-	var fields *fields
-	if d.flags&decodeUsingJSONFlag != 0 {
-		fields = jsonStructs.Fields(v.Type())
-	} else {
-		fields = structs.Fields(v.Type())
-	}
-
+	fields := structs.Fields(d.structTag, v.Type())
 	if isArray {
 		for i, f := range fields.List {
 			if i >= n {
