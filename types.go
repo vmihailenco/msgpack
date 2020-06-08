@@ -52,11 +52,9 @@ func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
 
 //------------------------------------------------------------------------------
 
-var (
-	structs = newStructCache()
-)
-
 const defaultStructTag = "msgpack"
+
+var structs = newStructCache()
 
 type structCache struct {
 	m sync.Map
@@ -71,18 +69,16 @@ func newStructCache() *structCache {
 	return &structCache{}
 }
 
-func (m *structCache) Fields(tag string, typ reflect.Type) *fields {
+func (m *structCache) Fields(typ reflect.Type, tag string) *fields {
 	key := structCacheKey{tag: tag, typ: typ}
+
 	if v, ok := m.m.Load(key); ok {
 		return v.(*fields)
 	}
 
-	fallbackTag := ""
-	if tag != defaultStructTag {
-		fallbackTag = tag
-	}
-	fs := getFields(typ, fallbackTag)
+	fs := getFields(typ, tag)
 	m.m.Store(key, fs)
+
 	return fs
 }
 
@@ -175,7 +171,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		f := typ.Field(i)
 
 		tagStr := f.Tag.Get(defaultStructTag)
-		if fallbackTag != "" && tagStr == "" {
+		if tagStr == "" && fallbackTag != "" {
 			tagStr = f.Tag.Get(fallbackTag)
 		}
 

@@ -131,7 +131,7 @@ func (e *Encoder) EncodeMapLen(l int) error {
 }
 
 func encodeStructValue(e *Encoder, strct reflect.Value) error {
-	structFields := structs.Fields(e.structTag, strct.Type())
+	structFields := structs.Fields(strct.Type(), e.structTag)
 	if e.flags&structAsArrayFlag != 0 || structFields.AsArray {
 		return encodeStructValueAsArray(e, strct, structFields.List)
 	}
