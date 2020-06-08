@@ -84,7 +84,6 @@ type Decoder struct {
 // by passing a reader that implements io.ByteScanner interface.
 func NewDecoder(r io.Reader) *Decoder {
 	d := new(Decoder)
-	d.structTag = defaultStructTag
 	d.Reset(r)
 	return d
 }
@@ -140,11 +139,11 @@ func (d *Decoder) UseDecodeInterfaceLoose(on bool) {
 // UseJSONTag causes the Decoder to use json struct tag as fallback option
 // if there is no msgpack tag.
 func (d *Decoder) UseJSONTag(on bool) {
-	tag := defaultStructTag
 	if on {
-		tag = "json"
+		d.UseCustomStructTag("json")
+	} else {
+		d.UseCustomStructTag("")
 	}
-	d.UseCustomStructTag(tag)
 }
 
 // UseCustomStructTag causes the decoder to use the supplied tag as a fallback option

@@ -96,7 +96,6 @@ func NewEncoder(w io.Writer) *Encoder {
 	e := &Encoder{
 		buf: make([]byte, 9),
 	}
-	e.structTag = defaultStructTag
 	e.Reset(w)
 	return e
 }
@@ -147,11 +146,11 @@ func (e *Encoder) StructAsArray(on bool) {
 // UseJSONTag causes the Encoder to use json struct tag as fallback option
 // if there is no msgpack tag.
 func (e *Encoder) UseJSONTag(on bool) {
-	tag := defaultStructTag
 	if on {
-		tag = "json"
+		e.UseCustomStructTag("json")
+	} else {
+		e.UseCustomStructTag("")
 	}
-	e.UseCustomStructTag(tag)
 }
 
 // UseCustomStructTag causes the Encoder to use a custom struct tag as
