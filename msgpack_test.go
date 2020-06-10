@@ -272,3 +272,16 @@ func (t *MsgpackTest) TestMapStringInterface(c *C) {
 	mm := out["hello"].(map[string]interface{})
 	c.Assert(mm["foo"], Equals, "bar")
 }
+
+//------------------------------------------------------------------------------
+
+func TestNoPanicOnUnsupportKey(t *testing.T) {
+	data := []byte{0x81, 0x81, 0xa1, 0x78, 0xc3, 0xc3}
+
+	var msg interface{}
+	err := msgpack.Unmarshal(data, &msg)
+
+	if err == nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
