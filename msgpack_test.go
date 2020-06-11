@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	. "gopkg.in/check.v1"
 
 	"github.com/vmihailenco/msgpack/v5"
@@ -280,8 +281,5 @@ func TestNoPanicOnUnsupportKey(t *testing.T) {
 
 	var msg interface{}
 	err := msgpack.Unmarshal(data, &msg)
-
-	if err == nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	require.EqualError(t, err, "msgpack: unsupported map key: map[string]interface {}")
 }

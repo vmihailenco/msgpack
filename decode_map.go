@@ -187,8 +187,6 @@ func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error
 	return nil
 }
 
-var errUnsupportedMapKey = errors.New("msgpack: unsupported map key")
-
 func (d *Decoder) DecodeMap() (interface{}, error) {
 	if d.decodeMapFunc != nil {
 		return d.decodeMapFunc(d)
@@ -228,7 +226,7 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 	valueType := reflect.TypeOf(value)
 
 	if !keyType.Comparable() {
-		return nil, errUnsupportedMapKey
+		return nil, fmt.Errorf("msgpack: unsupported map key: %s", keyType.String())
 	}
 
 	mapType := reflect.MapOf(keyType, valueType)
