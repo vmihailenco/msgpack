@@ -7,7 +7,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v4/codes"
+	"gopkg.in/vmihailenco/msgpack.v4/codes"
 )
 
 var internStringExtID int8 = -128

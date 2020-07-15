@@ -1,7 +1,6 @@
-module github.com/vmihailenco/msgpack/v4
+module gopkg.in/vmihailenco/msgpack.v4
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/vmihailenco/tagparser v0.1.1
