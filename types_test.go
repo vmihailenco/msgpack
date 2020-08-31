@@ -52,8 +52,10 @@ func (t *CustomTime) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 type IntSet map[int]struct{}
 
-var _ msgpack.CustomEncoder = (*IntSet)(nil)
-var _ msgpack.CustomDecoder = (*IntSet)(nil)
+var (
+	_ msgpack.CustomEncoder = (*IntSet)(nil)
+	_ msgpack.CustomDecoder = (*IntSet)(nil)
+)
 
 func (set IntSet) EncodeMsgpack(enc *msgpack.Encoder) error {
 	slice := make([]int, 0, len(set))
@@ -90,8 +92,10 @@ type CustomEncoder struct {
 	num int
 }
 
-var _ msgpack.CustomEncoder = (*CustomEncoder)(nil)
-var _ msgpack.CustomDecoder = (*CustomEncoder)(nil)
+var (
+	_ msgpack.CustomEncoder = (*CustomEncoder)(nil)
+	_ msgpack.CustomDecoder = (*CustomEncoder)(nil)
+)
 
 func (s *CustomEncoder) EncodeMsgpack(enc *msgpack.Encoder) error {
 	if s == nil {
@@ -214,6 +218,18 @@ type ExtTestField struct {
 	ExtTest ExtTest
 }
 
+type NoIntern struct {
+	A string
+	B string
+	C string
+}
+
+type Intern struct {
+	A string `msgpack:",intern"`
+	B string `msgpack:",intern"`
+	C string `msgpack:",intern"`
+}
+
 //------------------------------------------------------------------------------
 
 type encoderTest struct {
@@ -263,6 +279,9 @@ var encoderTests = []encoderTest{
 	{&JSONFallbackTest{Foo: "hello"}, "82a3666f6fa568656c6c6fa3626172a0"},
 	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64"},
 	{&JSONFallbackTest{Foo: "hello", Bar: "world"}, "82a3666f6fa568656c6c6fa3626172a5776f726c64"},
+
+	{&NoIntern{A: "foo", B: "foo", C: "foo"}, "83a141a3666f6fa142a3666f6fa143a3666f6f"},
+	{&Intern{A: "foo", B: "foo", C: "foo"}, "83a141a3666f6fa142d48000a143d48000"},
 }
 
 func TestEncoder(t *testing.T) {
@@ -591,10 +610,12 @@ var (
 		{
 			in:  &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}},
 			out: new(InlineTest),
-		}, {
+		},
+		{
 			in:  &InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}},
 			out: new(InlinePtrTest),
-		}, {
+		},
+		{
 			in:  InlineDupTest{FooTest{"foo"}, FooDupTest{"foo"}},
 			out: new(InlineDupTest),
 		},

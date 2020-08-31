@@ -202,11 +202,11 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		if tag.HasOption("intern") {
 			switch f.Type.Kind() {
 			case reflect.Interface:
-				field.encoder = encodeInternInterfaceValue
-				field.decoder = decodeInternInterfaceValue
+				field.encoder = encodeInternedInterfaceValue
+				field.decoder = decodeInternedInterfaceValue
 			case reflect.String:
-				field.encoder = encodeInternStringValue
-				field.decoder = decodeInternStringValue
+				field.encoder = encodeInternedStringValue
+				field.decoder = decodeInternedStringValue
 			default:
 				err := fmt.Errorf("msgpack: intern strings are not supported on %s", f.Type)
 				panic(err)

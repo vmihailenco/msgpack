@@ -10,28 +10,29 @@ import (
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
 
-var internStringExtID int8 = -128
+var internedStringExtID int8 = -128
 
 var errUnexpectedCode = errors.New("msgpack: unexpected code")
 
-func encodeInternInterfaceValue(e *Encoder, v reflect.Value) error {
+func encodeInternedInterfaceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
 		return e.EncodeNil()
 	}
 
 	v = v.Elem()
 	if v.Kind() == reflect.String {
-		return encodeInternStringValue(e, v)
+		return encodeInternedStringValue(e, v)
 	}
 	return e.EncodeValue(v)
 }
 
-func encodeInternStringValue(e *Encoder, v reflect.Value) error {
+func encodeInternedStringValue(e *Encoder, v reflect.Value) error {
 	s := v.String()
 
-	if s != "" {
+	// Interned string takes at least 3 bytes. Plain string 1 byte + string length.
+	if len(s) >= 3 {
 		if idx, ok := e.intern[s]; ok {
-			return e.internStringIndex(idx)
+			return e.encodeInternedStringIndex(idx)
 		}
 
 		if e.intern == nil {
@@ -45,12 +46,12 @@ func encodeInternStringValue(e *Encoder, v reflect.Value) error {
 	return e.EncodeString(s)
 }
 
-func (e *Encoder) internStringIndex(idx int) error {
+func (e *Encoder) encodeInternedStringIndex(idx int) error {
 	if idx < math.MaxUint8 {
 		if err := e.writeCode(codes.FixExt1); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(internStringExtID)); err != nil {
+		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
 			return err
 		}
 		return e.w.WriteByte(byte(idx))
@@ -60,7 +61,7 @@ func (e *Encoder) internStringIndex(idx int) error {
 		if err := e.writeCode(codes.FixExt2); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(internStringExtID)); err != nil {
+		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
 			return err
 		}
 		if err := e.w.WriteByte(byte(idx >> 8)); err != nil {
@@ -73,7 +74,7 @@ func (e *Encoder) internStringIndex(idx int) error {
 		if err := e.writeCode(codes.FixExt4); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(internStringExtID)); err != nil {
+		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
 			return err
 		}
 		if err := e.w.WriteByte(byte(idx >> 24)); err != nil {
@@ -93,13 +94,13 @@ func (e *Encoder) internStringIndex(idx int) error {
 
 //------------------------------------------------------------------------------
 
-func decodeInternInterfaceValue(d *Decoder, v reflect.Value) error {
+func decodeInternedInterfaceValue(d *Decoder, v reflect.Value) error {
 	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
 
-	s, err := d.internString(c)
+	s, err := d.internedString(c)
 	if err == nil {
 		v.Set(reflect.ValueOf(s))
 		return nil
@@ -115,13 +116,13 @@ func decodeInternInterfaceValue(d *Decoder, v reflect.Value) error {
 	return decodeInterfaceValue(d, v)
 }
 
-func decodeInternStringValue(d *Decoder, v reflect.Value) error {
+func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
 
-	s, err := d.internString(c)
+	s, err := d.internedString(c)
 	if err != nil {
 		if err == errUnexpectedCode {
 			return fmt.Errorf("msgpack: invalid code=%x decoding intern string", c)
@@ -133,10 +134,10 @@ func decodeInternStringValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) internString(c codes.Code) (string, error) {
+func (d *Decoder) internedString(c codes.Code) (string, error) {
 	if codes.IsFixedString(c) {
 		n := int(c & codes.FixedStrMask)
-		return d.internStringWithLen(n)
+		return d.internedStringWithLen(n)
 	}
 
 	switch c {
@@ -145,42 +146,42 @@ func (d *Decoder) internString(c codes.Code) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if typeID != internStringExtID {
+		if typeID != internedStringExtID {
 			err := fmt.Errorf("msgpack: got ext type=%d, wanted %d",
-				typeID, internStringExtID)
+				typeID, internedStringExtID)
 			return "", err
 		}
 
-		idx, err := d.internStringIndex(length)
+		idx, err := d.internedStringIndex(length)
 		if err != nil {
 			return "", err
 		}
 
-		return d.internStringAtIndex(idx)
+		return d.internedStringAtIndex(idx)
 	case codes.Str8, codes.Bin8:
 		n, err := d.uint8()
 		if err != nil {
 			return "", err
 		}
-		return d.internStringWithLen(int(n))
+		return d.internedStringWithLen(int(n))
 	case codes.Str16, codes.Bin16:
 		n, err := d.uint16()
 		if err != nil {
 			return "", err
 		}
-		return d.internStringWithLen(int(n))
+		return d.internedStringWithLen(int(n))
 	case codes.Str32, codes.Bin32:
 		n, err := d.uint32()
 		if err != nil {
 			return "", err
 		}
-		return d.internStringWithLen(int(n))
+		return d.internedStringWithLen(int(n))
 	}
 
 	return "", errUnexpectedCode
 }
 
-func (d *Decoder) internStringIndex(length int) (int, error) {
+func (d *Decoder) internedStringIndex(length int) (int, error) {
 	switch length {
 	case 1:
 		c, err := d.s.ReadByte()
@@ -208,7 +209,7 @@ func (d *Decoder) internStringIndex(length int) (int, error) {
 	return 0, err
 }
 
-func (d *Decoder) internStringAtIndex(idx int) (string, error) {
+func (d *Decoder) internedStringAtIndex(idx int) (string, error) {
 	if idx >= len(d.intern) {
 		err := fmt.Errorf("msgpack: intern string with index=%d does not exist", idx)
 		return "", err
@@ -216,7 +217,7 @@ func (d *Decoder) internStringAtIndex(idx int) (string, error) {
 	return d.intern[idx], nil
 }
 
-func (d *Decoder) internStringWithLen(n int) (string, error) {
+func (d *Decoder) internedStringWithLen(n int) (string, error) {
 	if n <= 0 {
 		return "", nil
 	}
