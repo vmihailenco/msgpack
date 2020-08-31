@@ -10,6 +10,8 @@ import (
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
 
+const minInternedStringLen = 3
+
 var internedStringExtID int8 = -128
 
 var errUnexpectedCode = errors.New("msgpack: unexpected code")
@@ -30,7 +32,7 @@ func encodeInternedStringValue(e *Encoder, v reflect.Value) error {
 	s := v.String()
 
 	// Interned string takes at least 3 bytes. Plain string 1 byte + string length.
-	if len(s) >= 3 {
+	if len(s) >= minInternedStringLen {
 		if idx, ok := e.intern[s]; ok {
 			return e.encodeInternedStringIndex(idx)
 		}
@@ -100,7 +102,7 @@ func decodeInternedInterfaceValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	s, err := d.internedString(c)
+	s, err := d.decodeInternedString(c)
 	if err == nil {
 		v.Set(reflect.ValueOf(s))
 		return nil
@@ -122,7 +124,7 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	s, err := d.internedString(c)
+	s, err := d.decodeInternedString(c)
 	if err != nil {
 		if err == errUnexpectedCode {
 			return fmt.Errorf("msgpack: invalid code=%x decoding intern string", c)
@@ -134,10 +136,10 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) internedString(c codes.Code) (string, error) {
+func (d *Decoder) decodeInternedString(c codes.Code) (string, error) {
 	if codes.IsFixedString(c) {
 		n := int(c & codes.FixedStrMask)
-		return d.internedStringWithLen(n)
+		return d.decodeInternedStringWithLen(n)
 	}
 
 	switch c {
@@ -152,7 +154,7 @@ func (d *Decoder) internedString(c codes.Code) (string, error) {
 			return "", err
 		}
 
-		idx, err := d.internedStringIndex(length)
+		idx, err := d.decodeInternedStringIndex(length)
 		if err != nil {
 			return "", err
 		}
@@ -163,25 +165,25 @@ func (d *Decoder) internedString(c codes.Code) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return d.internedStringWithLen(int(n))
+		return d.decodeInternedStringWithLen(int(n))
 	case codes.Str16, codes.Bin16:
 		n, err := d.uint16()
 		if err != nil {
 			return "", err
 		}
-		return d.internedStringWithLen(int(n))
+		return d.decodeInternedStringWithLen(int(n))
 	case codes.Str32, codes.Bin32:
 		n, err := d.uint32()
 		if err != nil {
 			return "", err
 		}
-		return d.internedStringWithLen(int(n))
+		return d.decodeInternedStringWithLen(int(n))
 	}
 
 	return "", errUnexpectedCode
 }
 
-func (d *Decoder) internedStringIndex(length int) (int, error) {
+func (d *Decoder) decodeInternedStringIndex(length int) (int, error) {
 	switch length {
 	case 1:
 		c, err := d.s.ReadByte()
@@ -217,7 +219,7 @@ func (d *Decoder) internedStringAtIndex(idx int) (string, error) {
 	return d.intern[idx], nil
 }
 
-func (d *Decoder) internedStringWithLen(n int) (string, error) {
+func (d *Decoder) decodeInternedStringWithLen(n int) (string, error) {
 	if n <= 0 {
 		return "", nil
 	}
@@ -227,7 +229,9 @@ func (d *Decoder) internedStringWithLen(n int) (string, error) {
 		return "", err
 	}
 
-	d.intern = append(d.intern, s)
+	if len(s) >= minInternedStringLen {
+		d.intern = append(d.intern, s)
+	}
 
 	return s, nil
 }
