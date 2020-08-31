@@ -225,9 +225,29 @@ type NoIntern struct {
 }
 
 type Intern struct {
-	A string `msgpack:",intern"`
-	B string `msgpack:",intern"`
-	C string `msgpack:",intern"`
+	A string      `msgpack:",intern"`
+	B string      `msgpack:",intern"`
+	C interface{} `msgpack:",intern"`
+}
+
+func TestIntern(t *testing.T) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	dec := msgpack.NewDecoder(&buf)
+
+	in := []Intern{
+		{"f", "f", "f"},
+		{"fo", "fo", "fo"},
+		{"foo", "foo", "foo"},
+		{"f", "fo", "foo"},
+	}
+	err := enc.Encode(in)
+	assert.Nil(t, err)
+
+	var out []Intern
+	err = dec.Decode(&out)
+	assert.Nil(t, err)
+	assert.Equal(t, in, out)
 }
 
 //------------------------------------------------------------------------------
