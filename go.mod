@@ -3,8 +3,7 @@ module github.com/vmihailenco/msgpack/v5
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	github.com/vmihailenco/tagparser v0.1.1
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
