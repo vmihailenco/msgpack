@@ -204,6 +204,21 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 	}
 
 	elem := v.Elem()
+
+	//support nested interface{}
+	elemTyp := elem.Type()
+	if elemTyp.Implements(customDecoderType) {
+		return decodeCustomValue(d, v)
+	}
+
+	if elemTyp.Implements(unmarshalerType) {
+		return unmarshalValue(d, v)
+	}
+
+	if elemTyp.Implements(binaryUnmarshalerType) {
+		return unmarshalBinaryValue(d, v)
+	}
+	
 	if !elem.CanSet() {
 		return d.interfaceValue(v)
 	}
