@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 var (
@@ -69,7 +69,7 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 		return 0, err
 	}
 
-	if codes.IsExt(c) {
+	if msgpcode.IsExt(c) {
 		if err = d.skipExtHeader(c); err != nil {
 			return 0, err
 		}
@@ -89,17 +89,17 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 }
 
 func (d *Decoder) _mapLen(c byte) (int, error) {
-	if c == codes.Nil {
+	if c == msgpcode.Nil {
 		return -1, nil
 	}
-	if c >= codes.FixedMapLow && c <= codes.FixedMapHigh {
-		return int(c & codes.FixedMapMask), nil
+	if c >= msgpcode.FixedMapLow && c <= msgpcode.FixedMapHigh {
+		return int(c & msgpcode.FixedMapMask), nil
 	}
-	if c == codes.Map16 {
+	if c == msgpcode.Map16 {
 		size, err := d.uint16()
 		return int(size), err
 	}
-	if c == codes.Map32 {
+	if c == msgpcode.Map32 {
 		size, err := d.uint32()
 		return int(size), err
 	}
@@ -208,7 +208,7 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 		return nil, err
 	}
 
-	if codes.IsString(code) || codes.IsBin(code) {
+	if msgpcode.IsString(code) || msgpcode.IsBin(code) {
 		return d.decodeMapStringInterfaceSize(size)
 	}
 

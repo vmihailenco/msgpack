@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 type extInfo struct {
@@ -158,23 +158,23 @@ func (e *Encoder) EncodeExtHeader(extID int8, extLen int) error {
 func (e *Encoder) encodeExtLen(l int) error {
 	switch l {
 	case 1:
-		return e.writeCode(codes.FixExt1)
+		return e.writeCode(msgpcode.FixExt1)
 	case 2:
-		return e.writeCode(codes.FixExt2)
+		return e.writeCode(msgpcode.FixExt2)
 	case 4:
-		return e.writeCode(codes.FixExt4)
+		return e.writeCode(msgpcode.FixExt4)
 	case 8:
-		return e.writeCode(codes.FixExt8)
+		return e.writeCode(msgpcode.FixExt8)
 	case 16:
-		return e.writeCode(codes.FixExt16)
+		return e.writeCode(msgpcode.FixExt16)
 	}
 	if l <= math.MaxUint8 {
-		return e.write1(codes.Ext8, uint8(l))
+		return e.write1(msgpcode.Ext8, uint8(l))
 	}
 	if l <= math.MaxUint16 {
-		return e.write2(codes.Ext16, uint16(l))
+		return e.write2(msgpcode.Ext16, uint16(l))
 	}
-	return e.write4(codes.Ext32, uint32(l))
+	return e.write4(msgpcode.Ext32, uint32(l))
 }
 
 func (d *Decoder) DecodeExtHeader() (extID int8, extLen int, err error) {
@@ -201,23 +201,23 @@ func (d *Decoder) extHeader(c byte) (int8, int, error) {
 
 func (d *Decoder) parseExtLen(c byte) (int, error) {
 	switch c {
-	case codes.FixExt1:
+	case msgpcode.FixExt1:
 		return 1, nil
-	case codes.FixExt2:
+	case msgpcode.FixExt2:
 		return 2, nil
-	case codes.FixExt4:
+	case msgpcode.FixExt4:
 		return 4, nil
-	case codes.FixExt8:
+	case msgpcode.FixExt8:
 		return 8, nil
-	case codes.FixExt16:
+	case msgpcode.FixExt16:
 		return 16, nil
-	case codes.Ext8:
+	case msgpcode.Ext8:
 		n, err := d.uint8()
 		return int(n), err
-	case codes.Ext16:
+	case msgpcode.Ext16:
 		n, err := d.uint16()
 		return int(n), err
-	case codes.Ext32:
+	case msgpcode.Ext32:
 		n, err := d.uint32()
 		return int(n), err
 	default:
@@ -274,11 +274,11 @@ func (d *Decoder) skipExtHeader(c byte) error {
 
 func extHeaderLen(c byte) int {
 	switch c {
-	case codes.Ext8:
+	case msgpcode.Ext8:
 		return 1
-	case codes.Ext16:
+	case msgpcode.Ext16:
 		return 2
-	case codes.Ext32:
+	case msgpcode.Ext32:
 		return 4
 	}
 	return 0

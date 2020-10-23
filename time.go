@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 var timeExtID int8 = -1
@@ -78,7 +78,7 @@ func (d *Decoder) DecodeTime() (time.Time, error) {
 	}
 
 	// Legacy format.
-	if c == codes.FixedArrayLow|2 {
+	if c == msgpcode.FixedArrayLow|2 {
 		sec, err := d.DecodeInt64()
 		if err != nil {
 			return time.Time{}, err
@@ -92,7 +92,7 @@ func (d *Decoder) DecodeTime() (time.Time, error) {
 		return time.Unix(sec, nsec), nil
 	}
 
-	if codes.IsString(c) {
+	if msgpcode.IsString(c) {
 		s, err := d.string(c)
 		if err != nil {
 			return time.Time{}, err

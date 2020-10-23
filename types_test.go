@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 //------------------------------------------------------------------------------
@@ -430,10 +430,10 @@ type decoderTest struct {
 }
 
 var decoderTests = []decoderTest{
-	{b: []byte{byte(codes.Bin32), 0x0f, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
-	{b: []byte{byte(codes.Str32), 0x0f, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
-	{b: []byte{byte(codes.Array32), 0x0f, 0xff, 0xff, 0xff}, out: new([]int), err: "EOF"},
-	{b: []byte{byte(codes.Map32), 0x0f, 0xff, 0xff, 0xff}, out: new(map[int]int), err: "EOF"},
+	{b: []byte{byte(msgpcode.Bin32), 0x0f, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
+	{b: []byte{byte(msgpcode.Str32), 0x0f, 0xff, 0xff, 0xff}, out: new([]byte), err: "EOF"},
+	{b: []byte{byte(msgpcode.Array32), 0x0f, 0xff, 0xff, 0xff}, out: new([]int), err: "EOF"},
+	{b: []byte{byte(msgpcode.Map32), 0x0f, 0xff, 0xff, 0xff}, out: new(map[int]int), err: "EOF"},
 }
 
 func TestDecoder(t *testing.T) {

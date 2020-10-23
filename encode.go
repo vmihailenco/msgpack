@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 const (
@@ -243,14 +243,14 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 }
 
 func (e *Encoder) EncodeNil() error {
-	return e.writeCode(codes.Nil)
+	return e.writeCode(msgpcode.Nil)
 }
 
 func (e *Encoder) EncodeBool(value bool) error {
 	if value {
-		return e.writeCode(codes.True)
+		return e.writeCode(msgpcode.True)
 	}
-	return e.writeCode(codes.False)
+	return e.writeCode(msgpcode.False)
 }
 
 func (e *Encoder) EncodeDuration(d time.Duration) error {

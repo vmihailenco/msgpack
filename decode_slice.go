@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
@@ -19,16 +19,16 @@ func (d *Decoder) DecodeArrayLen() (int, error) {
 }
 
 func (d *Decoder) arrayLen(c byte) (int, error) {
-	if c == codes.Nil {
+	if c == msgpcode.Nil {
 		return -1, nil
-	} else if c >= codes.FixedArrayLow && c <= codes.FixedArrayHigh {
-		return int(c & codes.FixedArrayMask), nil
+	} else if c >= msgpcode.FixedArrayLow && c <= msgpcode.FixedArrayHigh {
+		return int(c & msgpcode.FixedArrayMask), nil
 	}
 	switch c {
-	case codes.Array16:
+	case msgpcode.Array16:
 		n, err := d.uint16()
 		return int(n), err
-	case codes.Array32:
+	case msgpcode.Array32:
 		n, err := d.uint32()
 		return int(n), err
 	}

@@ -1,4 +1,4 @@
-package codes
+package msgpcode
 
 var (
 	PosFixedNumHigh byte = 0x7f

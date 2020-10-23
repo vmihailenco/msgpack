@@ -4,26 +4,26 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 func (d *Decoder) bytesLen(c byte) (int, error) {
-	if c == codes.Nil {
+	if c == msgpcode.Nil {
 		return -1, nil
 	}
 
-	if codes.IsFixedString(c) {
-		return int(c & codes.FixedStrMask), nil
+	if msgpcode.IsFixedString(c) {
+		return int(c & msgpcode.FixedStrMask), nil
 	}
 
 	switch c {
-	case codes.Str8, codes.Bin8:
+	case msgpcode.Str8, msgpcode.Bin8:
 		n, err := d.uint8()
 		return int(n), err
-	case codes.Str16, codes.Bin16:
+	case msgpcode.Str16, msgpcode.Bin16:
 		n, err := d.uint16()
 		return int(n), err
-	case codes.Str32, codes.Bin32:
+	case msgpcode.Str32, msgpcode.Bin32:
 		n, err := d.uint32()
 		return int(n), err
 	}

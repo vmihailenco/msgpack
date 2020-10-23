@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 func encodeMapValue(e *Encoder, v reflect.Value) error {
@@ -123,12 +123,12 @@ func (e *Encoder) encodeSortedMapStringInterface(m map[string]interface{}) error
 
 func (e *Encoder) EncodeMapLen(l int) error {
 	if l < 16 {
-		return e.writeCode(codes.FixedMapLow | byte(l))
+		return e.writeCode(msgpcode.FixedMapLow | byte(l))
 	}
 	if l <= math.MaxUint16 {
-		return e.write2(codes.Map16, uint16(l))
+		return e.write2(msgpcode.Map16, uint16(l))
 	}
-	return e.write4(codes.Map32, uint32(l))
+	return e.write4(msgpcode.Map32, uint32(l))
 }
 
 func encodeStructValue(e *Encoder, strct reflect.Value) error {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 func init() {
@@ -104,7 +104,7 @@ func TestExt(t *testing.T) {
 }
 
 func TestUnknownExt(t *testing.T) {
-	b := []byte{byte(codes.FixExt1), 2, 0}
+	b := []byte{byte(msgpcode.FixExt1), 2, 0}
 
 	var dst interface{}
 	err := msgpack.Unmarshal(b, &dst)

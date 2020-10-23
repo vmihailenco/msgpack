@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 const (
@@ -329,7 +329,7 @@ func (d *Decoder) DecodeNil() error {
 	if err != nil {
 		return err
 	}
-	if c != codes.Nil {
+	if c != msgpcode.Nil {
 		return fmt.Errorf("msgpack: invalid code=%x decoding nil", c)
 	}
 	return nil
@@ -356,10 +356,10 @@ func (d *Decoder) DecodeBool() (bool, error) {
 }
 
 func (d *Decoder) bool(c byte) (bool, error) {
-	if c == codes.False {
+	if c == msgpcode.False {
 		return false, nil
 	}
-	if c == codes.True {
+	if c == msgpcode.True {
 		return true, nil
 	}
 	return false, fmt.Errorf("msgpack: invalid code=%x decoding bool", c)
@@ -393,62 +393,62 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return nil, err
 	}
 
-	if codes.IsFixedNum(c) {
+	if msgpcode.IsFixedNum(c) {
 		return int8(c), nil
 	}
-	if codes.IsFixedMap(c) {
+	if msgpcode.IsFixedMap(c) {
 		err = d.s.UnreadByte()
 		if err != nil {
 			return nil, err
 		}
 		return d.DecodeMap()
 	}
-	if codes.IsFixedArray(c) {
+	if msgpcode.IsFixedArray(c) {
 		return d.decodeSlice(c)
 	}
-	if codes.IsFixedString(c) {
+	if msgpcode.IsFixedString(c) {
 		return d.string(c)
 	}
 
 	switch c {
-	case codes.Nil:
+	case msgpcode.Nil:
 		return nil, nil
-	case codes.False, codes.True:
+	case msgpcode.False, msgpcode.True:
 		return d.bool(c)
-	case codes.Float:
+	case msgpcode.Float:
 		return d.float32(c)
-	case codes.Double:
+	case msgpcode.Double:
 		return d.float64(c)
-	case codes.Uint8:
+	case msgpcode.Uint8:
 		return d.uint8()
-	case codes.Uint16:
+	case msgpcode.Uint16:
 		return d.uint16()
-	case codes.Uint32:
+	case msgpcode.Uint32:
 		return d.uint32()
-	case codes.Uint64:
+	case msgpcode.Uint64:
 		return d.uint64()
-	case codes.Int8:
+	case msgpcode.Int8:
 		return d.int8()
-	case codes.Int16:
+	case msgpcode.Int16:
 		return d.int16()
-	case codes.Int32:
+	case msgpcode.Int32:
 		return d.int32()
-	case codes.Int64:
+	case msgpcode.Int64:
 		return d.int64()
-	case codes.Bin8, codes.Bin16, codes.Bin32:
+	case msgpcode.Bin8, msgpcode.Bin16, msgpcode.Bin32:
 		return d.bytes(c, nil)
-	case codes.Str8, codes.Str16, codes.Str32:
+	case msgpcode.Str8, msgpcode.Str16, msgpcode.Str32:
 		return d.string(c)
-	case codes.Array16, codes.Array32:
+	case msgpcode.Array16, msgpcode.Array32:
 		return d.decodeSlice(c)
-	case codes.Map16, codes.Map32:
+	case msgpcode.Map16, msgpcode.Map32:
 		err = d.s.UnreadByte()
 		if err != nil {
 			return nil, err
 		}
 		return d.DecodeMap()
-	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
-		codes.Ext8, codes.Ext16, codes.Ext32:
+	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4, msgpcode.FixExt8, msgpcode.FixExt16,
+		msgpcode.Ext8, msgpcode.Ext16, msgpcode.Ext32:
 		return d.decodeInterfaceExt(c)
 	}
 
@@ -465,48 +465,48 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 		return nil, err
 	}
 
-	if codes.IsFixedNum(c) {
+	if msgpcode.IsFixedNum(c) {
 		return int64(int8(c)), nil
 	}
-	if codes.IsFixedMap(c) {
+	if msgpcode.IsFixedMap(c) {
 		err = d.s.UnreadByte()
 		if err != nil {
 			return nil, err
 		}
 		return d.DecodeMap()
 	}
-	if codes.IsFixedArray(c) {
+	if msgpcode.IsFixedArray(c) {
 		return d.decodeSlice(c)
 	}
-	if codes.IsFixedString(c) {
+	if msgpcode.IsFixedString(c) {
 		return d.string(c)
 	}
 
 	switch c {
-	case codes.Nil:
+	case msgpcode.Nil:
 		return nil, nil
-	case codes.False, codes.True:
+	case msgpcode.False, msgpcode.True:
 		return d.bool(c)
-	case codes.Float, codes.Double:
+	case msgpcode.Float, msgpcode.Double:
 		return d.float64(c)
-	case codes.Uint8, codes.Uint16, codes.Uint32, codes.Uint64:
+	case msgpcode.Uint8, msgpcode.Uint16, msgpcode.Uint32, msgpcode.Uint64:
 		return d.uint(c)
-	case codes.Int8, codes.Int16, codes.Int32, codes.Int64:
+	case msgpcode.Int8, msgpcode.Int16, msgpcode.Int32, msgpcode.Int64:
 		return d.int(c)
-	case codes.Bin8, codes.Bin16, codes.Bin32:
+	case msgpcode.Bin8, msgpcode.Bin16, msgpcode.Bin32:
 		return d.bytes(c, nil)
-	case codes.Str8, codes.Str16, codes.Str32:
+	case msgpcode.Str8, msgpcode.Str16, msgpcode.Str32:
 		return d.string(c)
-	case codes.Array16, codes.Array32:
+	case msgpcode.Array16, msgpcode.Array32:
 		return d.decodeSlice(c)
-	case codes.Map16, codes.Map32:
+	case msgpcode.Map16, msgpcode.Map32:
 		err = d.s.UnreadByte()
 		if err != nil {
 			return nil, err
 		}
 		return d.DecodeMap()
-	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
-		codes.Ext8, codes.Ext16, codes.Ext32:
+	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4, msgpcode.FixExt8, msgpcode.FixExt16,
+		msgpcode.Ext8, msgpcode.Ext16, msgpcode.Ext32:
 		return d.decodeInterfaceExt(c)
 	}
 
@@ -520,40 +520,40 @@ func (d *Decoder) Skip() error {
 		return err
 	}
 
-	if codes.IsFixedNum(c) {
+	if msgpcode.IsFixedNum(c) {
 		return nil
 	}
-	if codes.IsFixedMap(c) {
+	if msgpcode.IsFixedMap(c) {
 		return d.skipMap(c)
 	}
-	if codes.IsFixedArray(c) {
+	if msgpcode.IsFixedArray(c) {
 		return d.skipSlice(c)
 	}
-	if codes.IsFixedString(c) {
+	if msgpcode.IsFixedString(c) {
 		return d.skipBytes(c)
 	}
 
 	switch c {
-	case codes.Nil, codes.False, codes.True:
+	case msgpcode.Nil, msgpcode.False, msgpcode.True:
 		return nil
-	case codes.Uint8, codes.Int8:
+	case msgpcode.Uint8, msgpcode.Int8:
 		return d.skipN(1)
-	case codes.Uint16, codes.Int16:
+	case msgpcode.Uint16, msgpcode.Int16:
 		return d.skipN(2)
-	case codes.Uint32, codes.Int32, codes.Float:
+	case msgpcode.Uint32, msgpcode.Int32, msgpcode.Float:
 		return d.skipN(4)
-	case codes.Uint64, codes.Int64, codes.Double:
+	case msgpcode.Uint64, msgpcode.Int64, msgpcode.Double:
 		return d.skipN(8)
-	case codes.Bin8, codes.Bin16, codes.Bin32:
+	case msgpcode.Bin8, msgpcode.Bin16, msgpcode.Bin32:
 		return d.skipBytes(c)
-	case codes.Str8, codes.Str16, codes.Str32:
+	case msgpcode.Str8, msgpcode.Str16, msgpcode.Str32:
 		return d.skipBytes(c)
-	case codes.Array16, codes.Array32:
+	case msgpcode.Array16, msgpcode.Array32:
 		return d.skipSlice(c)
-	case codes.Map16, codes.Map32:
+	case msgpcode.Map16, msgpcode.Map32:
 		return d.skipMap(c)
-	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
-		codes.Ext8, codes.Ext16, codes.Ext32:
+	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4, msgpcode.FixExt8, msgpcode.FixExt16,
+		msgpcode.Ext8, msgpcode.Ext16, msgpcode.Ext32:
 		return d.skipExt(c)
 	}
 
@@ -571,7 +571,7 @@ func (d *Decoder) DecodeRaw() (RawMessage, error) {
 }
 
 // PeekCode returns the next MessagePack code without advancing the reader.
-// Subpackage msgpack/codes defines the list of available codes.
+// Subpackage msgpack/codes defines the list of available msgpcode.
 func (d *Decoder) PeekCode() (byte, error) {
 	c, err := d.s.ReadByte()
 	if err != nil {
@@ -588,7 +588,7 @@ func (d *Decoder) ReadFull(buf []byte) error {
 
 func (d *Decoder) hasNilCode() bool {
 	code, err := d.PeekCode()
-	return err == nil && code == codes.Nil
+	return err == nil && code == msgpcode.Nil
 }
 
 func (d *Decoder) readCode() (byte, error) {

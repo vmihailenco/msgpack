@@ -5,7 +5,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 func (d *Decoder) skipN(n int) error {
@@ -88,32 +88,32 @@ func (d *Decoder) DecodeUint64() (uint64, error) {
 }
 
 func (d *Decoder) uint(c byte) (uint64, error) {
-	if c == codes.Nil {
+	if c == msgpcode.Nil {
 		return 0, nil
 	}
-	if codes.IsFixedNum(c) {
+	if msgpcode.IsFixedNum(c) {
 		return uint64(int8(c)), nil
 	}
 	switch c {
-	case codes.Uint8:
+	case msgpcode.Uint8:
 		n, err := d.uint8()
 		return uint64(n), err
-	case codes.Int8:
+	case msgpcode.Int8:
 		n, err := d.int8()
 		return uint64(n), err
-	case codes.Uint16:
+	case msgpcode.Uint16:
 		n, err := d.uint16()
 		return uint64(n), err
-	case codes.Int16:
+	case msgpcode.Int16:
 		n, err := d.int16()
 		return uint64(n), err
-	case codes.Uint32:
+	case msgpcode.Uint32:
 		n, err := d.uint32()
 		return uint64(n), err
-	case codes.Int32:
+	case msgpcode.Int32:
 		n, err := d.int32()
 		return uint64(n), err
-	case codes.Uint64, codes.Int64:
+	case msgpcode.Uint64, msgpcode.Int64:
 		return d.uint64()
 	}
 	return 0, fmt.Errorf("msgpack: invalid code=%x decoding uint64", c)
@@ -130,32 +130,32 @@ func (d *Decoder) DecodeInt64() (int64, error) {
 }
 
 func (d *Decoder) int(c byte) (int64, error) {
-	if c == codes.Nil {
+	if c == msgpcode.Nil {
 		return 0, nil
 	}
-	if codes.IsFixedNum(c) {
+	if msgpcode.IsFixedNum(c) {
 		return int64(int8(c)), nil
 	}
 	switch c {
-	case codes.Uint8:
+	case msgpcode.Uint8:
 		n, err := d.uint8()
 		return int64(n), err
-	case codes.Int8:
+	case msgpcode.Int8:
 		n, err := d.uint8()
 		return int64(int8(n)), err
-	case codes.Uint16:
+	case msgpcode.Uint16:
 		n, err := d.uint16()
 		return int64(n), err
-	case codes.Int16:
+	case msgpcode.Int16:
 		n, err := d.uint16()
 		return int64(int16(n)), err
-	case codes.Uint32:
+	case msgpcode.Uint32:
 		n, err := d.uint32()
 		return int64(n), err
-	case codes.Int32:
+	case msgpcode.Int32:
 		n, err := d.uint32()
 		return int64(int32(n)), err
-	case codes.Uint64, codes.Int64:
+	case msgpcode.Uint64, msgpcode.Int64:
 		n, err := d.uint64()
 		return int64(n), err
 	}
@@ -171,7 +171,7 @@ func (d *Decoder) DecodeFloat32() (float32, error) {
 }
 
 func (d *Decoder) float32(c byte) (float32, error) {
-	if c == codes.Float {
+	if c == msgpcode.Float {
 		n, err := d.uint32()
 		if err != nil {
 			return 0, err
@@ -197,13 +197,13 @@ func (d *Decoder) DecodeFloat64() (float64, error) {
 
 func (d *Decoder) float64(c byte) (float64, error) {
 	switch c {
-	case codes.Float:
+	case msgpcode.Float:
 		n, err := d.float32(c)
 		if err != nil {
 			return 0, err
 		}
 		return float64(n), nil
-	case codes.Double:
+	case msgpcode.Double:
 		n, err := d.uint64()
 		if err != nil {
 			return 0, err

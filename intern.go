@@ -7,7 +7,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v5/codes"
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 const (
@@ -80,7 +80,7 @@ func (e *Encoder) encodeInternedString(s string, intern bool) error {
 
 func (e *Encoder) encodeInternedStringIndex(idx int) error {
 	if idx <= math.MaxUint8 {
-		if err := e.writeCode(codes.FixExt1); err != nil {
+		if err := e.writeCode(msgpcode.FixExt1); err != nil {
 			return err
 		}
 		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
@@ -90,7 +90,7 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 	}
 
 	if idx <= math.MaxUint16 {
-		if err := e.writeCode(codes.FixExt2); err != nil {
+		if err := e.writeCode(msgpcode.FixExt2); err != nil {
 			return err
 		}
 		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
@@ -103,7 +103,7 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 	}
 
 	if uint64(idx) <= math.MaxUint32 {
-		if err := e.writeCode(codes.FixExt4); err != nil {
+		if err := e.writeCode(msgpcode.FixExt4); err != nil {
 			return err
 		}
 		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
@@ -167,15 +167,15 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
-	if codes.IsFixedString(c) {
-		n := int(c & codes.FixedStrMask)
+	if msgpcode.IsFixedString(c) {
+		n := int(c & msgpcode.FixedStrMask)
 		return d.decodeInternedStringWithLen(n, intern)
 	}
 
 	switch c {
-	case codes.Nil:
+	case msgpcode.Nil:
 		return "", nil
-	case codes.FixExt1, codes.FixExt2, codes.FixExt4:
+	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4:
 		typeID, length, err := d.extHeader(c)
 		if err != nil {
 			return "", err
@@ -192,19 +192,19 @@ func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
 		}
 
 		return d.internedStringAtIndex(idx)
-	case codes.Str8, codes.Bin8:
+	case msgpcode.Str8, msgpcode.Bin8:
 		n, err := d.uint8()
 		if err != nil {
 			return "", err
 		}
 		return d.decodeInternedStringWithLen(int(n), intern)
-	case codes.Str16, codes.Bin16:
+	case msgpcode.Str16, msgpcode.Bin16:
 		n, err := d.uint16()
 		if err != nil {
 			return "", err
 		}
 		return d.decodeInternedStringWithLen(int(n), intern)
-	case codes.Str32, codes.Bin32:
+	case msgpcode.Str32, msgpcode.Bin32:
 		n, err := d.uint32()
 		if err != nil {
 			return "", err
