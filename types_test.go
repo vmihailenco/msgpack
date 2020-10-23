@@ -232,6 +232,33 @@ type Intern struct {
 
 func TestInternedString(t *testing.T) {
 	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseInternedStrings(true)
+
+	dec := msgpack.NewDecoder(&buf)
+	dec.UseInternedStrings(true)
+
+	for i := 0; i < 3; i++ {
+		err := enc.EncodeString("hello")
+		require.Nil(t, err)
+	}
+
+	s, err := dec.DecodeString()
+	require.Nil(t, err)
+	require.Equal(t, "hello", s)
+
+	s, err = dec.DecodeString()
+	require.Nil(t, err)
+	require.Equal(t, "hello", s)
+
+	v, err := dec.DecodeInterface()
+	require.Nil(t, err)
+	require.Equal(t, "hello", v)
+}
+
+func TestInternedStringTag(t *testing.T) {
+	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	dec := msgpack.NewDecoder(&buf)
 
@@ -639,13 +666,13 @@ var (
 		},
 
 		{in: (*EventTime)(nil), out: new(*EventTime)},
-		{in: &EventTime{time.Unix(0, 0)}, out: new(EventTime)},
+		{in: &EventTime{time.Unix(0, 0)}, out: new(*EventTime)},
 
 		{in: (*ExtTest)(nil), out: new(*ExtTest)},
-		{in: &ExtTest{"world"}, out: new(ExtTest), wanted: ExtTest{"hello world"}},
+		{in: &ExtTest{"world"}, out: new(*ExtTest), wanted: ExtTest{"hello world"}},
 		{
 			in:     ExtTestField{ExtTest{"world"}},
-			out:    new(ExtTestField),
+			out:    new(*ExtTestField),
 			wanted: ExtTestField{ExtTest{"hello world"}},
 		},
 

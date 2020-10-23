@@ -34,8 +34,10 @@ type ExtTest struct {
 	S string
 }
 
-var _ msgpack.CustomEncoder = (*ExtTest)(nil)
-var _ msgpack.CustomDecoder = (*ExtTest)(nil)
+var (
+	_ msgpack.CustomEncoder = (*ExtTest)(nil)
+	_ msgpack.CustomDecoder = (*ExtTest)(nil)
+)
 
 func (ext ExtTest) EncodeMsgpack(e *msgpack.Encoder) error {
 	return e.EncodeString("hello " + ext.S)
@@ -114,36 +116,35 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 }
 
 func TestExt(t *testing.T) {
-	for _, v := range []interface{}{ExtTest{"world"}, &ExtTest{"world"}} {
-		b, err := msgpack.Marshal(v)
-		if err != nil {
-			t.Fatal(err)
-		}
+	v := &ExtTest{"world"}
+	b, err := msgpack.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		var dst interface{}
-		err = msgpack.Unmarshal(b, &dst)
-		if err != nil {
-			t.Fatal(err)
-		}
+	var dst interface{}
+	err = msgpack.Unmarshal(b, &dst)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		v, ok := dst.(*ExtTest)
-		if !ok {
-			t.Fatalf("got %#v, wanted ExtTest", dst)
-		}
+	v, ok := dst.(*ExtTest)
+	if !ok {
+		t.Fatalf("got %#v, wanted ExtTest", dst)
+	}
 
-		wanted := "hello world"
-		if v.S != wanted {
-			t.Fatalf("got %q, wanted %q", v.S, wanted)
-		}
+	wanted := "hello world"
+	if v.S != wanted {
+		t.Fatalf("got %q, wanted %q", v.S, wanted)
+	}
 
-		ext := new(ExtTest)
-		err = msgpack.Unmarshal(b, ext)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if ext.S != wanted {
-			t.Fatalf("got %q, wanted %q", ext.S, wanted)
-		}
+	ext := new(ExtTest)
+	err = msgpack.Unmarshal(b, &ext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ext.S != wanted {
+		t.Fatalf("got %q, wanted %q", ext.S, wanted)
 	}
 }
 
@@ -197,7 +198,7 @@ func TestSliceOfTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outTime := *out[0].(*time.Time)
+	outTime := out[0].(time.Time)
 	inTime := in[0].(time.Time)
 	if outTime.Unix() != inTime.Unix() {
 		t.Fatalf("got %v, wanted %v", outTime, inTime)

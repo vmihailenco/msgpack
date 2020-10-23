@@ -17,8 +17,10 @@ type EventTime struct {
 	time.Time
 }
 
-var _ msgpack.Marshaler = (*EventTime)(nil)
-var _ msgpack.Unmarshaler = (*EventTime)(nil)
+var (
+	_ msgpack.Marshaler   = (*EventTime)(nil)
+	_ msgpack.Unmarshaler = (*EventTime)(nil)
+)
 
 func (tm *EventTime) MarshalMsgpack() ([]byte, error) {
 	b := make([]byte, 8)
@@ -51,7 +53,7 @@ func ExampleRegisterExt() {
 	fmt.Println(v.(*EventTime).UTC())
 
 	tm := new(EventTime)
-	err = msgpack.Unmarshal(b, tm)
+	err = msgpack.Unmarshal(b, &tm)
 	if err != nil {
 		panic(err)
 	}

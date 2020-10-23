@@ -30,17 +30,11 @@ var bufferPool = &sync.Pool{
 // Expecting to be used only during initialization, it panics if the mapping
 // between types and ids is not a bijection.
 func RegisterExt(id int8, value interface{}) {
-	typ := reflect.TypeOf(value)
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	ptr := reflect.PtrTo(typ)
-
 	if _, ok := extTypes[id]; ok {
 		panic(fmt.Errorf("msgpack: ext with id=%d is already registered", id))
 	}
 
-	registerExt(id, ptr, getEncoder(ptr), getDecoder(ptr))
+	typ := reflect.TypeOf(value)
 	registerExt(id, typ, getEncoder(typ), getDecoder(typ))
 }
 
@@ -205,7 +199,7 @@ func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
 		return nil, err
 	}
 
-	return v.Interface(), nil
+	return v.Elem().Interface(), nil
 }
 
 func (d *Decoder) skipExt(c codes.Code) error {

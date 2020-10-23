@@ -17,6 +17,30 @@ const (
 
 var internedStringExtID int8 = -128
 
+func init() {
+	extTypes[internedStringExtID] = &extInfo{
+		Type:    stringType,
+		Decoder: decodeInternedStringExt,
+	}
+}
+
+func decodeInternedStringExt(d *Decoder, v reflect.Value) error {
+	idx, err := d.decodeInternedStringIndex(d.extLen)
+	if err != nil {
+		return err
+	}
+
+	s, err := d.internedStringAtIndex(idx)
+	if err != nil {
+		return err
+	}
+
+	v.SetString(s)
+	return nil
+}
+
+//------------------------------------------------------------------------------
+
 var errUnexpectedCode = errors.New("msgpack: unexpected code")
 
 func encodeInternedInterfaceValue(e *Encoder, v reflect.Value) error {
