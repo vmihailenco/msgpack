@@ -12,7 +12,7 @@ import (
 
 const (
 	minInternedStringLen = 3
-	maxDictLen           = math.MaxUint16 - 1
+	maxDictLen           = math.MaxUint16
 )
 
 var internedStringExtID int8 = -128
@@ -55,7 +55,7 @@ func (e *Encoder) encodeInternedString(s string) error {
 }
 
 func (e *Encoder) encodeInternedStringIndex(idx int) error {
-	if idx < math.MaxUint8 {
+	if idx <= math.MaxUint8 {
 		if err := e.writeCode(codes.FixExt1); err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 		return e.w.WriteByte(byte(idx))
 	}
 
-	if idx < math.MaxUint16 {
+	if idx <= math.MaxUint16 {
 		if err := e.writeCode(codes.FixExt2); err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 		return e.w.WriteByte(byte(idx))
 	}
 
-	if int64(idx) < math.MaxUint32 {
+	if uint64(idx) <= math.MaxUint32 {
 		if err := e.writeCode(codes.FixExt4); err != nil {
 			return err
 		}

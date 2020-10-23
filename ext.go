@@ -3,6 +3,7 @@ package msgpack
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"reflect"
 	"sync"
 
@@ -127,10 +128,10 @@ func (e *Encoder) encodeExtLen(l int) error {
 	case 16:
 		return e.writeCode(codes.FixExt16)
 	}
-	if l < 256 {
+	if l <= math.MaxUint8 {
 		return e.write1(codes.Ext8, uint8(l))
 	}
-	if l < 65536 {
+	if l <= math.MaxUint16 {
 		return e.write2(codes.Ext16, uint16(l))
 	}
 	return e.write4(codes.Ext32, uint32(l))

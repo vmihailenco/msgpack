@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"math"
 	"reflect"
 	"sort"
 
@@ -124,7 +125,7 @@ func (e *Encoder) EncodeMapLen(l int) error {
 	if l < 16 {
 		return e.writeCode(codes.FixedMapLow | codes.Code(l))
 	}
-	if l < 65536 {
+	if l <= math.MaxUint16 {
 		return e.write2(codes.Map16, uint16(l))
 	}
 	return e.write4(codes.Map32, uint32(l))
