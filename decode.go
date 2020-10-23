@@ -355,7 +355,7 @@ func (d *Decoder) DecodeBool() (bool, error) {
 	return d.bool(c)
 }
 
-func (d *Decoder) bool(c codes.Code) (bool, error) {
+func (d *Decoder) bool(c byte) (bool, error) {
 	if c == codes.False {
 		return false, nil
 	}
@@ -572,12 +572,12 @@ func (d *Decoder) DecodeRaw() (RawMessage, error) {
 
 // PeekCode returns the next MessagePack code without advancing the reader.
 // Subpackage msgpack/codes defines the list of available codes.
-func (d *Decoder) PeekCode() (codes.Code, error) {
+func (d *Decoder) PeekCode() (byte, error) {
 	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err
 	}
-	return codes.Code(c), d.s.UnreadByte()
+	return c, d.s.UnreadByte()
 }
 
 // ReadFull reads exactly len(buf) bytes into the buf.
@@ -591,7 +591,7 @@ func (d *Decoder) hasNilCode() bool {
 	return err == nil && code == codes.Nil
 }
 
-func (d *Decoder) readCode() (codes.Code, error) {
+func (d *Decoder) readCode() (byte, error) {
 	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err
@@ -599,7 +599,7 @@ func (d *Decoder) readCode() (codes.Code, error) {
 	if d.rec != nil {
 		d.rec = append(d.rec, c)
 	}
-	return codes.Code(c), nil
+	return c, nil
 }
 
 func (d *Decoder) readFull(b []byte) error {

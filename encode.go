@@ -257,8 +257,8 @@ func (e *Encoder) EncodeDuration(d time.Duration) error {
 	return e.EncodeInt(int64(d))
 }
 
-func (e *Encoder) writeCode(c codes.Code) error {
-	return e.w.WriteByte(byte(c))
+func (e *Encoder) writeCode(c byte) error {
+	return e.w.WriteByte(c)
 }
 
 func (e *Encoder) write(b []byte) error {

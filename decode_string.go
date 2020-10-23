@@ -7,7 +7,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
 
-func (d *Decoder) bytesLen(c codes.Code) (int, error) {
+func (d *Decoder) bytesLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	}
@@ -42,7 +42,7 @@ func (d *Decoder) DecodeString() (string, error) {
 	return d.string(c)
 }
 
-func (d *Decoder) string(c codes.Code) (string, error) {
+func (d *Decoder) string(c byte) (string, error) {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return "", err
@@ -83,7 +83,7 @@ func (d *Decoder) DecodeBytes() ([]byte, error) {
 	return d.bytes(c, nil)
 }
 
-func (d *Decoder) bytes(c codes.Code, b []byte) ([]byte, error) {
+func (d *Decoder) bytes(c byte, b []byte) ([]byte, error) {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (d *Decoder) decodeBytesPtr(ptr *[]byte) error {
 	return d.bytesPtr(c, ptr)
 }
 
-func (d *Decoder) bytesPtr(c codes.Code, ptr *[]byte) error {
+func (d *Decoder) bytesPtr(c byte, ptr *[]byte) error {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (d *Decoder) bytesPtr(c codes.Code, ptr *[]byte) error {
 	return err
 }
 
-func (d *Decoder) skipBytes(c codes.Code) error {
+func (d *Decoder) skipBytes(c byte) error {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return err

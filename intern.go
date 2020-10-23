@@ -166,7 +166,7 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) decodeInternedString(c codes.Code, intern bool) (string, error) {
+func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
 	if codes.IsFixedString(c) {
 		n := int(c & codes.FixedStrMask)
 		return d.decodeInternedStringWithLen(n, intern)

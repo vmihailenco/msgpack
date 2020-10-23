@@ -123,7 +123,7 @@ func (e *Encoder) encodeSortedMapStringInterface(m map[string]interface{}) error
 
 func (e *Encoder) EncodeMapLen(l int) error {
 	if l < 16 {
-		return e.writeCode(codes.FixedMapLow | codes.Code(l))
+		return e.writeCode(codes.FixedMapLow | byte(l))
 	}
 	if l <= math.MaxUint16 {
 		return e.write2(codes.Map16, uint16(l))

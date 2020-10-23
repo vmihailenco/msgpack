@@ -18,7 +18,7 @@ func (d *Decoder) DecodeArrayLen() (int, error) {
 	return d.arrayLen(c)
 }
 
-func (d *Decoder) arrayLen(c codes.Code) (int, error) {
+func (d *Decoder) arrayLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	} else if c >= codes.FixedArrayLow && c <= codes.FixedArrayHigh {
@@ -154,7 +154,7 @@ func (d *Decoder) DecodeSlice() ([]interface{}, error) {
 	return d.decodeSlice(c)
 }
 
-func (d *Decoder) decodeSlice(c codes.Code) ([]interface{}, error) {
+func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 	n, err := d.arrayLen(c)
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func (d *Decoder) decodeSlice(c codes.Code) ([]interface{}, error) {
 	return s, nil
 }
 
-func (d *Decoder) skipSlice(c codes.Code) error {
+func (d *Decoder) skipSlice(c byte) error {
 	n, err := d.arrayLen(c)
 	if err != nil {
 		return err

@@ -53,7 +53,7 @@ func (e *Encoder) EncodeBytesLen(l int) error {
 
 func (e *Encoder) encodeStringLen(l int) error {
 	if l < 32 {
-		return e.writeCode(codes.FixedStrLow | codes.Code(l))
+		return e.writeCode(codes.FixedStrLow | byte(l))
 	}
 	if l < 256 {
 		return e.write1(codes.Str8, uint8(l))
@@ -90,7 +90,7 @@ func (e *Encoder) EncodeBytes(v []byte) error {
 
 func (e *Encoder) EncodeArrayLen(l int) error {
 	if l < 16 {
-		return e.writeCode(codes.FixedArrayLow | codes.Code(l))
+		return e.writeCode(codes.FixedArrayLow | byte(l))
 	}
 	if l <= math.MaxUint16 {
 		return e.write2(codes.Array16, uint16(l))

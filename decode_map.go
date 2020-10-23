@@ -82,13 +82,13 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 	return d.mapLen(c)
 }
 
-func (d *Decoder) mapLen(c codes.Code) (int, error) {
+func (d *Decoder) mapLen(c byte) (int, error) {
 	size, err := d._mapLen(c)
 	err = expandInvalidCodeMapLenError(c, err)
 	return size, err
 }
 
-func (d *Decoder) _mapLen(c codes.Code) (int, error) {
+func (d *Decoder) _mapLen(c byte) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	}
@@ -108,7 +108,7 @@ func (d *Decoder) _mapLen(c codes.Code) (int, error) {
 
 var errInvalidCode = errors.New("invalid code")
 
-func expandInvalidCodeMapLenError(c codes.Code, err error) error {
+func expandInvalidCodeMapLenError(c byte, err error) error {
 	if err == errInvalidCode {
 		return fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
 	}
@@ -259,7 +259,7 @@ func (d *Decoder) decodeMapStringInterfaceSize(size int) (map[string]interface{}
 	return m, nil
 }
 
-func (d *Decoder) skipMap(c codes.Code) error {
+func (d *Decoder) skipMap(c byte) error {
 	n, err := d.mapLen(c)
 	if err != nil {
 		return err

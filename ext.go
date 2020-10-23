@@ -185,7 +185,7 @@ func (d *Decoder) DecodeExtHeader() (extID int8, extLen int, err error) {
 	return d.extHeader(c)
 }
 
-func (d *Decoder) extHeader(c codes.Code) (int8, int, error) {
+func (d *Decoder) extHeader(c byte) (int8, int, error) {
 	extLen, err := d.parseExtLen(c)
 	if err != nil {
 		return 0, 0, err
@@ -199,7 +199,7 @@ func (d *Decoder) extHeader(c codes.Code) (int8, int, error) {
 	return int8(extID), extLen, nil
 }
 
-func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
+func (d *Decoder) parseExtLen(c byte) (int, error) {
 	switch c {
 	case codes.FixExt1:
 		return 1, nil
@@ -225,7 +225,7 @@ func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 	}
 }
 
-func (d *Decoder) decodeInterfaceExt(c codes.Code) (interface{}, error) {
+func (d *Decoder) decodeInterfaceExt(c byte) (interface{}, error) {
 	extID, extLen, err := d.extHeader(c)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (d *Decoder) decodeInterfaceExt(c codes.Code) (interface{}, error) {
 	return v.Interface(), nil
 }
 
-func (d *Decoder) skipExt(c codes.Code) error {
+func (d *Decoder) skipExt(c byte) error {
 	n, err := d.parseExtLen(c)
 	if err != nil {
 		return err
@@ -256,7 +256,7 @@ func (d *Decoder) skipExt(c codes.Code) error {
 	return d.skipN(n + 1)
 }
 
-func (d *Decoder) skipExtHeader(c codes.Code) error {
+func (d *Decoder) skipExtHeader(c byte) error {
 	// Read ext type.
 	_, err := d.readCode()
 	if err != nil {
@@ -272,7 +272,7 @@ func (d *Decoder) skipExtHeader(c codes.Code) error {
 	return nil
 }
 
-func extHeaderLen(c codes.Code) int {
+func extHeaderLen(c byte) int {
 	switch c {
 	case codes.Ext8:
 		return 1

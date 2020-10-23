@@ -117,7 +117,7 @@ func ExampleDecoder_Query() {
 	// 2nd phone is 54321
 }
 
-func ExampleEncoder_UseArrayForStructs() {
+func ExampleEncoder_UseArrayEncodedStructs() {
 	type Item struct {
 		Foo string
 		Bar string
