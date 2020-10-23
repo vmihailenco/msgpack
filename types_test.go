@@ -251,19 +251,27 @@ func TestInternedString(t *testing.T) {
 }
 
 func TestResetDict(t *testing.T) {
+	dict := []string{"hello world"}
+
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	dec := msgpack.NewDecoder(&buf)
 
-	enc.ResetDict(&buf, []string{"hello world"})
+	enc.ResetDict(&buf, dict)
 	err := enc.EncodeString("hello world")
 	require.Nil(t, err)
 	require.Equal(t, 3, buf.Len())
 
-	dec.ResetDict(&buf, []string{"hello world"})
+	dec.ResetDict(&buf, dict)
 	s, err := dec.DecodeString()
 	require.Nil(t, err)
 	require.Equal(t, "hello world", s)
+
+	dec.ResetDict(&buf, dict)
+	_ = enc.EncodeString("xxx")
+	require.Equal(t, 4, buf.Len())
+	_ = enc.EncodeString("xxx")
+	require.Equal(t, 8, buf.Len())
 }
 
 //------------------------------------------------------------------------------
