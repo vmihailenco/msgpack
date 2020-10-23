@@ -65,8 +65,8 @@ func (e *Encoder) encodeStringLen(l int) error {
 }
 
 func (e *Encoder) EncodeString(v string) error {
-	if e.flags&useInternedStringsFlag != 0 {
-		return e.encodeInternedString(v)
+	if intern := e.flags&useInternedStringsFlag != 0; intern || len(e.dict) > 0 {
+		return e.encodeInternedString(v, intern)
 	}
 	return e.encodeNormalString(v)
 }

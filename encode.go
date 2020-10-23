@@ -124,7 +124,6 @@ func (e *Encoder) Reset(w io.Writer) {
 
 func (e *Encoder) ResetDict(w io.Writer, dict []string) {
 	e.Reset(w)
-	e.UseInternedStrings(true)
 
 	e.dict = make(map[string]int, len(dict))
 	for i, s := range dict {

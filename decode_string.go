@@ -36,8 +36,8 @@ func (d *Decoder) DecodeString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if d.flags&useInternedStringsFlag != 0 {
-		return d.decodeInternedString(c)
+	if intern := d.flags&useInternedStringsFlag != 0; intern || len(d.dict) > 0 {
+		return d.decodeInternedString(c, intern)
 	}
 	return d.string(c)
 }

@@ -26,26 +26,26 @@ func encodeInternedInterfaceValue(e *Encoder, v reflect.Value) error {
 
 	v = v.Elem()
 	if v.Kind() == reflect.String {
-		return e.encodeInternedString(v.String())
+		return e.encodeInternedString(v.String(), true)
 	}
 	return e.EncodeValue(v)
 }
 
 func encodeInternedStringValue(e *Encoder, v reflect.Value) error {
-	return e.encodeInternedString(v.String())
+	return e.encodeInternedString(v.String(), true)
 }
 
-func (e *Encoder) encodeInternedString(s string) error {
+func (e *Encoder) encodeInternedString(s string, intern bool) error {
 	// Interned string takes at least 3 bytes. Plain string 1 byte + string length.
 	if len(s) >= minInternedStringLen {
 		if idx, ok := e.dict[s]; ok {
 			return e.encodeInternedStringIndex(idx)
 		}
 
-		if e.dict == nil {
-			e.dict = make(map[string]int)
-		}
-		if len(e.dict) < maxDictLen {
+		if intern && len(e.dict) < maxDictLen {
+			if e.dict == nil {
+				e.dict = make(map[string]int)
+			}
 			idx := len(e.dict)
 			e.dict[s] = idx
 		}
@@ -108,7 +108,7 @@ func decodeInternedInterfaceValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	s, err := d.decodeInternedString(c)
+	s, err := d.decodeInternedString(c, true)
 	if err == nil {
 		v.Set(reflect.ValueOf(s))
 		return nil
@@ -130,7 +130,7 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 		return err
 	}
 
-	s, err := d.decodeInternedString(c)
+	s, err := d.decodeInternedString(c, true)
 	if err != nil {
 		if err == errUnexpectedCode {
 			return fmt.Errorf("msgpack: invalid code=%x decoding intern string", c)
@@ -142,10 +142,10 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) decodeInternedString(c codes.Code) (string, error) {
+func (d *Decoder) decodeInternedString(c codes.Code, intern bool) (string, error) {
 	if codes.IsFixedString(c) {
 		n := int(c & codes.FixedStrMask)
-		return d.decodeInternedStringWithLen(n)
+		return d.decodeInternedStringWithLen(n, intern)
 	}
 
 	switch c {
@@ -173,19 +173,19 @@ func (d *Decoder) decodeInternedString(c codes.Code) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return d.decodeInternedStringWithLen(int(n))
+		return d.decodeInternedStringWithLen(int(n), intern)
 	case codes.Str16, codes.Bin16:
 		n, err := d.uint16()
 		if err != nil {
 			return "", err
 		}
-		return d.decodeInternedStringWithLen(int(n))
+		return d.decodeInternedStringWithLen(int(n), intern)
 	case codes.Str32, codes.Bin32:
 		n, err := d.uint32()
 		if err != nil {
 			return "", err
 		}
-		return d.decodeInternedStringWithLen(int(n))
+		return d.decodeInternedStringWithLen(int(n), intern)
 	}
 
 	return "", errUnexpectedCode
@@ -227,7 +227,7 @@ func (d *Decoder) internedStringAtIndex(idx int) (string, error) {
 	return d.dict[idx], nil
 }
 
-func (d *Decoder) decodeInternedStringWithLen(n int) (string, error) {
+func (d *Decoder) decodeInternedStringWithLen(n int, intern bool) (string, error) {
 	if n <= 0 {
 		return "", nil
 	}
@@ -237,7 +237,7 @@ func (d *Decoder) decodeInternedStringWithLen(n int) (string, error) {
 		return "", err
 	}
 
-	if len(s) >= minInternedStringLen && len(d.dict) < maxDictLen {
+	if intern && len(s) >= minInternedStringLen && len(d.dict) < maxDictLen {
 		d.dict = append(d.dict, s)
 	}
 

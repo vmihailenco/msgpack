@@ -124,7 +124,6 @@ func (d *Decoder) Reset(r io.Reader) {
 
 func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	d.Reset(r)
-	d.UseInternedStrings(true)
 	d.dict = append(d.dict[:0], dict...)
 }
 
