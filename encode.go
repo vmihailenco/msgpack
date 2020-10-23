@@ -107,6 +107,10 @@ func (e *Encoder) Writer() io.Writer {
 }
 
 func (e *Encoder) Reset(w io.Writer) {
+	e.ResetDict(w, nil)
+}
+
+func (e *Encoder) ResetDict(w io.Writer, dict []string) {
 	if bw, ok := w.(writer); ok {
 		e.w = bw
 	} else if bw, ok := e.w.(*byteWriter); ok {
@@ -115,19 +119,20 @@ func (e *Encoder) Reset(w io.Writer) {
 		e.w = newByteWriter(w)
 	}
 
-	for k := range e.dict {
-		delete(e.dict, k)
-	}
-
 	e.flags = 0
-}
 
-func (e *Encoder) ResetDict(w io.Writer, dict []string) {
-	e.Reset(w)
+	if dict == nil {
+		for k := range e.dict {
+			delete(e.dict, k)
+		}
+		return
+	}
 
 	e.dict = make(map[string]int, len(dict))
 	for i, s := range dict {
-		e.dict[s] = i
+		if len(s) >= minInternedStringLen {
+			e.dict[s] = i
+		}
 	}
 }
 

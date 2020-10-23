@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"math"
 	"net/url"
 	"reflect"
@@ -255,6 +256,9 @@ func TestInternedString(t *testing.T) {
 	v, err := dec.DecodeInterface()
 	require.Nil(t, err)
 	require.Equal(t, "hello", v)
+
+	_, err = dec.DecodeInterface()
+	require.Equal(t, io.EOF, err)
 }
 
 func TestInternedStringTag(t *testing.T) {
@@ -284,21 +288,35 @@ func TestResetDict(t *testing.T) {
 	enc := msgpack.NewEncoder(&buf)
 	dec := msgpack.NewDecoder(&buf)
 
-	enc.ResetDict(&buf, dict)
-	err := enc.EncodeString("hello world")
-	require.Nil(t, err)
-	require.Equal(t, 3, buf.Len())
+	{
+		enc.ResetDict(&buf, dict)
+		err := enc.EncodeString("hello world")
+		require.Nil(t, err)
+		require.Equal(t, 3, buf.Len())
+
+		dec.ResetDict(&buf, dict)
+		s, err := dec.DecodeString()
+		require.Nil(t, err)
+		require.Equal(t, "hello world", s)
+	}
+
+	{
+		enc.ResetDict(&buf, dict)
+		err := enc.EncodeString("hello world")
+		require.Nil(t, err)
+		require.Equal(t, 3, buf.Len())
+
+		dec.ResetDict(&buf, dict)
+		s, err := dec.DecodeInterface()
+		require.Nil(t, err)
+		require.Equal(t, "hello world", s)
+	}
 
 	dec.ResetDict(&buf, dict)
-	s, err := dec.DecodeString()
-	require.Nil(t, err)
-	require.Equal(t, "hello world", s)
-
-	dec.ResetDict(&buf, dict)
-	_ = enc.EncodeString("xxx")
-	require.Equal(t, 4, buf.Len())
-	_ = enc.EncodeString("xxx")
-	require.Equal(t, 8, buf.Len())
+	_ = enc.EncodeString("xxxx")
+	require.Equal(t, 5, buf.Len())
+	_ = enc.EncodeString("xxxx")
+	require.Equal(t, 10, buf.Len())
 }
 
 //------------------------------------------------------------------------------

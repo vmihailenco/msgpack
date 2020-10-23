@@ -102,6 +102,10 @@ func (d *Decoder) ResetReader(data []byte) {
 // Reset discards any buffered data, resets all state, and switches the buffered
 // reader to read from r.
 func (d *Decoder) Reset(r io.Reader) {
+	d.ResetDict(r, nil)
+}
+
+func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	if br, ok := r.(bufReader); ok {
 		d.r = br
 		d.s = br
@@ -113,17 +117,14 @@ func (d *Decoder) Reset(r io.Reader) {
 		d.s = br
 	}
 
-	if d.dict != nil {
-		d.dict = d.dict[:0]
-	}
-
 	d.flags = 0
 	d.decodeMapFunc = nil
-}
 
-func (d *Decoder) ResetDict(r io.Reader, dict []string) {
-	d.Reset(r)
-	d.dict = append(d.dict[:0], dict...)
+	if dict != nil {
+		d.dict = dict[:len(dict):len(dict)]
+	} else {
+		d.dict = d.dict[:0]
+	}
 }
 
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
