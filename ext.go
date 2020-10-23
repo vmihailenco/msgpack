@@ -29,8 +29,6 @@ type MarshalerUnmarshaler interface {
 }
 
 func RegisterExt(extID int8, value MarshalerUnmarshaler) {
-	typ := reflect.TypeOf(value)
-
 	RegisterExtEncoder(extID, value, func(e *Encoder, v reflect.Value) ([]byte, error) {
 		marshaler := v.Interface().(Marshaler)
 		return marshaler.MarshalMsgpack()
@@ -39,9 +37,6 @@ func RegisterExt(extID int8, value MarshalerUnmarshaler) {
 		b, err := d.readN(extLen)
 		if err != nil {
 			return err
-		}
-		if nilable(v) && v.IsNil() {
-			v.Set(reflect.New(typ.Elem()))
 		}
 		return v.Interface().(Unmarshaler).UnmarshalMsgpack(b)
 	})
@@ -66,8 +61,10 @@ func makeExtEncoder(
 	typ reflect.Type,
 	encoder func(enc *Encoder, v reflect.Value) ([]byte, error),
 ) encoderFunc {
+	nilable := typ.Kind() == reflect.Ptr
+
 	return func(e *Encoder, v reflect.Value) error {
-		if nilable(v) && v.IsNil() {
+		if nilable && v.IsNil() {
 			return e.EncodeNil()
 		}
 
@@ -116,10 +113,16 @@ func makeExtDecoder(
 	typ reflect.Type,
 	decoder func(d *Decoder, v reflect.Value, extLen int) error,
 ) decoderFunc {
+	nilable := typ.Kind() == reflect.Ptr
+
 	return func(d *Decoder, v reflect.Value) error {
 		if d.hasNilCode() {
 			v.Set(reflect.Zero(typ))
 			return d.DecodeNil()
+		}
+
+		if nilable && v.IsNil() {
+			v.Set(reflect.New(typ.Elem()))
 		}
 
 		extID, extLen, err := d.DecodeExtHeader()
