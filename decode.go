@@ -54,7 +54,7 @@ func PutDecoder(dec *Decoder) {
 func Unmarshal(data []byte, v interface{}) error {
 	dec := GetDecoder()
 
-	dec.ResetBytes(data)
+	dec.ResetReader(data)
 	err := dec.Decode(v)
 
 	PutDecoder(dec)
@@ -71,7 +71,7 @@ type Decoder struct {
 	extLen int
 	rec    []byte // accumulates read data if not nil
 
-	intern        []string
+	dict          []string
 	flags         uint32
 	structTag     string
 	decodeMapFunc func(*Decoder) (interface{}, error)
@@ -80,7 +80,7 @@ type Decoder struct {
 // NewDecoder returns a new decoder that reads from r.
 //
 // The decoder introduces its own buffering and may read data from r
-// beyond the MessagePack values requested. Buffering can be disabled
+// beyond the requested msgpack values. Buffering can be disabled
 // by passing a reader that implements io.ByteScanner interface.
 func NewDecoder(r io.Reader) *Decoder {
 	d := new(Decoder)
@@ -92,7 +92,7 @@ type resetter interface {
 	Reset([]byte)
 }
 
-func (d *Decoder) ResetBytes(data []byte) {
+func (d *Decoder) ResetReader(data []byte) {
 	if r, ok := d.r.(resetter); ok {
 		r.Reset(data)
 	} else {
@@ -114,21 +114,27 @@ func (d *Decoder) Reset(r io.Reader) {
 		d.s = br
 	}
 
-	if d.intern != nil {
-		d.intern = d.intern[:0]
+	if d.dict != nil {
+		d.dict = d.dict[:0]
 	}
 
 	d.flags = 0
 	d.decodeMapFunc = nil
 }
 
+func (d *Decoder) ResetDict(r io.Reader, dict []string) {
+	d.Reset(r)
+	d.UseInternedStrings(true)
+	d.dict = append(d.dict[:0], dict...)
+}
+
 func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
 	d.decodeMapFunc = fn
 }
 
-// UseDecodeInterfaceLoose causes decoder to use DecodeInterfaceLoose
+// UseLooseInterfaceDecoding causes decoder to use DecodeInterfaceLoose
 // to decode msgpack value into Go interface{}.
-func (d *Decoder) UseDecodeInterfaceLoose(on bool) {
+func (d *Decoder) UseLooseInterfaceDecoding(on bool) {
 	if on {
 		d.flags |= looseIfaceFlag
 	} else {
@@ -160,6 +166,15 @@ func (d *Decoder) DisallowUnknownFields(on bool) {
 		d.flags |= disallowUnknownFieldsFlag
 	} else {
 		d.flags &= ^disallowUnknownFieldsFlag
+	}
+}
+
+// UseInternedStrings enables support for decoding interned strings.
+func (d *Decoder) UseInternedStrings(on bool) {
+	if on {
+		d.flags |= useInternedStringsFlag
+	} else {
+		d.flags &= ^useInternedStringsFlag
 	}
 }
 
@@ -558,7 +573,7 @@ func (d *Decoder) DecodeRaw() (RawMessage, error) {
 }
 
 // PeekCode returns the next MessagePack code without advancing the reader.
-// Subpackage msgpack/codes defines list of available codes.
+// Subpackage msgpack/codes defines the list of available codes.
 func (d *Decoder) PeekCode() (codes.Code, error) {
 	c, err := d.s.ReadByte()
 	if err != nil {
@@ -608,7 +623,7 @@ func (d *Decoder) readN(n int) ([]byte, error) {
 		return nil, err
 	}
 	if d.rec != nil {
-		//TODO: read directly into d.rec?
+		// TODO: read directly into d.rec?
 		d.rec = append(d.rec, d.buf...)
 	}
 	return d.buf, nil

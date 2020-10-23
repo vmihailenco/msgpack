@@ -50,7 +50,7 @@ func (e *Encoder) EncodeBytesLen(l int) error {
 	return e.write4(codes.Bin32, uint32(l))
 }
 
-func (e *Encoder) encodeStrLen(l int) error {
+func (e *Encoder) encodeStringLen(l int) error {
 	if l < 32 {
 		return e.writeCode(codes.FixedStrLow | codes.Code(l))
 	}
@@ -64,7 +64,14 @@ func (e *Encoder) encodeStrLen(l int) error {
 }
 
 func (e *Encoder) EncodeString(v string) error {
-	if err := e.encodeStrLen(len(v)); err != nil {
+	if e.flags&useInternedStringsFlag != 0 {
+		return e.encodeInternedString(v)
+	}
+	return e.encodeNormalString(v)
+}
+
+func (e *Encoder) encodeNormalString(v string) error {
+	if err := e.encodeStringLen(len(v)); err != nil {
 		return err
 	}
 	return e.writeString(v)

@@ -38,7 +38,7 @@ func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
 	}
 
 	m := v.Convert(mapStringStringType).Interface().(map[string]string)
-	if e.flags&sortMapKeysFlag != 0 {
+	if e.flags&sortedMapKeysFlag != 0 {
 		return e.encodeSortedMapStringString(m)
 	}
 
@@ -64,7 +64,7 @@ func encodeMapStringInterfaceValue(e *Encoder, v reflect.Value) error {
 	}
 
 	m := v.Convert(mapStringInterfaceType).Interface().(map[string]interface{})
-	if e.flags&sortMapKeysFlag != 0 {
+	if e.flags&sortedMapKeysFlag != 0 {
 		return e.encodeSortedMapStringInterface(m)
 	}
 

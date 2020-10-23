@@ -10,7 +10,10 @@ import (
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
 
-const minInternedStringLen = 3
+const (
+	minInternedStringLen = 3
+	maxDictLen           = math.MaxUint16 - 1
+)
 
 var internedStringExtID int8 = -128
 
@@ -23,29 +26,32 @@ func encodeInternedInterfaceValue(e *Encoder, v reflect.Value) error {
 
 	v = v.Elem()
 	if v.Kind() == reflect.String {
-		return encodeInternedStringValue(e, v)
+		return e.encodeInternedString(v.String())
 	}
 	return e.EncodeValue(v)
 }
 
 func encodeInternedStringValue(e *Encoder, v reflect.Value) error {
-	s := v.String()
+	return e.encodeInternedString(v.String())
+}
 
+func (e *Encoder) encodeInternedString(s string) error {
 	// Interned string takes at least 3 bytes. Plain string 1 byte + string length.
 	if len(s) >= minInternedStringLen {
-		if idx, ok := e.intern[s]; ok {
+		if idx, ok := e.dict[s]; ok {
 			return e.encodeInternedStringIndex(idx)
 		}
 
-		if e.intern == nil {
-			e.intern = make(map[string]int)
+		if e.dict == nil {
+			e.dict = make(map[string]int)
 		}
-
-		idx := len(e.intern)
-		e.intern[s] = idx
+		if len(e.dict) < maxDictLen {
+			idx := len(e.dict)
+			e.dict[s] = idx
+		}
 	}
 
-	return e.EncodeString(s)
+	return e.encodeNormalString(s)
 }
 
 func (e *Encoder) encodeInternedStringIndex(idx int) error {
@@ -143,6 +149,8 @@ func (d *Decoder) decodeInternedString(c codes.Code) (string, error) {
 	}
 
 	switch c {
+	case codes.Nil:
+		return "", nil
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4:
 		typeID, length, err := d.extHeader(c)
 		if err != nil {
@@ -212,11 +220,11 @@ func (d *Decoder) decodeInternedStringIndex(length int) (int, error) {
 }
 
 func (d *Decoder) internedStringAtIndex(idx int) (string, error) {
-	if idx >= len(d.intern) {
+	if idx >= len(d.dict) {
 		err := fmt.Errorf("msgpack: intern string with index=%d does not exist", idx)
 		return "", err
 	}
-	return d.intern[idx], nil
+	return d.dict[idx], nil
 }
 
 func (d *Decoder) decodeInternedStringWithLen(n int) (string, error) {
@@ -229,8 +237,8 @@ func (d *Decoder) decodeInternedStringWithLen(n int) (string, error) {
 		return "", err
 	}
 
-	if len(s) >= minInternedStringLen {
-		d.intern = append(d.intern, s)
+	if len(s) >= minInternedStringLen && len(d.dict) < maxDictLen {
+		d.dict = append(d.dict, s)
 	}
 
 	return s, nil

@@ -36,6 +36,9 @@ func (d *Decoder) DecodeString() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if d.flags&useInternedStringsFlag != 0 {
+		return d.decodeInternedString(c)
+	}
 	return d.string(c)
 }
 

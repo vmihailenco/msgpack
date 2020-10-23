@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
@@ -230,7 +230,7 @@ type Intern struct {
 	C interface{} `msgpack:",intern"`
 }
 
-func TestIntern(t *testing.T) {
+func TestInternedString(t *testing.T) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	dec := msgpack.NewDecoder(&buf)
@@ -242,12 +242,28 @@ func TestIntern(t *testing.T) {
 		{"f", "fo", "foo"},
 	}
 	err := enc.Encode(in)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	var out []Intern
 	err = dec.Decode(&out)
-	assert.Nil(t, err)
-	assert.Equal(t, in, out)
+	require.Nil(t, err)
+	require.Equal(t, in, out)
+}
+
+func TestResetDict(t *testing.T) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	dec := msgpack.NewDecoder(&buf)
+
+	enc.ResetDict(&buf, []string{"hello world"})
+	err := enc.EncodeString("hello world")
+	require.Nil(t, err)
+	require.Equal(t, 3, buf.Len())
+
+	dec.ResetDict(&buf, []string{"hello world"})
+	s, err := dec.DecodeString()
+	require.Nil(t, err)
+	require.Equal(t, "hello world", s)
 }
 
 //------------------------------------------------------------------------------
@@ -308,7 +324,7 @@ func TestEncoder(t *testing.T) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	enc.UseJSONTag(true)
-	enc.SortMapKeys(true)
+	enc.UseSortedMapKeys(true)
 	enc.UseCompactInts(true)
 
 	for _, test := range encoderTests {
@@ -456,7 +472,7 @@ func (t typeTest) String() string {
 	return fmt.Sprintf("in=%#v, out=%#v", t.in, t.out)
 }
 
-func (t *typeTest) assertErr(err error, s string) {
+func (t *typeTest) requireErr(err error, s string) {
 	if err == nil {
 		t.Fatalf("got %v error, wanted %q", err, s)
 	}
@@ -662,7 +678,7 @@ func TestTypes(t *testing.T) {
 		enc := msgpack.NewEncoder(&buf)
 		err := enc.Encode(test.in)
 		if test.encErr != "" {
-			test.assertErr(err, test.encErr)
+			test.requireErr(err, test.encErr)
 			continue
 		}
 		if err != nil {
@@ -672,7 +688,7 @@ func TestTypes(t *testing.T) {
 		dec := msgpack.NewDecoder(&buf)
 		err = dec.Decode(test.out)
 		if test.decErr != "" {
-			test.assertErr(err, test.decErr)
+			test.requireErr(err, test.decErr)
 			continue
 		}
 		if err != nil {
@@ -767,29 +783,29 @@ func TestStringsBin(t *testing.T) {
 
 	for _, test := range tests {
 		b, err := msgpack.Marshal(test.in)
-		assert.Nil(t, err)
+		require.Nil(t, err)
 		s := hex.EncodeToString(b)
-		assert.Equal(t, s, test.wanted)
+		require.Equal(t, s, test.wanted)
 
 		var out string
 		err = msgpack.Unmarshal(b, &out)
-		assert.Nil(t, err)
-		assert.Equal(t, out, test.in)
+		require.Nil(t, err)
+		require.Equal(t, out, test.in)
 
 		var msg msgpack.RawMessage
 		err = msgpack.Unmarshal(b, &msg)
-		assert.Nil(t, err)
-		assert.Equal(t, []byte(msg), b)
+		require.Nil(t, err)
+		require.Equal(t, []byte(msg), b)
 
 		dec := msgpack.NewDecoder(bytes.NewReader(b))
 		v, err := dec.DecodeInterface()
-		assert.Nil(t, err)
-		assert.Equal(t, v.(string), test.in)
+		require.Nil(t, err)
+		require.Equal(t, v.(string), test.in)
 
 		var dst interface{}
 		dst = ""
 		err = msgpack.Unmarshal(b, &dst)
-		assert.EqualError(t, err, "msgpack: Decode(non-pointer string)")
+		require.EqualError(t, err, "msgpack: Decode(non-pointer string)")
 	}
 }
 

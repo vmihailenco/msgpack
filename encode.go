@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	sortMapKeysFlag uint32 = 1 << iota
+	sortedMapKeysFlag uint32 = 1 << iota
 	structAsArrayFlag
 	useCompactIntsFlag
 	useCompactFloatsFlag
+	useInternedStringsFlag
 )
 
 type writer interface {
@@ -85,7 +86,7 @@ type Encoder struct {
 	buf     []byte
 	timeBuf []byte
 
-	intern map[string]int
+	dict map[string]int
 
 	flags     uint32
 	structTag string
@@ -114,28 +115,38 @@ func (e *Encoder) Reset(w io.Writer) {
 		e.w = newByteWriter(w)
 	}
 
-	for k := range e.intern {
-		delete(e.intern, k)
+	for k := range e.dict {
+		delete(e.dict, k)
 	}
 
 	e.flags = 0
+}
+
+func (e *Encoder) ResetDict(w io.Writer, dict []string) {
+	e.Reset(w)
+	e.UseInternedStrings(true)
+
+	e.dict = make(map[string]int, len(dict))
+	for i, s := range dict {
+		e.dict[s] = i
+	}
 }
 
 // SortMapKeys causes the Encoder to encode map keys in increasing order.
 // Supported map types are:
 //   - map[string]string
 //   - map[string]interface{}
-func (e *Encoder) SortMapKeys(on bool) *Encoder {
+func (e *Encoder) UseSortedMapKeys(on bool) *Encoder {
 	if on {
-		e.flags |= sortMapKeysFlag
+		e.flags |= sortedMapKeysFlag
 	} else {
-		e.flags &= ^sortMapKeysFlag
+		e.flags &= ^sortedMapKeysFlag
 	}
 	return e
 }
 
-// StructAsArray causes the Encoder to encode Go structs as msgpack arrays.
-func (e *Encoder) StructAsArray(on bool) {
+// UseArrayEncodedStructs causes the Encoder to encode Go structs as msgpack arrays.
+func (e *Encoder) UseArrayEncodedStructs(on bool) {
 	if on {
 		e.flags |= structAsArrayFlag
 	} else {
@@ -176,6 +187,15 @@ func (e *Encoder) UseCompactFloats(on bool) {
 		e.flags |= useCompactFloatsFlag
 	} else {
 		e.flags &= ^useCompactFloatsFlag
+	}
+}
+
+// UseInternedStrings causes the Encoder to intern strings.
+func (e *Encoder) UseInternedStrings(on bool) {
+	if on {
+		e.flags |= useInternedStringsFlag
+	} else {
+		e.flags &= ^useInternedStringsFlag
 	}
 }
 
