@@ -15,10 +15,10 @@ const (
 	maxDictLen           = math.MaxUint16
 )
 
-var internedStringExtID int8 = -128
+var internedStringExtID = int8(math.MinInt8)
 
 func init() {
-	extTypes[internedStringExtID] = &extInfo{
+	extTypes[int8(internedStringExtID)] = &extInfo{
 		Type:    stringType,
 		Decoder: decodeInternedStringExt,
 	}
@@ -83,42 +83,21 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 		if err := e.writeCode(msgpcode.FixExt1); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
-			return err
-		}
-		return e.w.WriteByte(byte(idx))
+		return e.write1(byte(internedStringExtID), uint8(idx))
 	}
 
 	if idx <= math.MaxUint16 {
 		if err := e.writeCode(msgpcode.FixExt2); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
-			return err
-		}
-		if err := e.w.WriteByte(byte(idx >> 8)); err != nil {
-			return err
-		}
-		return e.w.WriteByte(byte(idx))
+		return e.write2(byte(internedStringExtID), uint16(idx))
 	}
 
 	if uint64(idx) <= math.MaxUint32 {
 		if err := e.writeCode(msgpcode.FixExt4); err != nil {
 			return err
 		}
-		if err := e.w.WriteByte(byte(internedStringExtID)); err != nil {
-			return err
-		}
-		if err := e.w.WriteByte(byte(idx >> 24)); err != nil {
-			return err
-		}
-		if err := e.w.WriteByte(byte(idx >> 16)); err != nil {
-			return err
-		}
-		if err := e.w.WriteByte(byte(idx >> 8)); err != nil {
-			return err
-		}
-		return e.w.WriteByte(byte(idx))
+		return e.write4(byte(internedStringExtID), uint32(idx))
 	}
 
 	return fmt.Errorf("msgpack: intern string index=%d is too large", idx)
