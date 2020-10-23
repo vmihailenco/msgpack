@@ -629,7 +629,6 @@ var (
 
 		{in: time.Unix(0, 0), out: new(time.Time)},
 		{in: new(time.Time), out: new(time.Time)},
-		{in: new(time.Time), out: new(*time.Time)},
 		{in: time.Unix(0, 1), out: new(time.Time)},
 		{in: time.Unix(1, 0), out: new(time.Time)},
 		{in: time.Unix(1, 1), out: new(time.Time)},
@@ -671,7 +670,7 @@ var (
 		{in: (*ExtTest)(nil), out: new(*ExtTest)},
 		{in: &ExtTest{"world"}, out: new(*ExtTest), wanted: ExtTest{"hello world"}},
 		{
-			in:     ExtTestField{ExtTest{"world"}},
+			in:     &ExtTestField{ExtTest{"world"}},
 			out:    new(*ExtTestField),
 			wanted: ExtTestField{ExtTest{"hello world"}},
 		},

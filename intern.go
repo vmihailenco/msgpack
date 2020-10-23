@@ -24,8 +24,8 @@ func init() {
 	}
 }
 
-func decodeInternedStringExt(d *Decoder, v reflect.Value) error {
-	idx, err := d.decodeInternedStringIndex(d.extLen)
+func decodeInternedStringExt(d *Decoder, v reflect.Value, extLen int) error {
+	idx, err := d.decodeInternedStringIndex(extLen)
 	if err != nil {
 		return err
 	}

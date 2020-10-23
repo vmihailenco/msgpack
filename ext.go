@@ -12,7 +12,7 @@ import (
 
 type extInfo struct {
 	Type    reflect.Type
-	Decoder decoderFunc
+	Decoder func(d *Decoder, v reflect.Value, extLen int) error
 }
 
 var extTypes = make(map[int8]*extInfo)
@@ -23,90 +23,133 @@ var bufferPool = &sync.Pool{
 	},
 }
 
-// RegisterExt records a type, identified by a value for that type,
-// under the provided id. That id will identify the concrete type of a value
-// sent or received as an interface variable. Only types that will be
-// transferred as implementations of interface values need to be registered.
-// Expecting to be used only during initialization, it panics if the mapping
-// between types and ids is not a bijection.
-func RegisterExt(id int8, value interface{}) {
-	if _, ok := extTypes[id]; ok {
-		panic(fmt.Errorf("msgpack: ext with id=%d is already registered", id))
-	}
+type MarshalerUnmarshaler interface {
+	Marshaler
+	Unmarshaler
+}
 
+func RegisterExt(extID int8, value MarshalerUnmarshaler) {
 	typ := reflect.TypeOf(value)
-	registerExt(id, typ, getEncoder(typ), getDecoder(typ))
-}
 
-func registerExt(id int8, typ reflect.Type, enc encoderFunc, dec decoderFunc) {
-	if enc != nil {
-		typeEncMap.Store(typ, makeExtEncoder(id, enc))
-	}
-	if dec != nil {
-		extTypes[id] = &extInfo{
-			Type:    typ,
-			Decoder: dec,
+	RegisterExtEncoder(extID, value, func(e *Encoder, v reflect.Value) ([]byte, error) {
+		marshaler := v.Interface().(Marshaler)
+		return marshaler.MarshalMsgpack()
+	})
+	RegisterExtDecoder(extID, value, func(d *Decoder, v reflect.Value, extLen int) error {
+		b, err := d.readN(extLen)
+		if err != nil {
+			return err
 		}
-		typeDecMap.Store(typ, makeExtDecoder(id, dec))
+		if nilable(v) && v.IsNil() {
+			v.Set(reflect.New(typ.Elem()))
+		}
+		return v.Interface().(Unmarshaler).UnmarshalMsgpack(b)
+	})
+}
+
+func RegisterExtEncoder(
+	extID int8,
+	value interface{},
+	encoder func(enc *Encoder, v reflect.Value) ([]byte, error),
+) {
+	typ := reflect.TypeOf(value)
+	extEncoder := makeExtEncoder(extID, typ, encoder)
+
+	typeEncMap.Store(typ, extEncoder)
+	if typ.Kind() == reflect.Ptr {
+		typeEncMap.Store(typ.Elem(), makeExtEncoderAddr(extEncoder))
 	}
 }
 
-func (e *Encoder) EncodeExtHeader(typeID int8, length int) error {
-	if err := e.encodeExtLen(length); err != nil {
+func makeExtEncoder(
+	extID int8,
+	typ reflect.Type,
+	encoder func(enc *Encoder, v reflect.Value) ([]byte, error),
+) encoderFunc {
+	return func(e *Encoder, v reflect.Value) error {
+		if nilable(v) && v.IsNil() {
+			return e.EncodeNil()
+		}
+
+		b, err := encoder(e, v)
+		if err != nil {
+			return err
+		}
+
+		if err := e.EncodeExtHeader(extID, len(b)); err != nil {
+			return err
+		}
+
+		return e.write(b)
+	}
+}
+
+func makeExtEncoderAddr(extEncoder encoderFunc) encoderFunc {
+	return func(e *Encoder, v reflect.Value) error {
+		if !v.CanAddr() {
+			return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
+		}
+		return extEncoder(e, v.Addr())
+	}
+}
+
+func RegisterExtDecoder(
+	extID int8,
+	value interface{},
+	decoder func(dec *Decoder, v reflect.Value, extLen int) error,
+) {
+	typ := reflect.TypeOf(value)
+	extDecoder := makeExtDecoder(extID, typ, decoder)
+	extTypes[extID] = &extInfo{
+		Type:    typ,
+		Decoder: decoder,
+	}
+
+	typeDecMap.Store(typ, extDecoder)
+	if typ.Kind() == reflect.Ptr {
+		typeDecMap.Store(typ.Elem(), makeExtDecoderAddr(extDecoder))
+	}
+}
+
+func makeExtDecoder(
+	wantedExtID int8,
+	typ reflect.Type,
+	decoder func(d *Decoder, v reflect.Value, extLen int) error,
+) decoderFunc {
+	return func(d *Decoder, v reflect.Value) error {
+		if d.hasNilCode() {
+			v.Set(reflect.Zero(typ))
+			return d.DecodeNil()
+		}
+
+		extID, extLen, err := d.DecodeExtHeader()
+		if err != nil {
+			return err
+		}
+		if extID != wantedExtID {
+			return fmt.Errorf("msgpack: got ext type=%d, wanted %d", extID, wantedExtID)
+		}
+		return decoder(d, v, extLen)
+	}
+}
+
+func makeExtDecoderAddr(extDecoder decoderFunc) decoderFunc {
+	return func(d *Decoder, v reflect.Value) error {
+		if !v.CanAddr() {
+			return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
+		}
+		return extDecoder(d, v.Addr())
+	}
+}
+
+func (e *Encoder) EncodeExtHeader(extID int8, extLen int) error {
+	if err := e.encodeExtLen(extLen); err != nil {
 		return err
 	}
-	if err := e.w.WriteByte(byte(typeID)); err != nil {
+	if err := e.w.WriteByte(byte(extID)); err != nil {
 		return err
 	}
 	return nil
-}
-
-func makeExtEncoder(typeID int8, enc encoderFunc) encoderFunc {
-	return func(e *Encoder, v reflect.Value) error {
-		buf := bufferPool.Get().(*bytes.Buffer)
-		defer bufferPool.Put(buf)
-		buf.Reset()
-
-		oldw := e.w
-		e.w = buf
-		err := enc(e, v)
-		e.w = oldw
-
-		if err != nil {
-			return err
-		}
-
-		err = e.EncodeExtHeader(typeID, buf.Len())
-		if err != nil {
-			return err
-		}
-		return e.write(buf.Bytes())
-	}
-}
-
-func makeExtDecoder(typeID int8, dec decoderFunc) decoderFunc {
-	return func(d *Decoder, v reflect.Value) error {
-		c, err := d.PeekCode()
-		if err != nil {
-			return err
-		}
-
-		if !codes.IsExt(c) {
-			return dec(d, v)
-		}
-
-		id, extLen, err := d.DecodeExtHeader()
-		if err != nil {
-			return err
-		}
-
-		if id != typeID {
-			return fmt.Errorf("msgpack: got ext type=%d, wanted %d", id, typeID)
-		}
-
-		d.extLen = extLen
-		return dec(d, v)
-	}
 }
 
 func (e *Encoder) encodeExtLen(l int) error {
@@ -131,6 +174,28 @@ func (e *Encoder) encodeExtLen(l int) error {
 	return e.write4(codes.Ext32, uint32(l))
 }
 
+func (d *Decoder) DecodeExtHeader() (extID int8, extLen int, err error) {
+	c, err := d.readCode()
+	if err != nil {
+		return
+	}
+	return d.extHeader(c)
+}
+
+func (d *Decoder) extHeader(c codes.Code) (int8, int, error) {
+	extLen, err := d.parseExtLen(c)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	extID, err := d.readCode()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return int8(extID), extLen, nil
+}
+
 func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 	switch c {
 	case codes.FixExt1:
@@ -153,33 +218,11 @@ func (d *Decoder) parseExtLen(c codes.Code) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	default:
-		return 0, fmt.Errorf("msgpack: invalid code=%x decoding ext length", c)
+		return 0, fmt.Errorf("msgpack: invalid code=%x decoding ext extLen", c)
 	}
 }
 
-func (d *Decoder) extHeader(c codes.Code) (int8, int, error) {
-	length, err := d.parseExtLen(c)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	typeID, err := d.readCode()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return int8(typeID), length, nil
-}
-
-func (d *Decoder) DecodeExtHeader() (typeID int8, length int, err error) {
-	c, err := d.readCode()
-	if err != nil {
-		return
-	}
-	return d.extHeader(c)
-}
-
-func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
+func (d *Decoder) decodeInterfaceExt(c codes.Code) (interface{}, error) {
 	extID, extLen, err := d.extHeader(c)
 	if err != nil {
 		return nil, err
@@ -190,16 +233,16 @@ func (d *Decoder) extInterface(c codes.Code) (interface{}, error) {
 		return nil, fmt.Errorf("msgpack: unknown ext id=%d", extID)
 	}
 
-	v := reflect.New(info.Type)
+	v := reflect.New(info.Type).Elem()
+	if nilable(v) && v.IsNil() {
+		v.Set(reflect.New(info.Type.Elem()))
+	}
 
-	d.extLen = extLen
-	err = info.Decoder(d, v.Elem())
-	d.extLen = 0
-	if err != nil {
+	if err := info.Decoder(d, v, extLen); err != nil {
 		return nil, err
 	}
 
-	return v.Elem().Interface(), nil
+	return v.Interface(), nil
 }
 
 func (d *Decoder) skipExt(c codes.Code) error {

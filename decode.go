@@ -68,8 +68,7 @@ type Decoder struct {
 	s   io.ByteScanner
 	buf []byte
 
-	extLen int
-	rec    []byte // accumulates read data if not nil
+	rec []byte // accumulates read data if not nil
 
 	dict          []string
 	flags         uint32
@@ -450,7 +449,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
 		codes.Ext8, codes.Ext16, codes.Ext32:
-		return d.extInterface(c)
+		return d.decodeInterfaceExt(c)
 	}
 
 	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
@@ -508,7 +507,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 		return d.DecodeMap()
 	case codes.FixExt1, codes.FixExt2, codes.FixExt4, codes.FixExt8, codes.FixExt16,
 		codes.Ext8, codes.Ext16, codes.Ext32:
-		return d.extInterface(c)
+		return d.decodeInterfaceExt(c)
 	}
 
 	return 0, fmt.Errorf("msgpack: unknown code %x decoding interface{}", c)
@@ -593,7 +592,6 @@ func (d *Decoder) hasNilCode() bool {
 }
 
 func (d *Decoder) readCode() (codes.Code, error) {
-	d.extLen = 0
 	c, err := d.s.ReadByte()
 	if err != nil {
 		return 0, err

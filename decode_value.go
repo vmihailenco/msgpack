@@ -7,8 +7,10 @@ import (
 	"reflect"
 )
 
-var interfaceType = reflect.TypeOf((*interface{})(nil)).Elem()
-var stringType = reflect.TypeOf((*string)(nil)).Elem()
+var (
+	interfaceType = reflect.TypeOf((*interface{})(nil)).Elem()
+	stringType    = reflect.TypeOf((*string)(nil)).Elem()
+)
 
 var valueDecoders []decoderFunc
 
@@ -158,10 +160,8 @@ func unmarshalValueAddr(d *Decoder, v reflect.Value) error {
 }
 
 func unmarshalValue(d *Decoder, v reflect.Value) error {
-	if d.extLen == 0 || d.extLen == 1 {
-		if d.hasNilCode() {
-			return d.decodeNilValue(v)
-		}
+	if d.hasNilCode() {
+		return d.decodeNilValue(v)
 	}
 
 	if v.IsNil() {
@@ -170,20 +170,12 @@ func unmarshalValue(d *Decoder, v reflect.Value) error {
 
 	var b []byte
 
-	if d.extLen != 0 {
-		var err error
-		b, err = d.readN(d.extLen)
-		if err != nil {
-			return err
-		}
-	} else {
-		d.rec = make([]byte, 0, 64)
-		if err := d.Skip(); err != nil {
-			return err
-		}
-		b = d.rec
-		d.rec = nil
+	d.rec = make([]byte, 0, 64)
+	if err := d.Skip(); err != nil {
+		return err
 	}
+	b = d.rec
+	d.rec = nil
 
 	unmarshaler := v.Interface().(Unmarshaler)
 	return unmarshaler.UnmarshalMsgpack(b)

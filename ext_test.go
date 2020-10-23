@@ -3,10 +3,10 @@ package msgpack_test
 import (
 	"bytes"
 	"encoding/hex"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/vmihailenco/msgpack/v5/codes"
 )
@@ -15,104 +15,59 @@ func init() {
 	msgpack.RegisterExt(9, (*ExtTest)(nil))
 }
 
-func TestRegisterExtPanic(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Fatalf("panic expected")
-		}
-		got := r.(error).Error()
-		wanted := "msgpack: ext with id=9 is already registered"
-		if got != wanted {
-			t.Fatalf("got %q, wanted %q", got, wanted)
-		}
-	}()
-	msgpack.RegisterExt(9, (*ExtTest)(nil))
-}
-
 type ExtTest struct {
 	S string
 }
 
 var (
-	_ msgpack.CustomEncoder = (*ExtTest)(nil)
-	_ msgpack.CustomDecoder = (*ExtTest)(nil)
+	_ msgpack.Marshaler   = (*ExtTest)(nil)
+	_ msgpack.Unmarshaler = (*ExtTest)(nil)
 )
 
-func (ext ExtTest) EncodeMsgpack(e *msgpack.Encoder) error {
-	return e.EncodeString("hello " + ext.S)
+func (ext ExtTest) MarshalMsgpack() ([]byte, error) {
+	return msgpack.Marshal("hello " + ext.S)
 }
 
-func (ext *ExtTest) DecodeMsgpack(d *msgpack.Decoder) error {
-	var err error
-	ext.S, err = d.DecodeString()
-	return err
+func (ext *ExtTest) UnmarshalMsgpack(b []byte) error {
+	return msgpack.Unmarshal(b, &ext.S)
 }
 
 func TestEncodeDecodeExtHeader(t *testing.T) {
 	v := &ExtTest{"world"}
 
-	// Marshal using EncodeExtHeader
-	var b bytes.Buffer
-	enc := msgpack.NewEncoder(&b)
-	err := v.EncodeMsgpack(enc)
-	if err != nil {
-		t.Fatal(err)
-	}
+	payload, err := v.MarshalMsgpack()
+	require.Nil(t, err)
 
-	payload := make([]byte, len(b.Bytes()))
-	copy(payload, b.Bytes())
-
-	b.Reset()
-	enc = msgpack.NewEncoder(&b)
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
 	err = enc.EncodeExtHeader(9, len(payload))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := b.Write(payload); err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 
-	// Unmarshal using generic function
+	_, err = buf.Write(payload)
+	require.Nil(t, err)
+
 	var dst interface{}
-	err = msgpack.Unmarshal(b.Bytes(), &dst)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err = msgpack.Unmarshal(buf.Bytes(), &dst)
+	require.Nil(t, err)
 
-	v, ok := dst.(*ExtTest)
-	if !ok {
-		t.Fatalf("got %#v, wanted ExtTest", dst)
-	}
-
+	v = dst.(*ExtTest)
 	wanted := "hello world"
-	if v.S != wanted {
-		t.Fatalf("got %q, wanted %q", v.S, wanted)
-	}
+	require.Equal(t, v.S, wanted)
 
-	// Unmarshal using DecodeExtHeader
-	d := msgpack.NewDecoder(&b)
-	typeId, length, err := d.DecodeExtHeader()
-	if err != nil {
-		t.Fatal(err)
-	}
+	dec := msgpack.NewDecoder(&buf)
+	extID, extLen, err := dec.DecodeExtHeader()
+	require.Nil(t, err)
+	require.Equal(t, int8(9), extID)
+	require.Equal(t, len(payload), extLen)
 
-	if typeId != 9 {
-		t.Fatalf("got %d, wanted 9", 9)
-	}
-	if length != len(payload) {
-		t.Fatalf("got %d, wanted %d", length, len(payload))
-	}
+	data := make([]byte, extLen)
+	err = dec.ReadFull(data)
+	require.Nil(t, err)
 
 	v = &ExtTest{}
-	err = v.DecodeMsgpack(d)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if v.S != wanted {
-		t.Fatalf("got %q, wanted %q", v.S, wanted)
-	}
+	err = v.UnmarshalMsgpack(data)
+	require.Nil(t, err)
+	require.Equal(t, wanted, v.S)
 }
 
 func TestExt(t *testing.T) {
@@ -163,28 +118,6 @@ func TestUnknownExt(t *testing.T) {
 	}
 }
 
-func TestDecodeExtWithMap(t *testing.T) {
-	type S struct {
-		I int
-	}
-	msgpack.RegisterExt(2, S{})
-
-	b, err := msgpack.Marshal(&S{I: 42})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var got map[string]interface{}
-	if err := msgpack.Unmarshal(b, &got); err != nil {
-		t.Fatal(err)
-	}
-
-	wanted := map[string]interface{}{"I": int64(42)}
-	if !reflect.DeepEqual(got, wanted) {
-		t.Fatalf("got %#v, but wanted %#v", got, wanted)
-	}
-}
-
 func TestSliceOfTime(t *testing.T) {
 	in := []interface{}{time.Now()}
 	b, err := msgpack.Marshal(in)
@@ -207,6 +140,10 @@ func TestSliceOfTime(t *testing.T) {
 
 type customPayload struct {
 	payload []byte
+}
+
+func (cp *customPayload) MarshalMsgpack() ([]byte, error) {
+	return cp.payload, nil
 }
 
 func (cp *customPayload) UnmarshalMsgpack(b []byte) error {
