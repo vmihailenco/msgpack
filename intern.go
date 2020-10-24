@@ -18,7 +18,7 @@ const (
 var internedStringExtID = int8(math.MinInt8)
 
 func init() {
-	extTypes[int8(internedStringExtID)] = &extInfo{
+	extTypes[internedStringExtID] = &extInfo{
 		Type:    stringType,
 		Decoder: decodeInternedStringExt,
 	}

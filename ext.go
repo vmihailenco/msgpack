@@ -1,11 +1,9 @@
 package msgpack
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"reflect"
-	"sync"
 
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
@@ -16,12 +14,6 @@ type extInfo struct {
 }
 
 var extTypes = make(map[int8]*extInfo)
-
-var bufferPool = &sync.Pool{
-	New: func() interface{} {
-		return new(bytes.Buffer)
-	},
-}
 
 type MarshalerUnmarshaler interface {
 	Marshaler

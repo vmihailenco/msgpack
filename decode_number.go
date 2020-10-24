@@ -18,7 +18,7 @@ func (d *Decoder) uint8() (uint8, error) {
 	if err != nil {
 		return 0, err
 	}
-	return uint8(c), nil
+	return c, nil
 }
 
 func (d *Decoder) int8() (int8, error) {

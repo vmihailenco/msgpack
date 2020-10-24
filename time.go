@@ -11,8 +11,6 @@ import (
 
 var timeExtID int8 = -1
 
-var timeType = reflect.TypeOf((*time.Time)(nil)).Elem()
-
 func init() {
 	RegisterExtEncoder(timeExtID, time.Time{}, timeEncoder)
 	RegisterExtDecoder(timeExtID, time.Time{}, timeDecoder)
