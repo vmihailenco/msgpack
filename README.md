@@ -34,9 +34,6 @@
 - Simple but very fast and efficient
   [queries](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Decoder-Query).
 
-API docs: https://pkg.go.dev/github.com/vmihailenco/msgpack/v5. Examples:
-https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#pkg-examples.
-
 ## Installation
 
 This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and semantic import
