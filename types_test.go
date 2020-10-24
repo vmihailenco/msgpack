@@ -388,10 +388,6 @@ type EmbeddedTime struct {
 	time.Time
 }
 
-type Interface struct {
-	Foo interface{}
-}
-
 type (
 	interfaceAlias     interface{}
 	byteAlias          byte
@@ -591,8 +587,6 @@ var (
 			out:    new(*ExtTestField),
 			wanted: ExtTestField{ExtTest{"hello world"}},
 		},
-
-		{in: Interface{Foo: "foo"}, out: &Interface{Foo: "bar"}},
 
 		{
 			in:  &InlineTest{OmitEmptyTest: OmitEmptyTest{Bar: "world"}},

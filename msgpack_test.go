@@ -293,6 +293,10 @@ func TestRawMessage(t *testing.T) {
 		Foo msgpack.RawMessage
 	}
 
+	type Out2 struct {
+		Foo interface{}
+	}
+
 	b, err := msgpack.Marshal(&In{
 		Foo: map[string]interface{}{
 			"hello": "world",
@@ -310,4 +314,28 @@ func TestRawMessage(t *testing.T) {
 	require.Equal(t, map[string]string{
 		"hello": "world",
 	}, m)
+
+	msg := new(msgpack.RawMessage)
+	out2 := Out2{
+		Foo: msg,
+	}
+	err = msgpack.Unmarshal(b, &out2)
+	require.Nil(t, err)
+	require.Equal(t, out.Foo, *msg)
+}
+
+func TestInterface(t *testing.T) {
+	type Interface struct {
+		Foo interface{}
+	}
+
+	in := Interface{Foo: "foo"}
+	b, err := msgpack.Marshal(in)
+	require.Nil(t, err)
+
+	var str string
+	out := Interface{Foo: &str}
+	err = msgpack.Unmarshal(b, &out)
+	require.Nil(t, err)
+	require.Equal(t, "foo", str)
 }

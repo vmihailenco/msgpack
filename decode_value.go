@@ -194,13 +194,7 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		return d.interfaceValue(v)
 	}
-
-	elem := v.Elem()
-	if !elem.CanSet() {
-		return d.interfaceValue(v)
-	}
-
-	return d.DecodeValue(elem)
+	return d.DecodeValue(v.Elem())
 }
 
 func (d *Decoder) interfaceValue(v reflect.Value) error {
