@@ -120,6 +120,7 @@ func (e *Encoder) ResetDict(w io.Writer, dict []string) {
 	}
 
 	e.flags = 0
+	e.structTag = ""
 
 	if dict == nil {
 		for k := range e.dict {

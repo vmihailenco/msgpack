@@ -181,9 +181,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		}
 
 		if f.Name == "_msgpack" {
-			if tag.HasOption("asArray") {
-				fs.AsArray = true
-			}
+			fs.AsArray = tag.HasOption("as_array") || tag.HasOption("asArray")
 			if tag.HasOption("omitempty") {
 				omitEmpty = true
 			}

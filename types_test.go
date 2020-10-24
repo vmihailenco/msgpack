@@ -209,7 +209,7 @@ type InlineDupTest struct {
 }
 
 type AsArrayTest struct {
-	_msgpack struct{} `msgpack:",asArray"`
+	_msgpack struct{} `msgpack:",as_array"`
 
 	OmitEmptyTest
 }
