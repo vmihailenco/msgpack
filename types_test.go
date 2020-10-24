@@ -1110,21 +1110,6 @@ func TestFloat64(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-
-	in := float64(math.NaN())
-	b, err := msgpack.Marshal(in)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var out float64
-	err = msgpack.Unmarshal(b, &out)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !math.IsNaN(out) {
-		t.Fatal("not NaN")
-	}
 }
 
 func mustParseTime(format, s string) time.Time {

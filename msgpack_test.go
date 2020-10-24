@@ -3,6 +3,7 @@ package msgpack_test
 import (
 	"bufio"
 	"bytes"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -338,4 +339,15 @@ func TestInterface(t *testing.T) {
 	err = msgpack.Unmarshal(b, &out)
 	require.Nil(t, err)
 	require.Equal(t, "foo", str)
+}
+
+func TestNaN(t *testing.T) {
+	in := float64(math.NaN())
+	b, err := msgpack.Marshal(in)
+	require.Nil(t, err)
+
+	var out float64
+	err = msgpack.Unmarshal(b, &out)
+	require.Nil(t, err)
+	require.True(t, math.IsNaN(out))
 }
