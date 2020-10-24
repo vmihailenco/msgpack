@@ -276,10 +276,38 @@ func (t *MsgpackTest) TestMapStringInterface(c *C) {
 
 //------------------------------------------------------------------------------
 
-func TestNoPanicOnUnsupportKey(t *testing.T) {
+func TestNoPanicOnUnsupportedKey(t *testing.T) {
 	data := []byte{0x81, 0x81, 0xa1, 0x78, 0xc3, 0xc3}
 
 	var msg interface{}
 	err := msgpack.Unmarshal(data, &msg)
 	require.EqualError(t, err, "msgpack: unsupported map key: map[string]interface {}")
+}
+
+func TestRawMessage(t *testing.T) {
+	type In struct {
+		Foo map[string]interface{}
+	}
+
+	type Out struct {
+		Foo msgpack.RawMessage
+	}
+
+	b, err := msgpack.Marshal(&In{
+		Foo: map[string]interface{}{
+			"hello": "world",
+		},
+	})
+	require.Nil(t, err)
+
+	var out Out
+	err = msgpack.Unmarshal(b, &out)
+	require.Nil(t, err)
+
+	var m map[string]string
+	err = msgpack.Unmarshal(out.Foo, &m)
+	require.Nil(t, err)
+	require.Equal(t, map[string]string{
+		"hello": "world",
+	}, m)
 }
