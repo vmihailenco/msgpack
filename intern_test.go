@@ -109,3 +109,30 @@ func TestResetDict(t *testing.T) {
 	_ = enc.Encode("xxxx")
 	require.Equal(t, 10, buf.Len())
 }
+
+func TestMapWithInternedString(t *testing.T) {
+	type M map[string]interface{}
+
+	dict := []string{"hello world", "foo bar"}
+
+	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(nil)
+	enc.ResetDict(&buf, dict)
+
+	dec := msgpack.NewDecoder(nil)
+	dec.ResetDict(&buf, dict)
+
+	for i := 0; i < 100; i++ {
+		in := M{
+			"foo bar":     "hello world",
+			"hello world": "foo bar",
+			"foo":         "bar",
+		}
+		err := enc.Encode(in)
+		require.Nil(t, err)
+
+		_, err = dec.DecodeInterface()
+		require.Nil(t, err)
+	}
+}

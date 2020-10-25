@@ -19,13 +19,13 @@ var (
 )
 
 func decodeMapValue(d *Decoder, v reflect.Value) error {
-	size, err := d.DecodeMapLen()
+	n, err := d.DecodeMapLen()
 	if err != nil {
 		return err
 	}
 
 	typ := v.Type()
-	if size == -1 {
+	if n == -1 {
 		v.Set(reflect.Zero(typ))
 		return nil
 	}
@@ -33,33 +33,35 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		v.Set(reflect.MakeMap(typ))
 	}
-	if size == 0 {
+	if n == 0 {
 		return nil
 	}
 
-	return decodeMapValueSize(d, v, size)
+	return d.decodeTypedMapValue(v, n)
 }
 
-func decodeMapValueSize(d *Decoder, v reflect.Value, size int) error {
-	typ := v.Type()
-	keyType := typ.Key()
-	valueType := typ.Elem()
-
-	for i := 0; i < size; i++ {
-		mk := reflect.New(keyType).Elem()
-		if err := d.DecodeValue(mk); err != nil {
-			return err
-		}
-
-		mv := reflect.New(valueType).Elem()
-		if err := d.DecodeValue(mv); err != nil {
-			return err
-		}
-
-		v.SetMapIndex(mk, mv)
+func (d *Decoder) decodeMapDefault() (interface{}, error) {
+	if d.decodeMapFunc != nil {
+		return d.decodeMapFunc(d)
 	}
 
-	return nil
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return nil, err
+	}
+	if n == -1 {
+		return nil, nil
+	}
+
+	code, err := d.PeekCode()
+	if err != nil {
+		return nil, err
+	}
+
+	if msgpcode.IsString(code) || msgpcode.IsBin(code) || msgpcode.IsExt(code) {
+		return d.decodeMap(n)
+	}
+	return d.decodeUntypedMap(n)
 }
 
 // DecodeMapLen decodes map length. Length is -1 when map is nil.
@@ -187,29 +189,71 @@ func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error
 	return nil
 }
 
-func (d *Decoder) DecodeMap() (interface{}, error) {
-	if d.decodeMapFunc != nil {
-		return d.decodeMapFunc(d)
-	}
-
-	size, err := d.DecodeMapLen()
+func (d *Decoder) DecodeMap() (map[string]interface{}, error) {
+	n, err := d.DecodeMapLen()
 	if err != nil {
 		return nil, err
 	}
-	if size == -1 {
+	if n == -1 {
 		return nil, nil
 	}
-	if size == 0 {
-		return make(map[string]interface{}), nil
-	}
+	return d.decodeMap(n)
+}
 
-	code, err := d.PeekCode()
+func (d *Decoder) decodeMap(n int) (map[string]interface{}, error) {
+	m := make(map[string]interface{}, min(n, maxMapSize))
+	for i := 0; i < n; i++ {
+		mk, err := d.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		mv, err := d.decodeInterfaceCond()
+		if err != nil {
+			return nil, err
+		}
+		m[mk] = mv
+	}
+	return m, nil
+}
+
+func (d *Decoder) DecodeUntypedMap() (interface{}, error) {
+	n, err := d.DecodeMapLen()
 	if err != nil {
 		return nil, err
 	}
+	if n == -1 {
+		return nil, nil
+	}
+	return d.decodeUntypedMap(n)
+}
 
-	if msgpcode.IsString(code) || msgpcode.IsBin(code) {
-		return d.decodeMapStringInterfaceSize(size)
+func (d *Decoder) decodeUntypedMap(n int) (interface{}, error) {
+	m := make(map[interface{}]interface{}, min(n, maxMapSize))
+
+	for i := 0; i < n; i++ {
+		mk, err := d.decodeInterfaceCond()
+		if err != nil {
+			return nil, err
+		}
+
+		mv, err := d.decodeInterfaceCond()
+		if err != nil {
+			return nil, err
+		}
+
+		m[mk] = mv
+	}
+
+	return m, nil
+}
+
+func (d *Decoder) DecodeTypedMap() (interface{}, error) {
+	n, err := d.DecodeMapLen()
+	if err != nil {
+		return nil, err
+	}
+	if n == -1 {
+		return nil, nil
 	}
 
 	key, err := d.decodeInterfaceCond()
@@ -231,32 +275,36 @@ func (d *Decoder) DecodeMap() (interface{}, error) {
 
 	mapType := reflect.MapOf(keyType, valueType)
 	mapValue := reflect.MakeMap(mapType)
-
 	mapValue.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
-	size--
 
-	err = decodeMapValueSize(d, mapValue, size)
-	if err != nil {
+	n--
+	if err := d.decodeTypedMapValue(mapValue, n); err != nil {
 		return nil, err
 	}
 
 	return mapValue.Interface(), nil
 }
 
-func (d *Decoder) decodeMapStringInterfaceSize(size int) (map[string]interface{}, error) {
-	m := make(map[string]interface{}, min(size, maxMapSize))
-	for i := 0; i < size; i++ {
-		mk, err := d.DecodeString()
-		if err != nil {
-			return nil, err
+func (d *Decoder) decodeTypedMapValue(v reflect.Value, n int) error {
+	typ := v.Type()
+	keyType := typ.Key()
+	valueType := typ.Elem()
+
+	for i := 0; i < n; i++ {
+		mk := reflect.New(keyType).Elem()
+		if err := d.DecodeValue(mk); err != nil {
+			return err
 		}
-		mv, err := d.decodeInterfaceCond()
-		if err != nil {
-			return nil, err
+
+		mv := reflect.New(valueType).Elem()
+		if err := d.DecodeValue(mv); err != nil {
+			return err
 		}
-		m[mk] = mv
+
+		v.SetMapIndex(mk, mv)
 	}
-	return m, nil
+
+	return nil
 }
 
 func (d *Decoder) skipMap(c byte) error {

@@ -47,7 +47,7 @@ func ExampleMarshal_mapStringInterface() {
 	// hello = world
 }
 
-func ExampleDecoder_SetDecodeMapFunc() {
+func ExampleDecoder_SetMapDecoder() {
 	buf := new(bytes.Buffer)
 
 	enc := msgpack.NewEncoder(buf)
@@ -60,7 +60,7 @@ func ExampleDecoder_SetDecodeMapFunc() {
 	dec := msgpack.NewDecoder(buf)
 
 	// Causes decoder to produce map[string]string instead of map[string]interface{}.
-	dec.SetDecodeMapFunc(func(d *msgpack.Decoder) (interface{}, error) {
+	dec.SetMapDecoder(func(d *msgpack.Decoder) (interface{}, error) {
 		n, err := d.DecodeMapLen()
 		if err != nil {
 			return nil, err

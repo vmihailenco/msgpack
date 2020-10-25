@@ -116,7 +116,7 @@ func (d *Decoder) resetReader(r io.Reader) {
 	}
 }
 
-func (d *Decoder) SetDecodeMapFunc(fn func(*Decoder) (interface{}, error)) {
+func (d *Decoder) SetMapDecoder(fn func(*Decoder) (interface{}, error)) {
 	d.decodeMapFunc = fn
 }
 
@@ -391,7 +391,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		return d.DecodeMap()
+		return d.decodeMapDefault()
 	}
 	if msgpcode.IsFixedArray(c) {
 		return d.decodeSlice(c)
@@ -436,7 +436,7 @@ func (d *Decoder) DecodeInterface() (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		return d.DecodeMap()
+		return d.decodeMapDefault()
 	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4, msgpcode.FixExt8, msgpcode.FixExt16,
 		msgpcode.Ext8, msgpcode.Ext16, msgpcode.Ext32:
 		return d.decodeInterfaceExt(c)
@@ -463,7 +463,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		return d.DecodeMap()
+		return d.decodeMapDefault()
 	}
 	if msgpcode.IsFixedArray(c) {
 		return d.decodeSlice(c)
@@ -494,7 +494,7 @@ func (d *Decoder) DecodeInterfaceLoose() (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		return d.DecodeMap()
+		return d.decodeMapDefault()
 	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4, msgpcode.FixExt8, msgpcode.FixExt16,
 		msgpcode.Ext8, msgpcode.Ext16, msgpcode.Ext32:
 		return d.decodeInterfaceExt(c)

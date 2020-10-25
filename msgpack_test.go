@@ -258,31 +258,29 @@ func (t *MsgpackTest) TestSliceNil(c *C) {
 
 //------------------------------------------------------------------------------
 
-func (t *MsgpackTest) TestMapStringInterface(c *C) {
+//------------------------------------------------------------------------------
+
+func TestNoPanicOnUnsupportedKey(t *testing.T) {
+	data := []byte{0x81, 0x81, 0xa1, 0x78, 0xc3, 0xc3}
+
+	_, err := msgpack.NewDecoder(bytes.NewReader(data)).DecodeTypedMap()
+	require.EqualError(t, err, "msgpack: unsupported map key: map[string]interface {}")
+}
+
+func TestMapDefault(t *testing.T) {
 	in := map[string]interface{}{
 		"foo": "bar",
 		"hello": map[string]interface{}{
 			"foo": "bar",
 		},
 	}
+	b, err := msgpack.Marshal(in)
+	require.Nil(t, err)
+
 	var out map[string]interface{}
-
-	c.Assert(t.enc.Encode(in), IsNil)
-	c.Assert(t.dec.Decode(&out), IsNil)
-
-	c.Assert(out["foo"], Equals, "bar")
-	mm := out["hello"].(map[string]interface{})
-	c.Assert(mm["foo"], Equals, "bar")
-}
-
-//------------------------------------------------------------------------------
-
-func TestNoPanicOnUnsupportedKey(t *testing.T) {
-	data := []byte{0x81, 0x81, 0xa1, 0x78, 0xc3, 0xc3}
-
-	var msg interface{}
-	err := msgpack.Unmarshal(data, &msg)
-	require.EqualError(t, err, "msgpack: unsupported map key: map[string]interface {}")
+	err = msgpack.Unmarshal(b, &out)
+	require.Nil(t, err)
+	require.Equal(t, in, out)
 }
 
 func TestRawMessage(t *testing.T) {
