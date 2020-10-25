@@ -28,16 +28,17 @@ func (d *Decoder) bytesLen(c byte) (int, error) {
 		return int(n), err
 	}
 
-	return 0, fmt.Errorf("msgpack: invalid code=%x decoding bytes length", c)
+	return 0, fmt.Errorf("msgpack: invalid code=%x decoding string/bytes length", c)
 }
 
 func (d *Decoder) DecodeString() (string, error) {
+	if intern := d.flags&useInternedStringsFlag != 0; intern || len(d.dict) > 0 {
+		return d.decodeInternedString(intern)
+	}
+
 	c, err := d.readCode()
 	if err != nil {
 		return "", err
-	}
-	if intern := d.flags&useInternedStringsFlag != 0; intern || len(d.dict) > 0 {
-		return d.decodeInternedString(c, intern)
 	}
 	return d.string(c)
 }

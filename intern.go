@@ -111,12 +111,7 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 //------------------------------------------------------------------------------
 
 func decodeInternedInterfaceValue(d *Decoder, v reflect.Value) error {
-	c, err := d.readCode()
-	if err != nil {
-		return err
-	}
-
-	s, err := d.decodeInternedString(c, true)
+	s, err := d.decodeInternedString(true)
 	if err == nil {
 		v.Set(reflect.ValueOf(s))
 		return nil
@@ -134,12 +129,7 @@ func decodeInternedInterfaceValue(d *Decoder, v reflect.Value) error {
 }
 
 func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
-	c, err := d.readCode()
-	if err != nil {
-		return err
-	}
-
-	s, err := d.decodeInternedString(c, true)
+	s, err := d.decodeInternedString(true)
 	if err != nil {
 		return err
 	}
@@ -148,7 +138,12 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
+func (d *Decoder) decodeInternedString(intern bool) (string, error) {
+	c, err := d.readCode()
+	if err != nil {
+		return "", err
+	}
+
 	if msgpcode.IsFixedString(c) {
 		n := int(c & msgpcode.FixedStrMask)
 		return d.decodeInternedStringWithLen(n, intern)
