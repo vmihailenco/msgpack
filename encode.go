@@ -25,23 +25,16 @@ type writer interface {
 
 type byteWriter struct {
 	io.Writer
-
-	buf [1]byte
 }
 
-func newByteWriter(w io.Writer) *byteWriter {
-	bw := new(byteWriter)
-	bw.Reset(w)
-	return bw
+func newByteWriter(w io.Writer) byteWriter {
+	return byteWriter{
+		Writer: w,
+	}
 }
 
-func (bw *byteWriter) Reset(w io.Writer) {
-	bw.Writer = w
-}
-
-func (bw *byteWriter) WriteByte(c byte) error {
-	bw.buf[0] = c
-	_, err := bw.Write(bw.buf[:])
+func (bw byteWriter) WriteByte(c byte) error {
+	_, err := bw.Write([]byte{c})
 	return err
 }
 
@@ -111,18 +104,11 @@ func (e *Encoder) Reset(w io.Writer) {
 }
 
 func (e *Encoder) ResetDict(w io.Writer, dict []string) {
-	if bw, ok := w.(writer); ok {
-		e.w = bw
-	} else if bw, ok := e.w.(*byteWriter); ok {
-		bw.Reset(w)
-	} else {
-		e.w = newByteWriter(w)
-	}
-
+	e.resetWriter(w)
 	e.flags = 0
 	e.structTag = ""
 
-	if dict == nil {
+	if len(dict) == 0 {
 		for k := range e.dict {
 			delete(e.dict, k)
 		}
@@ -134,6 +120,14 @@ func (e *Encoder) ResetDict(w io.Writer, dict []string) {
 		if len(s) >= minInternedStringLen {
 			e.dict[s] = i
 		}
+	}
+}
+
+func (e *Encoder) resetWriter(w io.Writer) {
+	if bw, ok := w.(writer); ok {
+		e.w = bw
+	} else {
+		e.w = newByteWriter(w)
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 type NoIntern struct {
 	A string
 	B string
-	C string
+	C interface{}
 }
 
 type Intern struct {
@@ -30,20 +30,19 @@ func TestInternedString(t *testing.T) {
 	dec := msgpack.NewDecoder(&buf)
 	dec.UseInternedStrings(true)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 3; i++ {
 		err := enc.EncodeString("hello")
 		require.Nil(t, err)
 	}
+
+	for i := 0; i < 3; i++ {
+		s, err := dec.DecodeString()
+		require.Nil(t, err)
+		require.Equal(t, "hello", s)
+	}
+
 	err := enc.Encode("hello")
 	require.Nil(t, err)
-
-	s, err := dec.DecodeString()
-	require.Nil(t, err)
-	require.Equal(t, "hello", s)
-
-	s, err = dec.DecodeString()
-	require.Nil(t, err)
-	require.Equal(t, "hello", s)
 
 	v, err := dec.DecodeInterface()
 	require.Nil(t, err)
@@ -74,7 +73,7 @@ func TestInternedStringTag(t *testing.T) {
 }
 
 func TestResetDict(t *testing.T) {
-	dict := []string{"hello world"}
+	dict := []string{"hello world", "foo bar"}
 
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
@@ -94,19 +93,19 @@ func TestResetDict(t *testing.T) {
 
 	{
 		enc.ResetDict(&buf, dict)
-		err := enc.EncodeString("hello world")
+		err := enc.Encode("foo bar")
 		require.Nil(t, err)
 		require.Equal(t, 3, buf.Len())
 
 		dec.ResetDict(&buf, dict)
 		s, err := dec.DecodeInterface()
 		require.Nil(t, err)
-		require.Equal(t, "hello world", s)
+		require.Equal(t, "foo bar", s)
 	}
 
 	dec.ResetDict(&buf, dict)
 	_ = enc.EncodeString("xxxx")
 	require.Equal(t, 5, buf.Len())
-	_ = enc.EncodeString("xxxx")
+	_ = enc.Encode("xxxx")
 	require.Equal(t, 10, buf.Len())
 }

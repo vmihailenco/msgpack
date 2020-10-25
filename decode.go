@@ -54,7 +54,7 @@ func PutDecoder(dec *Decoder) {
 func Unmarshal(data []byte, v interface{}) error {
 	dec := GetDecoder()
 
-	dec.ResetReader(data)
+	dec.Reset(bytes.NewReader(data))
 	err := dec.Decode(v)
 
 	PutDecoder(dec)
@@ -91,14 +91,6 @@ type resetter interface {
 	Reset([]byte)
 }
 
-func (d *Decoder) ResetReader(data []byte) {
-	if r, ok := d.r.(resetter); ok {
-		r.Reset(data)
-	} else {
-		d.Reset(bytes.NewReader(data))
-	}
-}
-
 // Reset discards any buffered data, resets all state, and switches the buffered
 // reader to read from r.
 func (d *Decoder) Reset(r io.Reader) {
@@ -106,24 +98,25 @@ func (d *Decoder) Reset(r io.Reader) {
 }
 
 func (d *Decoder) ResetDict(r io.Reader, dict []string) {
+	d.resetReader(r)
+	d.flags = 0
+	d.decodeMapFunc = nil
+
+	if len(dict) > 0 {
+		d.dict = dict[:len(dict):len(dict)]
+	} else {
+		d.dict = d.dict[:0]
+	}
+}
+
+func (d *Decoder) resetReader(r io.Reader) {
 	if br, ok := r.(bufReader); ok {
 		d.r = br
 		d.s = br
-	} else if br, ok := d.r.(*bufio.Reader); ok {
-		br.Reset(r)
 	} else {
 		br := bufio.NewReader(r)
 		d.r = br
 		d.s = br
-	}
-
-	d.flags = 0
-	d.decodeMapFunc = nil
-
-	if dict != nil {
-		d.dict = dict[:len(dict):len(dict)]
-	} else {
-		d.dict = d.dict[:0]
 	}
 }
 
