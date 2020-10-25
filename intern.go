@@ -2,7 +2,6 @@ package msgpack
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -41,7 +40,14 @@ func decodeInternedStringExt(d *Decoder, v reflect.Value, extLen int) error {
 
 //------------------------------------------------------------------------------
 
-var errUnexpectedCode = errors.New("msgpack: unexpected code")
+type unexpectedCodeError struct {
+	code byte
+	hint string
+}
+
+func (err unexpectedCodeError) Error() string {
+	return fmt.Sprintf("msgpack: unexpected code=%x decoding %s", err.code, err.hint)
+}
 
 func encodeInternedInterfaceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
@@ -60,7 +66,7 @@ func encodeInternedStringValue(e *Encoder, v reflect.Value) error {
 }
 
 func (e *Encoder) encodeInternedString(s string, intern bool) error {
-	// Interned string takes at least 3 bytes. Plain string 1 byte + string length.
+	// Interned string takes at least 3 bytes. Plain string 1 byte + string len.
 	if len(s) >= minInternedStringLen {
 		if idx, ok := e.dict[s]; ok {
 			return e.encodeInternedStringIndex(idx)
@@ -116,14 +122,15 @@ func decodeInternedInterfaceValue(d *Decoder, v reflect.Value) error {
 		v.Set(reflect.ValueOf(s))
 		return nil
 	}
-	if err != nil && err != errUnexpectedCode {
-		return err
+	if err != nil {
+		if _, ok := err.(unexpectedCodeError); !ok {
+			return err
+		}
 	}
 
 	if err := d.s.UnreadByte(); err != nil {
 		return err
 	}
-
 	return decodeInterfaceValue(d, v)
 }
 
@@ -135,9 +142,6 @@ func decodeInternedStringValue(d *Decoder, v reflect.Value) error {
 
 	s, err := d.decodeInternedString(c, true)
 	if err != nil {
-		if err == errUnexpectedCode {
-			return fmt.Errorf("msgpack: invalid code=%x decoding intern string", c)
-		}
 		return err
 	}
 
@@ -155,7 +159,7 @@ func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
 	case msgpcode.Nil:
 		return "", nil
 	case msgpcode.FixExt1, msgpcode.FixExt2, msgpcode.FixExt4:
-		typeID, length, err := d.extHeader(c)
+		typeID, extLen, err := d.extHeader(c)
 		if err != nil {
 			return "", err
 		}
@@ -165,7 +169,7 @@ func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
 			return "", err
 		}
 
-		idx, err := d.decodeInternedStringIndex(length)
+		idx, err := d.decodeInternedStringIndex(extLen)
 		if err != nil {
 			return "", err
 		}
@@ -191,11 +195,14 @@ func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
 		return d.decodeInternedStringWithLen(int(n), intern)
 	}
 
-	return "", errUnexpectedCode
+	return "", unexpectedCodeError{
+		code: c,
+		hint: "interned string",
+	}
 }
 
-func (d *Decoder) decodeInternedStringIndex(length int) (int, error) {
-	switch length {
+func (d *Decoder) decodeInternedStringIndex(extLen int) (int, error) {
+	switch extLen {
 	case 1:
 		c, err := d.s.ReadByte()
 		if err != nil {
@@ -218,13 +225,13 @@ func (d *Decoder) decodeInternedStringIndex(length int) (int, error) {
 		return int(n), nil
 	}
 
-	err := fmt.Errorf("msgpack: unsupported intern string index length=%d", length)
+	err := fmt.Errorf("msgpack: unsupported ext len=%d decoding interned string", extLen)
 	return 0, err
 }
 
 func (d *Decoder) internedStringAtIndex(idx int) (string, error) {
 	if idx >= len(d.dict) {
-		err := fmt.Errorf("msgpack: intern string with index=%d does not exist", idx)
+		err := fmt.Errorf("msgpack: interned string at index=%d does not exist", idx)
 		return "", err
 	}
 	return d.dict[idx], nil

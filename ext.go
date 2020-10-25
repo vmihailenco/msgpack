@@ -213,7 +213,7 @@ func (d *Decoder) parseExtLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	default:
-		return 0, fmt.Errorf("msgpack: invalid code=%x decoding ext extLen", c)
+		return 0, fmt.Errorf("msgpack: invalid code=%x decoding ext len", c)
 	}
 }
 

@@ -30,10 +30,12 @@ func TestInternedString(t *testing.T) {
 	dec := msgpack.NewDecoder(&buf)
 	dec.UseInternedStrings(true)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		err := enc.EncodeString("hello")
 		require.Nil(t, err)
 	}
+	err := enc.Encode("hello")
+	require.Nil(t, err)
 
 	s, err := dec.DecodeString()
 	require.Nil(t, err)
