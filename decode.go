@@ -87,10 +87,6 @@ func NewDecoder(r io.Reader) *Decoder {
 	return d
 }
 
-type resetter interface {
-	Reset([]byte)
-}
-
 // Reset discards any buffered data, resets all state, and switches the buffered
 // reader to read from r.
 func (d *Decoder) Reset(r io.Reader) {
