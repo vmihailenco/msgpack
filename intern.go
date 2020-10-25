@@ -39,15 +39,6 @@ func decodeInternedStringExt(d *Decoder, v reflect.Value, extLen int) error {
 
 //------------------------------------------------------------------------------
 
-type unexpectedCodeError struct {
-	code byte
-	hint string
-}
-
-func (err unexpectedCodeError) Error() string {
-	return fmt.Sprintf("msgpack: unexpected code=%x decoding %s", err.code, err.hint)
-}
-
 func encodeInternedInterfaceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
 		return e.EncodeNil()

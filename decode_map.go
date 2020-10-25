@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -85,12 +84,6 @@ func (d *Decoder) DecodeMapLen() (int, error) {
 }
 
 func (d *Decoder) mapLen(c byte) (int, error) {
-	size, err := d._mapLen(c)
-	err = expandInvalidCodeMapLenError(c, err)
-	return size, err
-}
-
-func (d *Decoder) _mapLen(c byte) (int, error) {
 	if c == msgpcode.Nil {
 		return -1, nil
 	}
@@ -105,16 +98,7 @@ func (d *Decoder) _mapLen(c byte) (int, error) {
 		size, err := d.uint32()
 		return int(size), err
 	}
-	return 0, errInvalidCode
-}
-
-var errInvalidCode = errors.New("invalid code")
-
-func expandInvalidCodeMapLenError(c byte, err error) error {
-	if err == errInvalidCode {
-		return fmt.Errorf("msgpack: invalid code=%x decoding map length", c)
-	}
-	return err
+	return 0, unexpectedCodeError{code: c, hint: "map length"}
 }
 
 func decodeMapStringStringValue(d *Decoder, v reflect.Value) error {
@@ -331,12 +315,12 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 	var isArray bool
 
-	n, err := d._mapLen(c)
+	n, err := d.mapLen(c)
 	if err != nil {
 		var err2 error
 		n, err2 = d.arrayLen(c)
 		if err2 != nil {
-			return expandInvalidCodeMapLenError(c, err)
+			return err
 		}
 		isArray = true
 	}
