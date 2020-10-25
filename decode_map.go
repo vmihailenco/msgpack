@@ -143,33 +143,11 @@ func decodeMapStringInterfaceValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) decodeMapStringInterfacePtr(ptr *map[string]interface{}) error {
-	n, err := d.DecodeMapLen()
+	m, err := d.DecodeMap()
 	if err != nil {
 		return err
 	}
-	if n == -1 {
-		*ptr = nil
-		return nil
-	}
-
-	m := *ptr
-	if m == nil {
-		*ptr = make(map[string]interface{}, min(n, maxMapSize))
-		m = *ptr
-	}
-
-	for i := 0; i < n; i++ {
-		mk, err := d.DecodeString()
-		if err != nil {
-			return err
-		}
-		mv, err := d.decodeInterfaceCond()
-		if err != nil {
-			return err
-		}
-		m[mk] = mv
-	}
-
+	*ptr = m
 	return nil
 }
 
