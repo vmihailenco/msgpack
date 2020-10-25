@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math"
 	"reflect"
@@ -106,7 +105,7 @@ func (e *Encoder) encodeInternedStringIndex(idx int) error {
 		return e.write4(byte(internedStringExtID), uint32(idx))
 	}
 
-	return fmt.Errorf("msgpack: intern string index=%d is too large", idx)
+	return fmt.Errorf("msgpack: interned string index=%d is too large", idx)
 }
 
 //------------------------------------------------------------------------------
@@ -204,24 +203,22 @@ func (d *Decoder) decodeInternedString(c byte, intern bool) (string, error) {
 func (d *Decoder) decodeInternedStringIndex(extLen int) (int, error) {
 	switch extLen {
 	case 1:
-		c, err := d.s.ReadByte()
+		n, err := d.uint8()
 		if err != nil {
 			return 0, err
 		}
-		return int(c), nil
+		return int(n), nil
 	case 2:
-		b, err := d.readN(2)
+		n, err := d.uint16()
 		if err != nil {
 			return 0, err
 		}
-		n := binary.BigEndian.Uint16(b)
 		return int(n), nil
 	case 4:
-		b, err := d.readN(4)
+		n, err := d.uint32()
 		if err != nil {
 			return 0, err
 		}
-		n := binary.BigEndian.Uint32(b)
 		return int(n), nil
 	}
 
