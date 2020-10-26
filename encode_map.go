@@ -85,6 +85,13 @@ func (e *Encoder) EncodeMap(m map[string]interface{}) error {
 }
 
 func (e *Encoder) EncodeMapSorted(m map[string]interface{}) error {
+	if m == nil {
+		return e.EncodeNil()
+	}
+	if err := e.EncodeMapLen(len(m)); err != nil {
+		return err
+	}
+
 	keys := make([]string, 0, len(m))
 
 	for k := range m {
