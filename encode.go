@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	sortedMapKeysFlag uint32 = 1 << iota
+	sortedMapsFlag uint32 = 1 << iota
 	structAsArrayFlag
 	useCompactIntsFlag
 	useCompactFloatsFlag
@@ -131,15 +131,15 @@ func (e *Encoder) resetWriter(w io.Writer) {
 	}
 }
 
-// SortMapKeys causes the Encoder to encode map keys in increasing order.
+// UseSortedMaps causes the Encoder to encode map keys in increasing order.
 // Supported map types are:
 //   - map[string]string
 //   - map[string]interface{}
-func (e *Encoder) UseSortedMapKeys(on bool) *Encoder {
+func (e *Encoder) UseSortedMaps(on bool) *Encoder {
 	if on {
-		e.flags |= sortedMapKeysFlag
+		e.flags |= sortedMapsFlag
 	} else {
-		e.flags &= ^sortedMapKeysFlag
+		e.flags &= ^sortedMapsFlag
 	}
 	return e
 }

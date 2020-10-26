@@ -276,7 +276,7 @@ func TestEncoder(t *testing.T) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	enc.UseJSONTag(true)
-	enc.UseSortedMapKeys(true)
+	enc.UseSortedMaps(true)
 	enc.UseCompactInts(true)
 
 	for _, test := range encoderTests {

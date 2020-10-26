@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/vmihailenco/msgpack.svg)](https://travis-ci.org/vmihailenco/msgpack)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/vmihailenco/msgpack/v5)](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
-[![Documentation](https://img.shields.io/badge/pg-documentation-informational)](https://msgpack.uptrace.dev/)
+[![Documentation](https://img.shields.io/badge/msgpack-documentation-informational)](https://msgpack.uptrace.dev/)
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
 > :heart: [**Uptrace.dev** - distributed traces, logs, and errors in one place](https://uptrace.dev)
@@ -36,11 +36,16 @@
 
 ## Installation
 
-This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and semantic import
-versioning since v4:
+msgpack supports 2 last Go versions and requires support for
+[Go modules](https://github.com/golang/go/wiki/Modules). So make sure to initialize a Go module:
 
 ```shell
 go mod init github.com/my/repo
+```
+
+And then install msgpack/v5 (note _v5_ in the import; omitting it is a popular mistake):
+
+```shell
 go get github.com/vmihailenco/msgpack/v5
 ```
 

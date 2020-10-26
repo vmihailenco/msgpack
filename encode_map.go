@@ -39,7 +39,7 @@ func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
 	}
 
 	m := v.Convert(mapStringStringType).Interface().(map[string]string)
-	if e.flags&sortedMapKeysFlag != 0 {
+	if e.flags&sortedMapsFlag != 0 {
 		return e.encodeSortedMapStringString(m)
 	}
 
@@ -59,21 +59,45 @@ func encodeMapStringInterfaceValue(e *Encoder, v reflect.Value) error {
 	if v.IsNil() {
 		return e.EncodeNil()
 	}
+	m := v.Convert(mapStringInterfaceType).Interface().(map[string]interface{})
+	if e.flags&sortedMapsFlag != 0 {
+		return e.EncodeMapSorted(m)
+	}
+	return e.EncodeMap(m)
+}
 
-	if err := e.EncodeMapLen(v.Len()); err != nil {
+func (e *Encoder) EncodeMap(m map[string]interface{}) error {
+	if m == nil {
+		return e.EncodeNil()
+	}
+	if err := e.EncodeMapLen(len(m)); err != nil {
 		return err
 	}
-
-	m := v.Convert(mapStringInterfaceType).Interface().(map[string]interface{})
-	if e.flags&sortedMapKeysFlag != 0 {
-		return e.encodeSortedMapStringInterface(m)
-	}
-
 	for mk, mv := range m {
 		if err := e.EncodeString(mk); err != nil {
 			return err
 		}
 		if err := e.Encode(mv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Encoder) EncodeMapSorted(m map[string]interface{}) error {
+	keys := make([]string, 0, len(m))
+
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if err := e.EncodeString(k); err != nil {
+			return err
+		}
+		if err := e.Encode(m[k]); err != nil {
 			return err
 		}
 	}
@@ -94,26 +118,6 @@ func (e *Encoder) encodeSortedMapStringString(m map[string]string) error {
 			return err
 		}
 		if err = e.EncodeString(m[k]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (e *Encoder) encodeSortedMapStringInterface(m map[string]interface{}) error {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		err := e.EncodeString(k)
-		if err != nil {
-			return err
-		}
-		if err = e.Encode(m[k]); err != nil {
 			return err
 		}
 	}
