@@ -349,3 +349,34 @@ func TestNaN(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, math.IsNaN(out))
 }
+
+func TestUseSortedMaps(t *testing.T) {
+	in := map[string]interface{}{
+		"a": "a",
+		"b": "b",
+		"c": "c",
+		"d": "d",
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseSortedMaps(true)
+	dec := msgpack.NewDecoder(&buf)
+
+	err := enc.Encode(in)
+	require.Nil(t, err)
+
+	wanted := make([]byte, buf.Len())
+	copy(wanted, buf.Bytes())
+	buf.Reset()
+
+	for i := 0; i < 100; i++ {
+		err := enc.Encode(in)
+		require.Nil(t, err)
+		require.Equal(t, wanted, buf.Bytes())
+
+		out, err := dec.DecodeMap()
+		require.Nil(t, err)
+		require.Equal(t, in, out)
+	}
+}
