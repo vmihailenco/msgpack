@@ -80,7 +80,7 @@ func TestResetDict(t *testing.T) {
 	dec := msgpack.NewDecoder(&buf)
 
 	{
-		enc.ResetDict(&buf, dict)
+		enc.ResetDict(&buf, dictMap(dict))
 		err := enc.EncodeString("hello world")
 		require.Nil(t, err)
 		require.Equal(t, 3, buf.Len())
@@ -92,7 +92,7 @@ func TestResetDict(t *testing.T) {
 	}
 
 	{
-		enc.ResetDict(&buf, dict)
+		enc.ResetDict(&buf, dictMap(dict))
 		err := enc.Encode("foo bar")
 		require.Nil(t, err)
 		require.Equal(t, 3, buf.Len())
@@ -118,7 +118,7 @@ func TestMapWithInternedString(t *testing.T) {
 	var buf bytes.Buffer
 
 	enc := msgpack.NewEncoder(nil)
-	enc.ResetDict(&buf, dict)
+	enc.ResetDict(&buf, dictMap(dict))
 
 	dec := msgpack.NewDecoder(nil)
 	dec.ResetDict(&buf, dict)
@@ -135,4 +135,12 @@ func TestMapWithInternedString(t *testing.T) {
 		_, err = dec.DecodeInterface()
 		require.Nil(t, err)
 	}
+}
+
+func dictMap(dict []string) map[string]int {
+	m := make(map[string]int, len(dict))
+	for i, s := range dict {
+		m[s] = i
+	}
+	return m
 }

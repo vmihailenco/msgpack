@@ -99,26 +99,22 @@ func (e *Encoder) Writer() io.Writer {
 	return e.w
 }
 
+// Reset discards any buffered data, resets all state, and switches the writer to write to w.
 func (e *Encoder) Reset(w io.Writer) {
 	e.ResetDict(w, nil)
 }
 
-func (e *Encoder) ResetDict(w io.Writer, dict []string) {
+// ResetDict is like Reset, but also resets the dict.
+func (e *Encoder) ResetDict(w io.Writer, dict map[string]int) {
 	e.resetWriter(w)
 	e.flags = 0
 	e.structTag = ""
 
-	if len(dict) == 0 {
+	if len(dict) > 0 {
+		e.dict = dict
+	} else {
 		for k := range e.dict {
 			delete(e.dict, k)
-		}
-		return
-	}
-
-	e.dict = make(map[string]int, len(dict))
-	for i, s := range dict {
-		if len(s) >= minInternedStringLen {
-			e.dict[s] = i
 		}
 	}
 }

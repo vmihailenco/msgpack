@@ -93,13 +93,14 @@ func (d *Decoder) Reset(r io.Reader) {
 	d.ResetDict(r, nil)
 }
 
+// ResetDict is like Reset, but also resets the dict.
 func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	d.resetReader(r)
 	d.flags = 0
 	d.decodeMapFunc = nil
 
 	if len(dict) > 0 {
-		d.dict = dict[:len(dict):len(dict)]
+		d.dict = dict
 	} else {
 		d.dict = d.dict[:0]
 	}
