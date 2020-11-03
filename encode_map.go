@@ -39,7 +39,7 @@ func encodeMapStringStringValue(e *Encoder, v reflect.Value) error {
 	}
 
 	m := v.Convert(mapStringStringType).Interface().(map[string]string)
-	if e.flags&sortedMapsFlag != 0 {
+	if e.flags&sortMapKeysFlag != 0 {
 		return e.encodeSortedMapStringString(m)
 	}
 
@@ -60,7 +60,7 @@ func encodeMapStringInterfaceValue(e *Encoder, v reflect.Value) error {
 		return e.EncodeNil()
 	}
 	m := v.Convert(mapStringInterfaceType).Interface().(map[string]interface{})
-	if e.flags&sortedMapsFlag != 0 {
+	if e.flags&sortMapKeysFlag != 0 {
 		return e.EncodeMapSorted(m)
 	}
 	return e.EncodeMap(m)
@@ -144,7 +144,7 @@ func (e *Encoder) EncodeMapLen(l int) error {
 
 func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	structFields := structs.Fields(strct.Type(), e.structTag)
-	if e.flags&structAsArrayFlag != 0 || structFields.AsArray {
+	if e.flags&arrayEncodedStructsFlag != 0 || structFields.AsArray {
 		return encodeStructValueAsArray(e, strct, structFields.List)
 	}
 	fields := structFields.OmitEmpty(strct)

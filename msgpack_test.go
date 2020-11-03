@@ -350,7 +350,7 @@ func TestNaN(t *testing.T) {
 	require.True(t, math.IsNaN(out))
 }
 
-func TestUseSortedMaps(t *testing.T) {
+func TestSetSortMapKeys(t *testing.T) {
 	in := map[string]interface{}{
 		"a": "a",
 		"b": "b",
@@ -360,7 +360,7 @@ func TestUseSortedMaps(t *testing.T) {
 
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
-	enc.UseSortedMaps(true)
+	enc.SetSortMapKeys(true)
 	dec := msgpack.NewDecoder(&buf)
 
 	err := enc.Encode(in)

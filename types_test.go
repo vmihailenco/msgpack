@@ -123,7 +123,7 @@ func TestUseJsonTag(t *testing.T) {
 	var buf bytes.Buffer
 
 	enc := msgpack.NewEncoder(&buf)
-	enc.UseJSONTag(true)
+	enc.SetCustomStructTag("json")
 
 	in := &JSONFallbackTest{Foo: "hello", Bar: "world"}
 	err := enc.Encode(in)
@@ -132,7 +132,7 @@ func TestUseJsonTag(t *testing.T) {
 	}
 
 	dec := msgpack.NewDecoder(&buf)
-	dec.UseJSONTag(true)
+	dec.SetCustomStructTag("json")
 
 	out := new(JSONFallbackTest)
 	err = dec.Decode(out)
@@ -159,7 +159,7 @@ func TestUseCustomTag(t *testing.T) {
 	var buf bytes.Buffer
 
 	enc := msgpack.NewEncoder(&buf)
-	enc.UseCustomStructTag("custom")
+	enc.SetCustomStructTag("custom")
 	in := &CustomFallbackTest{Foo: "hello", Bar: "world"}
 	err := enc.Encode(in)
 	if err != nil {
@@ -167,7 +167,7 @@ func TestUseCustomTag(t *testing.T) {
 	}
 
 	dec := msgpack.NewDecoder(&buf)
-	dec.UseCustomStructTag("custom")
+	dec.SetCustomStructTag("custom")
 	out := new(CustomFallbackTest)
 	err = dec.Decode(out)
 	if err != nil {
@@ -275,8 +275,8 @@ var encoderTests = []encoderTest{
 func TestEncoder(t *testing.T) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
-	enc.UseJSONTag(true)
-	enc.UseSortedMaps(true)
+	enc.SetCustomStructTag("json")
+	enc.SetSortMapKeys(true)
 	enc.UseCompactInts(true)
 
 	for _, test := range encoderTests {

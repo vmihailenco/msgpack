@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	looseIfaceFlag uint32 = 1 << iota
+	looseInterfaceDecodingFlag uint32 = 1 << iota
 	disallowUnknownFieldsFlag
 )
 
@@ -97,6 +97,7 @@ func (d *Decoder) Reset(r io.Reader) {
 func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	d.resetReader(r)
 	d.flags = 0
+	d.structTag = ""
 	d.decodeMapFunc = nil
 
 	if len(dict) > 0 {
@@ -125,25 +126,15 @@ func (d *Decoder) SetMapDecoder(fn func(*Decoder) (interface{}, error)) {
 // to decode msgpack value into Go interface{}.
 func (d *Decoder) UseLooseInterfaceDecoding(on bool) {
 	if on {
-		d.flags |= looseIfaceFlag
+		d.flags |= looseInterfaceDecodingFlag
 	} else {
-		d.flags &= ^looseIfaceFlag
+		d.flags &= ^looseInterfaceDecodingFlag
 	}
 }
 
-// UseJSONTag causes the Decoder to use json struct tag as fallback option
+// SetCustomStructTag causes the decoder to use the supplied tag as a fallback option
 // if there is no msgpack tag.
-func (d *Decoder) UseJSONTag(on bool) {
-	if on {
-		d.UseCustomStructTag("json")
-	} else {
-		d.UseCustomStructTag("")
-	}
-}
-
-// UseCustomStructTag causes the decoder to use the supplied tag as a fallback option
-// if there is no msgpack tag.
-func (d *Decoder) UseCustomStructTag(tag string) {
+func (d *Decoder) SetCustomStructTag(tag string) {
 	d.structTag = tag
 }
 
@@ -304,7 +295,7 @@ func (d *Decoder) DecodeMulti(v ...interface{}) error {
 }
 
 func (d *Decoder) decodeInterfaceCond() (interface{}, error) {
-	if d.flags&looseIfaceFlag != 0 {
+	if d.flags&looseInterfaceDecodingFlag != 0 {
 		return d.DecodeInterfaceLoose()
 	}
 	return d.DecodeInterface()

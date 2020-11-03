@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	sortedMapsFlag uint32 = 1 << iota
-	structAsArrayFlag
+	sortMapKeysFlag uint32 = 1 << iota
+	arrayEncodedStructsFlag
 	useCompactIntsFlag
 	useCompactFloatsFlag
 	useInternedStringsFlag
@@ -127,42 +127,32 @@ func (e *Encoder) resetWriter(w io.Writer) {
 	}
 }
 
-// UseSortedMaps causes the Encoder to encode map keys in increasing order.
+// SetSortMapKeys causes the Encoder to encode map keys in increasing order.
 // Supported map types are:
 //   - map[string]string
 //   - map[string]interface{}
-func (e *Encoder) UseSortedMaps(on bool) *Encoder {
+func (e *Encoder) SetSortMapKeys(on bool) *Encoder {
 	if on {
-		e.flags |= sortedMapsFlag
+		e.flags |= sortMapKeysFlag
 	} else {
-		e.flags &= ^sortedMapsFlag
+		e.flags &= ^sortMapKeysFlag
 	}
 	return e
+}
+
+// SetCustomStructTag causes the Encoder to use a custom struct tag as
+// fallback option if there is no msgpack tag.
+func (e *Encoder) SetCustomStructTag(tag string) {
+	e.structTag = tag
 }
 
 // UseArrayEncodedStructs causes the Encoder to encode Go structs as msgpack arrays.
 func (e *Encoder) UseArrayEncodedStructs(on bool) {
 	if on {
-		e.flags |= structAsArrayFlag
+		e.flags |= arrayEncodedStructsFlag
 	} else {
-		e.flags &= ^structAsArrayFlag
+		e.flags &= ^arrayEncodedStructsFlag
 	}
-}
-
-// UseJSONTag causes the Encoder to use json struct tag as fallback option
-// if there is no msgpack tag.
-func (e *Encoder) UseJSONTag(on bool) {
-	if on {
-		e.UseCustomStructTag("json")
-	} else {
-		e.UseCustomStructTag("")
-	}
-}
-
-// UseCustomStructTag causes the Encoder to use a custom struct tag as
-// fallback option if there is no msgpack tag.
-func (e *Encoder) UseCustomStructTag(tag string) {
-	e.structTag = tag
 }
 
 // UseCompactEncoding causes the Encoder to chose the most compact encoding.
