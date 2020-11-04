@@ -27,6 +27,11 @@ var (
 	binaryUnmarshalerType = reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
 )
 
+var (
+	textMarshalerType   = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
+	textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+)
+
 type (
 	encoderFunc func(*Encoder, reflect.Value) error
 	decoderFunc func(*Decoder, reflect.Value) error
@@ -39,7 +44,7 @@ var (
 
 // Register registers encoder and decoder functions for a value.
 // This is low level API and in most cases you should prefer implementing
-// Marshaler/CustomEncoder and Unmarshaler/CustomDecoder interfaces.
+// CustomEncoder/CustomDecoder or Marshaler/Unmarshaler interfaces.
 func Register(value interface{}, enc encoderFunc, dec decoderFunc) {
 	typ := reflect.TypeOf(value)
 	if enc != nil {
@@ -66,7 +71,7 @@ type structCacheKey struct {
 }
 
 func newStructCache() *structCache {
-	return &structCache{}
+	return new(structCache)
 }
 
 func (m *structCache) Fields(typ reflect.Type, tag string) *fields {

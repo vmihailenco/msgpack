@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"math/big"
 	"net/url"
 	"reflect"
 	"strings"
@@ -600,6 +601,8 @@ var (
 			in:  InlineDupTest{FooTest{"foo"}, FooDupTest{"foo"}},
 			out: new(InlineDupTest),
 		},
+
+		{in: big.NewInt(123), out: new(big.Int)},
 	}
 )
 
@@ -663,9 +666,7 @@ func TestTypes(t *testing.T) {
 		if wanted == nil {
 			wanted = indirect(test.in)
 		}
-		if !reflect.DeepEqual(out, wanted) {
-			t.Fatalf("%#v != %#v (%s)", out, wanted, test)
-		}
+		require.Equal(t, wanted, out)
 	}
 
 	for _, test := range typeTests {

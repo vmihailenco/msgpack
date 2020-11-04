@@ -72,6 +72,9 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 	if typ.Implements(binaryUnmarshalerType) {
 		return unmarshalBinaryValue
 	}
+	if typ.Implements(textUnmarshalerType) {
+		return unmarshalTextValue
+	}
 
 	// Addressable struct field value.
 	if kind != reflect.Ptr {
@@ -84,6 +87,9 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 		}
 		if ptr.Implements(binaryUnmarshalerType) {
 			return unmarshalBinaryValueAddr
+		}
+		if ptr.Implements(textUnmarshalerType) {
+			return unmarshalTextValueAddr
 		}
 	}
 
@@ -246,4 +252,31 @@ func unmarshalBinaryValue(d *Decoder, v reflect.Value) error {
 
 	unmarshaler := v.Interface().(encoding.BinaryUnmarshaler)
 	return unmarshaler.UnmarshalBinary(data)
+}
+
+//------------------------------------------------------------------------------
+
+func unmarshalTextValueAddr(d *Decoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
+	}
+	return unmarshalTextValue(d, v.Addr())
+}
+
+func unmarshalTextValue(d *Decoder, v reflect.Value) error {
+	if d.hasNilCode() {
+		return d.decodeNilValue(v)
+	}
+
+	if v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+
+	data, err := d.DecodeBytes()
+	if err != nil {
+		return err
+	}
+
+	unmarshaler := v.Interface().(encoding.TextUnmarshaler)
+	return unmarshaler.UnmarshalText(data)
 }
