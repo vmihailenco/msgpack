@@ -40,27 +40,10 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) decodeMapDefault() (interface{}, error) {
-	if d.decodeMapFunc != nil {
-		return d.decodeMapFunc(d)
+	if d.mapDecoder != nil {
+		return d.mapDecoder(d)
 	}
-
-	n, err := d.DecodeMapLen()
-	if err != nil {
-		return nil, err
-	}
-	if n == -1 {
-		return nil, nil
-	}
-
-	code, err := d.PeekCode()
-	if err != nil {
-		return nil, err
-	}
-
-	if msgpcode.IsString(code) || msgpcode.IsBin(code) || msgpcode.IsExt(code) {
-		return d.decodeMap(n)
-	}
-	return d.decodeUntypedMap(n)
+	return d.DecodeMap()
 }
 
 // DecodeMapLen decodes map length. Length is -1 when map is nil.
@@ -156,14 +139,13 @@ func (d *Decoder) DecodeMap() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if n == -1 {
 		return nil, nil
 	}
-	return d.decodeMap(n)
-}
 
-func (d *Decoder) decodeMap(n int) (map[string]interface{}, error) {
 	m := make(map[string]interface{}, min(n, maxMapSize))
+
 	for i := 0; i < n; i++ {
 		mk, err := d.DecodeString()
 		if err != nil {
@@ -175,21 +157,20 @@ func (d *Decoder) decodeMap(n int) (map[string]interface{}, error) {
 		}
 		m[mk] = mv
 	}
+
 	return m, nil
 }
 
-func (d *Decoder) DecodeUntypedMap() (interface{}, error) {
+func (d *Decoder) DecodeUntypedMap() (map[interface{}]interface{}, error) {
 	n, err := d.DecodeMapLen()
 	if err != nil {
 		return nil, err
 	}
+
 	if n == -1 {
 		return nil, nil
 	}
-	return d.decodeUntypedMap(n)
-}
 
-func (d *Decoder) decodeUntypedMap(n int) (interface{}, error) {
 	m := make(map[interface{}]interface{}, min(n, maxMapSize))
 
 	for i := 0; i < n; i++ {
@@ -209,6 +190,8 @@ func (d *Decoder) decodeUntypedMap(n int) (interface{}, error) {
 	return m, nil
 }
 
+// DecodeTypedMap decodes a typed map. Typed map is a map that has a fixed type for keys and values.
+// Key and value types may be different.
 func (d *Decoder) DecodeTypedMap() (interface{}, error) {
 	n, err := d.DecodeMapLen()
 	if err != nil {

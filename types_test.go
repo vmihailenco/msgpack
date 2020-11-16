@@ -680,12 +680,21 @@ func TestTypes(t *testing.T) {
 		}
 
 		var dst interface{}
-		err = msgpack.Unmarshal(b, &dst)
+		dec := msgpack.NewDecoder(bytes.NewReader(b))
+		dec.SetMapDecoder(func(dec *msgpack.Decoder) (interface{}, error) {
+			return dec.DecodeUntypedMap()
+		})
+
+		err = dec.Decode(&dst)
 		if err != nil {
 			t.Fatalf("Unmarshal into interface{} failed: %s (%s)", err, test)
 		}
 
-		dec := msgpack.NewDecoder(bytes.NewReader(b))
+		dec = msgpack.NewDecoder(bytes.NewReader(b))
+		dec.SetMapDecoder(func(dec *msgpack.Decoder) (interface{}, error) {
+			return dec.DecodeUntypedMap()
+		})
+
 		_, err = dec.DecodeInterface()
 		if err != nil {
 			t.Fatalf("DecodeInterface failed: %s (%s)", err, test)

@@ -70,10 +70,10 @@ type Decoder struct {
 
 	rec []byte // accumulates read data if not nil
 
-	dict          []string
-	flags         uint32
-	structTag     string
-	decodeMapFunc func(*Decoder) (interface{}, error)
+	dict       []string
+	flags      uint32
+	structTag  string
+	mapDecoder func(*Decoder) (interface{}, error)
 }
 
 // NewDecoder returns a new decoder that reads from r.
@@ -98,7 +98,7 @@ func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	d.resetReader(r)
 	d.flags = 0
 	d.structTag = ""
-	d.decodeMapFunc = nil
+	d.mapDecoder = nil
 
 	if len(dict) > 0 {
 		d.dict = dict
@@ -119,7 +119,7 @@ func (d *Decoder) resetReader(r io.Reader) {
 }
 
 func (d *Decoder) SetMapDecoder(fn func(*Decoder) (interface{}, error)) {
-	d.decodeMapFunc = fn
+	d.mapDecoder = fn
 }
 
 // UseLooseInterfaceDecoding causes decoder to use DecodeInterfaceLoose
