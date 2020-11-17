@@ -193,11 +193,11 @@ func (e *Encoder) Encode(v interface{}) error {
 	case []byte:
 		return e.EncodeBytes(v)
 	case int:
-		return e.encodeInt64Cond(int64(v))
+		return e.EncodeInt(int64(v))
 	case int64:
 		return e.encodeInt64Cond(v)
 	case uint:
-		return e.encodeUint64Cond(uint64(v))
+		return e.EncodeUint(uint64(v))
 	case uint64:
 		return e.encodeUint64Cond(v)
 	case bool:
