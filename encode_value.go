@@ -12,12 +12,12 @@ var valueEncoders []encoderFunc
 func init() {
 	valueEncoders = []encoderFunc{
 		reflect.Bool:          encodeBoolValue,
-		reflect.Int:           encodeInt64CondValue,
+		reflect.Int:           encodeIntValue,
 		reflect.Int8:          encodeInt8CondValue,
 		reflect.Int16:         encodeInt16CondValue,
 		reflect.Int32:         encodeInt32CondValue,
 		reflect.Int64:         encodeInt64CondValue,
-		reflect.Uint:          encodeUint64CondValue,
+		reflect.Uint:          encodeUintValue,
 		reflect.Uint8:         encodeUint8CondValue,
 		reflect.Uint16:        encodeUint16CondValue,
 		reflect.Uint32:        encodeUint32CondValue,

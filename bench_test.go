@@ -203,8 +203,10 @@ type benchmarkStruct2 struct {
 	UpdatedAt time.Time
 }
 
-var _ msgpack.CustomEncoder = (*benchmarkStruct2)(nil)
-var _ msgpack.CustomDecoder = (*benchmarkStruct2)(nil)
+var (
+	_ msgpack.CustomEncoder = (*benchmarkStruct2)(nil)
+	_ msgpack.CustomDecoder = (*benchmarkStruct2)(nil)
+)
 
 func (s *benchmarkStruct2) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
@@ -346,8 +348,8 @@ func BenchmarkQuery(b *testing.B) {
 	var records []map[string]interface{}
 	for i := 0; i < 1000; i++ {
 		record := map[string]interface{}{
-			"id":    i,
-			"attrs": map[string]interface{}{"phone": i},
+			"id":    int64(i),
+			"attrs": map[string]interface{}{"phone": int64(i)},
 		}
 		records = append(records, record)
 	}

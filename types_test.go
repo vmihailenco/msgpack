@@ -20,7 +20,7 @@ import (
 //------------------------------------------------------------------------------
 
 type Object struct {
-	n int
+	n int64
 }
 
 func (o *Object) MarshalMsgpack() ([]byte, error) {
@@ -280,18 +280,14 @@ func TestEncoder(t *testing.T) {
 	enc.SetSortMapKeys(true)
 	enc.UseCompactInts(true)
 
-	for _, test := range encoderTests {
+	for i, test := range encoderTests {
 		buf.Reset()
 
 		err := enc.Encode(test.in)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 
 		s := hex.EncodeToString(buf.Bytes())
-		if s != test.wanted {
-			t.Fatalf("%s != %s (in=%#v)", s, test.wanted, test.in)
-		}
+		require.Equal(t, test.wanted, s, "#%d", i)
 	}
 }
 
