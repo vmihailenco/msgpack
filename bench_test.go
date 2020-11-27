@@ -95,6 +95,26 @@ func BenchmarkInt32(b *testing.B) {
 	benchmarkEncodeDecode(b, int32(0), &dst)
 }
 
+func BenchmarkFloat32(b *testing.B) {
+	var dst float32
+	benchmarkEncodeDecode(b, float32(0), &dst)
+}
+
+func BenchmarkFloat32_Max(b *testing.B) {
+	var dst float32
+	benchmarkEncodeDecode(b, float32(math.MaxFloat32), &dst)
+}
+
+func BenchmarkFloat64(b *testing.B) {
+	var dst float64
+	benchmarkEncodeDecode(b, float64(0), &dst)
+}
+
+func BenchmarkFloat64_Max(b *testing.B) {
+	var dst float64
+	benchmarkEncodeDecode(b, float64(math.MaxFloat64), &dst)
+}
+
 func BenchmarkTime(b *testing.B) {
 	var dst time.Time
 	benchmarkEncodeDecode(b, time.Now(), &dst)
