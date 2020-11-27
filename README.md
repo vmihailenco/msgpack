@@ -16,23 +16,28 @@
 
 - Primitives, arrays, maps, structs, time.Time and interface{}.
 - Appengine \*datastore.Key and datastore.Cursor.
-- [CustomEncoder](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-CustomEncoder)/CustomDecoder
-  interfaces for custom encoding.
+- [CustomEncoder]/[CustomDecoder] interfaces for custom encoding.
 - [Extensions](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-RegisterExt) to encode
   type information.
 - Renaming fields via `msgpack:"my_field_name"` and alias via `msgpack:"alias:another_name"`.
 - Omitting individual empty fields via `msgpack:",omitempty"` tag or all
-  [empty fields in a struct](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Marshal--OmitEmpty).
-- [Map keys sorting](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Encoder.SortMapKeys).
+  [empty fields in a struct](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Marshal-OmitEmpty).
+- [Map keys sorting](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Encoder.SetSortMapKeys).
 - Encoding/decoding all
-  [structs as arrays](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Encoder.UseArrayForStructs)
+  [structs as arrays](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Encoder.UseArrayEncodedStructs)
   or
-  [individual structs](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Marshal--AsArray).
-- [Encoder.UseJSONTag](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Encoder.UseJSONTag) with
-  [Decoder.UseJSONTag](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Decoder.UseJSONTag) can
-  turn msgpack into drop-in replacement for JSON.
+  [individual structs](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Marshal-AsArray).
+- [Encoder.SetCustomStructTag] with [Decoder.SetCustomStructTag] can turn msgpack into drop-in
+  replacement for any tag.
 - Simple but very fast and efficient
-  [queries](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Decoder-Query).
+  [queries](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#example-Decoder.Query).
+
+[customencoder]: https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#CustomEncoder
+[customdecoder]: https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#CustomDecoder
+[encoder.setcustomstructtag]:
+  https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Encoder.SetCustomStructTag
+[decoder.setcustomstructtag]:
+  https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#Decoder.SetCustomStructTag
 
 ## Installation
 
