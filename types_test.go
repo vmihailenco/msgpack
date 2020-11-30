@@ -614,6 +614,8 @@ func indirect(viface interface{}) interface{} {
 }
 
 func TestTypes(t *testing.T) {
+	msgpack.RegisterExt(1, (*EventTime)(nil))
+
 	for _, test := range typeTests {
 		test.T = t
 

@@ -34,17 +34,37 @@ func RegisterExt(extID int8, value MarshalerUnmarshaler) {
 	})
 }
 
+func UnregisterExt(extID int8) {
+	unregisterExtEncoder(extID)
+	unregisterExtDecoder(extID)
+}
+
 func RegisterExtEncoder(
 	extID int8,
 	value interface{},
 	encoder func(enc *Encoder, v reflect.Value) ([]byte, error),
 ) {
+	unregisterExtEncoder(extID)
+
 	typ := reflect.TypeOf(value)
 	extEncoder := makeExtEncoder(extID, typ, encoder)
-
+	typeEncMap.Store(extID, typ)
 	typeEncMap.Store(typ, extEncoder)
 	if typ.Kind() == reflect.Ptr {
 		typeEncMap.Store(typ.Elem(), makeExtEncoderAddr(extEncoder))
+	}
+}
+
+func unregisterExtEncoder(extID int8) {
+	t, ok := typeEncMap.Load(extID)
+	if !ok {
+		return
+	}
+	typeEncMap.Delete(extID)
+	typ := t.(reflect.Type)
+	typeEncMap.Delete(typ)
+	if typ.Kind() == reflect.Ptr {
+		typeEncMap.Delete(typ.Elem())
 	}
 }
 
@@ -87,6 +107,8 @@ func RegisterExtDecoder(
 	value interface{},
 	decoder func(dec *Decoder, v reflect.Value, extLen int) error,
 ) {
+	unregisterExtDecoder(extID)
+
 	typ := reflect.TypeOf(value)
 	extDecoder := makeExtDecoder(extID, typ, decoder)
 	extTypes[extID] = &extInfo{
@@ -94,9 +116,24 @@ func RegisterExtDecoder(
 		Decoder: decoder,
 	}
 
+	typeDecMap.Store(extID, typ)
 	typeDecMap.Store(typ, extDecoder)
 	if typ.Kind() == reflect.Ptr {
 		typeDecMap.Store(typ.Elem(), makeExtDecoderAddr(extDecoder))
+	}
+}
+
+func unregisterExtDecoder(extID int8) {
+	t, ok := typeDecMap.Load(extID)
+	if !ok {
+		return
+	}
+	typeDecMap.Delete(extID)
+	delete(extTypes, extID)
+	typ := t.(reflect.Type)
+	typeDecMap.Delete(typ)
+	if typ.Kind() == reflect.Ptr {
+		typeDecMap.Delete(typ.Elem())
 	}
 }
 
