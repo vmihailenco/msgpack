@@ -109,7 +109,10 @@ func (e *Encoder) ResetDict(w io.Writer, dict map[string]int) {
 	e.resetWriter(w)
 	e.flags = 0
 	e.structTag = ""
+	e.SetDict(dict)
+}
 
+func (e *Encoder) SetDict(dict map[string]int) {
 	if len(dict) > 0 {
 		e.dict = dict
 	} else {

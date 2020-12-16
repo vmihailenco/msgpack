@@ -99,7 +99,10 @@ func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	d.flags = 0
 	d.structTag = ""
 	d.mapDecoder = nil
+	d.SetDict(dict)
+}
 
+func (d *Decoder) SetDict(dict []string) {
 	if len(dict) > 0 {
 		d.dict = dict
 	} else {
