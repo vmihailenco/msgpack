@@ -43,7 +43,7 @@ func (d *Decoder) decodeMapDefault() (interface{}, error) {
 	if d.mapDecoder != nil {
 		return d.mapDecoder(d)
 	}
-	return d.DecodeMap()
+	return d.DecodeTypedMap()
 }
 
 // DecodeMapLen decodes map length. Length is -1 when map is nil.

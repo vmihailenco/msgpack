@@ -264,13 +264,13 @@ func TestNoPanicOnUnsupportedKey(t *testing.T) {
 	data := []byte{0x81, 0x81, 0xa1, 0x78, 0xc3, 0xc3}
 
 	_, err := msgpack.NewDecoder(bytes.NewReader(data)).DecodeTypedMap()
-	require.EqualError(t, err, "msgpack: unsupported map key: map[string]interface {}")
+	require.EqualError(t, err, "msgpack: unsupported map key: map[string]bool")
 }
 
 func TestMapDefault(t *testing.T) {
 	in := map[string]interface{}{
 		"foo": "bar",
-		"hello": map[string]interface{}{
+		"hello": map[string]string{
 			"foo": "bar",
 		},
 	}
