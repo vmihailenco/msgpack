@@ -197,7 +197,7 @@ func (d *Decoder) DecodeTypedMap() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	if n == -1 {
+	if n <= 0 {
 		return nil, nil
 	}
 
