@@ -103,11 +103,7 @@ func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 }
 
 func (d *Decoder) SetDict(dict []string) {
-	if len(dict) > 0 {
-		d.dict = dict
-	} else {
-		d.dict = d.dict[:0]
-	}
+	d.dict = dict
 }
 
 func (d *Decoder) resetReader(r io.Reader) {
