@@ -208,9 +208,9 @@ func ExampleMarshal_escapedNames() {
 		panic(err)
 	}
 
-	type Item struct{
-		SomethingSpecial uint `msgpack:"'something:special'"`
-		HelloWorld string     `msgpack:"'hello, world'"`
+	type Item struct {
+		SomethingSpecial uint   `msgpack:"'something:special'"`
+		HelloWorld       string `msgpack:"'hello, world'"`
 	}
 	var item Item
 	if err := msgpack.Unmarshal(raw, &item); err != nil {
