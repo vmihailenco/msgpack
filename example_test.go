@@ -197,3 +197,25 @@ func ExampleMarshal_omitEmpty() {
 	// Output: item: "\x82\xa3Foo\xa5hello\xa3Bar\xa0"
 	// item2: "\x81\xa3Foo\xa5hello"
 }
+
+func ExampleMarshal_escapedNames() {
+	og := map[string]interface{}{
+		"something:special": uint(123),
+		"hello, world":      "hello!",
+	}
+	raw, err := msgpack.Marshal(og)
+	if err != nil {
+		panic(err)
+	}
+
+	type Item struct {
+		SomethingSpecial uint   `msgpack:"'something:special'"`
+		HelloWorld       string `msgpack:"'hello, world'"`
+	}
+	var item Item
+	if err := msgpack.Unmarshal(raw, &item); err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v\n", item)
+	//output: msgpack_test.Item{SomethingSpecial:0x7b, HelloWorld:"hello!"}
+}
