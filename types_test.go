@@ -571,7 +571,7 @@ var (
 		{
 			in:     AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}},
 			out:    new(unexported),
-			wanted: unexported{Foo: "foo"},
+			decErr: "msgpack: number of fields in array-encoded struct has changed",
 		},
 
 		{in: (*EventTime)(nil), out: new(*EventTime)},
