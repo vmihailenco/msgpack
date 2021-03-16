@@ -327,6 +327,11 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
+	case reflect.Struct:
+		if !v.CanInterface() {
+			return false
+		}
+		return v.Interface() == reflect.Zero(v.Type()).Interface()
 	}
 	return false
 }
