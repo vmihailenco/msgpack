@@ -380,3 +380,64 @@ func TestSetSortMapKeys(t *testing.T) {
 		require.Equal(t, in, out)
 	}
 }
+
+type NullInt struct {
+	Valid bool
+	Int   int
+}
+
+func (i *NullInt) Set(j int) {
+	i.Int = j
+	i.Valid = true
+}
+
+func (i NullInt) MarshalMsgpack() ([]byte, error) {
+	return msgpack.Marshal(i.Int)
+}
+
+func (i *NullInt) UnmarshalMsgpack(b []byte) error {
+	if err := msgpack.Unmarshal(b, &i.Int); err != nil {
+		return err
+	}
+	i.Valid = true
+	return nil
+}
+
+type Secretive struct {
+	Visible bool
+	hidden  bool
+}
+
+type T struct {
+	I NullInt `msgpack:",omitempty"`
+	J NullInt
+	// Secretive is not a "simple" struct because it has an hidden field.
+	S Secretive `msgpack:",omitempty"`
+}
+
+func ExampleMarshal_ignore_simple_zero_structs_when_tagged_with_omitempty() {
+	var t1 T
+	raw, err := msgpack.Marshal(t1)
+	if err != nil {
+		panic(err)
+	}
+	var t2 T
+	if err = msgpack.Unmarshal(raw, &t2); err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v\n", t2)
+
+	t2.I.Set(42)
+	t2.S.hidden = true // won't be included because it is a hidden field
+	raw, err = msgpack.Marshal(t2)
+	if err != nil {
+		panic(err)
+	}
+	var t3 T
+	if err = msgpack.Unmarshal(raw, &t3); err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v\n", t3)
+	// Output: msgpack_test.T{I:msgpack_test.NullInt{Valid:false, Int:0}, J:msgpack_test.NullInt{Valid:true, Int:0}, S:msgpack_test.Secretive{Visible:false, hidden:false}}
+	// msgpack_test.T{I:msgpack_test.NullInt{Valid:true, Int:42}, J:msgpack_test.NullInt{Valid:true, Int:0}, S:msgpack_test.Secretive{Visible:false, hidden:false}}
+}
