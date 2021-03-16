@@ -113,6 +113,17 @@ type CustomEncoderField struct {
 	Field CustomEncoder
 }
 
+type CustomEncoderEmbeddedPtr struct {
+	*CustomEncoder
+}
+
+func (s *CustomEncoderEmbeddedPtr) DecodeMsgpack(dec *msgpack.Decoder) error {
+	if s.CustomEncoder == nil {
+		s.CustomEncoder = new(CustomEncoder)
+	}
+	return s.CustomEncoder.DecodeMsgpack(dec)
+}
+
 //------------------------------------------------------------------------------
 
 type JSONFallbackTest struct {
@@ -560,6 +571,10 @@ var (
 		{
 			in:  &CustomEncoderField{Field: CustomEncoder{"a", nil, 1}},
 			out: new(CustomEncoderField),
+		},
+		{
+			in:  &CustomEncoderEmbeddedPtr{&CustomEncoder{"a", nil, 1}},
+			out: new(CustomEncoderEmbeddedPtr),
 		},
 
 		{in: repoURL, out: new(url.URL)},
