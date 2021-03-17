@@ -317,11 +317,9 @@ type isZeroer interface {
 	IsZero() bool
 }
 
-var isZeroerType = reflect.TypeOf(new(isZeroer)).Elem()
-
 func isEmptyValue(v reflect.Value) bool {
-	if v.Type().Implements(isZeroerType) {
-		return (v.Interface().(isZeroer)).IsZero()
+	if z, ok := v.Interface().(isZeroer); ok {
+		return z.IsZero()
 	}
 	switch v.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
