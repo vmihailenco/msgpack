@@ -313,7 +313,16 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 	return true
 }
 
+type isZeroer interface {
+	IsZero() bool
+}
+
+var isZeroerType = reflect.TypeOf(new(isZeroer)).Elem()
+
 func isEmptyValue(v reflect.Value) bool {
+	if v.Type().Implements(isZeroerType) {
+		return (v.Interface().(isZeroer)).IsZero()
+	}
 	switch v.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return v.Len() == 0
@@ -327,11 +336,6 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
-	case reflect.Struct:
-		if !v.CanInterface() {
-			return false
-		}
-		return v.Interface() == reflect.Zero(v.Type()).Interface()
 	}
 	return false
 }

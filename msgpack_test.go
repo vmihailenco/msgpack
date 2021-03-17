@@ -391,6 +391,10 @@ func (i *NullInt) Set(j int) {
 	i.Valid = true
 }
 
+func (i NullInt) IsZero() bool {
+	return !i.Valid
+}
+
 func (i NullInt) MarshalMsgpack() ([]byte, error) {
 	return msgpack.Marshal(i.Int)
 }
