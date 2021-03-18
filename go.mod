@@ -6,5 +6,3 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/vmihailenco/tagparser/v2 v2.0.0
 )
-
-retract v5.2.2
