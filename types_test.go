@@ -196,6 +196,11 @@ func TestUseCustomTag(t *testing.T) {
 
 //------------------------------------------------------------------------------
 
+type OmitTimeTest struct {
+	Foo time.Time  `msgpack:",omitempty"`
+	Bar *time.Time `msgpack:",omitempty"`
+}
+
 type OmitEmptyTest struct {
 	Foo string `msgpack:",omitempty"`
 	Bar string `msgpack:",omitempty"`
@@ -579,6 +584,9 @@ var (
 
 		{in: repoURL, out: new(url.URL)},
 		{in: repoURL, out: new(*url.URL)},
+
+		{in: OmitEmptyTest{}, out: new(OmitEmptyTest)},
+		{in: OmitTimeTest{}, out: new(OmitTimeTest)},
 
 		{in: nil, out: new(*AsArrayTest), wantnil: true},
 		{in: nil, out: new(AsArrayTest), wantzero: true},

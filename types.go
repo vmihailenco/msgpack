@@ -319,7 +319,7 @@ type isZeroer interface {
 
 func isEmptyValue(v reflect.Value) bool {
 	if z, ok := v.Interface().(isZeroer); ok {
-		return z.IsZero()
+		return nilable(v.Kind()) && v.IsNil() || z.IsZero()
 	}
 	switch v.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
