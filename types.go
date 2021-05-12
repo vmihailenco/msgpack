@@ -97,12 +97,12 @@ type field struct {
 	decoder   decoderFunc
 }
 
-func (f *field) Omit(strct reflect.Value) bool {
+func (f *field) Omit(strct reflect.Value, forced bool) bool {
 	v, ok := fieldByIndex(strct, f.index)
 	if !ok {
 		return true
 	}
-	return f.omitEmpty && isEmptyValue(v)
+	return (f.omitEmpty || forced) && isEmptyValue(v)
 }
 
 func (f *field) EncodeValue(e *Encoder, strct reflect.Value) error {
@@ -152,15 +152,15 @@ func (fs *fields) warnIfFieldExists(name string) {
 	}
 }
 
-func (fs *fields) OmitEmpty(strct reflect.Value) []*field {
-	if !fs.hasOmitEmpty {
+func (fs *fields) OmitEmpty(strct reflect.Value, forced bool) []*field {
+	if !fs.hasOmitEmpty && !forced {
 		return fs.List
 	}
 
 	fields := make([]*field, 0, len(fs.List))
 
 	for _, f := range fs.List {
-		if !f.Omit(strct) {
+		if !f.Omit(strct, forced) {
 			fields = append(fields, f)
 		}
 	}
