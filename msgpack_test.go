@@ -381,6 +381,20 @@ func TestSetSortMapKeys(t *testing.T) {
 	}
 }
 
+func TestSetOmitEmpty(t *testing.T) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	enc.SetOmitEmpty(true)
+	err := enc.Encode(EmbeddingPtrTest{})
+	require.Nil(t, err)
+
+	var t2 *EmbeddingPtrTest
+	dec := msgpack.NewDecoder(&buf)
+	err = dec.Decode(&t2)
+	require.Nil(t, err)
+	require.Nil(t, t2.Exported)
+}
+
 type NullInt struct {
 	Valid bool
 	Int   int
