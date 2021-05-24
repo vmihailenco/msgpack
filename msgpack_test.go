@@ -459,3 +459,19 @@ func ExampleMarshal_ignore_simple_zero_structs_when_tagged_with_omitempty() {
 	// Output: msgpack_test.T{I:msgpack_test.NullInt{Valid:false, Int:0}, J:msgpack_test.NullInt{Valid:true, Int:0}, S:msgpack_test.Secretive{Visible:false, hidden:false}}
 	// msgpack_test.T{I:msgpack_test.NullInt{Valid:true, Int:42}, J:msgpack_test.NullInt{Valid:true, Int:0}, S:msgpack_test.Secretive{Visible:false, hidden:false}}
 }
+
+type Value interface{}
+type Wrapper struct {
+	Value Value `msgpack:"v,omitempty"`
+}
+
+func TestEncodeWrappedValue(t *testing.T) {
+	var v Value
+	v = (*time.Time)(nil)
+	c := &Wrapper{
+		Value: v,
+	}
+	var buf bytes.Buffer
+	require.Nil(t, msgpack.NewEncoder(&buf).Encode(v))
+	require.Nil(t, msgpack.NewEncoder(&buf).Encode(c))
+}
