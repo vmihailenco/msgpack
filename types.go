@@ -318,17 +318,21 @@ type isZeroer interface {
 }
 
 func isEmptyValue(v reflect.Value) bool {
-	// unwrap to detect nil ptr
-	for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
+	kind := v.Kind()
+
+	for kind == reflect.Interface {
 		if v.IsNil() {
 			return true
 		}
 		v = v.Elem()
+		kind = v.Kind()
 	}
+
 	if z, ok := v.Interface().(isZeroer); ok {
-		return nilable(v.Kind()) && v.IsNil() || z.IsZero()
+		return nilable(kind) && v.IsNil() || z.IsZero()
 	}
-	switch v.Kind() {
+
+	switch kind {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return v.Len() == 0
 	case reflect.Bool:
@@ -339,8 +343,11 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Uint() == 0
 	case reflect.Float32, reflect.Float64:
 		return v.Float() == 0
+	case reflect.Ptr:
+		return v.IsNil()
+	default:
+		return false
 	}
-	return false
 }
 
 func fieldByIndex(v reflect.Value, index []int) (_ reflect.Value, ok bool) {
