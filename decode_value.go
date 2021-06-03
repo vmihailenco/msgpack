@@ -71,7 +71,7 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 
 	kind := typ.Kind()
 	if kind == reflect.Ptr {
-		//if kind is ptr, like &msgpack.RawMessage, will use cache msgpack.RawMessage => ptrValueDecoder
+		//if kind is ptr, like &msgpack.RawMessage, will use wrong cache msgpack.RawMessage => ptrValueDecoder
 		//and goto ptrValueDecoder if has nil code then  panic
 		if _, ok := typeDecMap.Load(typ.Elem()); ok {
 			return ptrValueDecoder(typ)
