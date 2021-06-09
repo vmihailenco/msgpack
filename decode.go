@@ -61,6 +61,12 @@ func (d *Decoder) Reset(r io.Reader) error {
 	return nil
 }
 
+// Buffered returns a reader of the data remaining in the Decoder's buffer.
+// The reader is valid until the next call to Decode.
+func (d *Decoder) Buffered() io.Reader {
+	return d.r
+}
+
 func (d *Decoder) Decode(v ...interface{}) error {
 	for _, vv := range v {
 		if err := d.decode(vv); err != nil {
