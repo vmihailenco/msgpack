@@ -78,6 +78,11 @@ func (e *Encoder) Encode(v ...interface{}) error {
 	return nil
 }
 
+// Writer returns the Encoder's writer.
+func (e *Encoder) Writer() io.Writer {
+	return e.w
+}
+
 func (e *Encoder) encode(v interface{}) error {
 	switch v := v.(type) {
 	case nil:
