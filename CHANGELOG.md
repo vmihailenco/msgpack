@@ -16,7 +16,7 @@
 
 ### Removed
 
-- `UseJSONTag` is removed. Use SetCustomStructTag("json") instead.
+- `UseJSONTag` is removed. Use `SetCustomStructTag("json")` instead.
 
 ## v4
 

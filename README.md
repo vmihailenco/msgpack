@@ -13,6 +13,12 @@
 - [Reference](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
 - [Examples](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#pkg-examples)
 
+Other projects you may like:
+
+- [Bun](https://bun.uptrace.dev) - fast and simple SQL client for PostgreSQL, MySQL, and SQLite.
+- [treemux](https://github.com/vmihailenco/treemux) - high-speed, flexible, tree-based HTTP router
+  for Go.
+
 ## Features
 
 - Primitives, arrays, maps, structs, time.Time and interface{}.
