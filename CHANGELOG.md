@@ -1,5 +1,3 @@
-# Changelog
-
 ## v5
 
 ### Added
