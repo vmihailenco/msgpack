@@ -1,3 +1,7 @@
+## [5.3.5](https://github.com/vmihailenco/msgpack/compare/v5.3.4...v5.3.5) (2021-10-22)
+
+
+
 ## v5
 
 ### Added
