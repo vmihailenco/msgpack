@@ -13,6 +13,7 @@ import (
 const (
 	sortMapKeysFlag uint32 = 1 << iota
 	arrayEncodedStructsFlag
+	orderedArrayEncodedStructsFlag
 	useCompactIntsFlag
 	useCompactFloatsFlag
 	useInternedStringsFlag
@@ -163,6 +164,17 @@ func (e *Encoder) UseArrayEncodedStructs(on bool) {
 		e.flags |= arrayEncodedStructsFlag
 	} else {
 		e.flags &= ^arrayEncodedStructsFlag
+	}
+}
+
+// UseOrderedArrayEncodedStructs causes the Encoder to encode Go structs as msgpack arrays.
+// Encoder uses tags to set order of array elements.
+// Encoder sets array element as null if there is no element for that index.
+func (e *Encoder) UseOrderedArrayEncodedStructs(on bool) {
+	if on {
+		e.flags |= orderedArrayEncodedStructsFlag
+	} else {
+		e.flags &= ^orderedArrayEncodedStructsFlag
 	}
 }
 

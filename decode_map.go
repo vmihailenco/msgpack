@@ -279,49 +279,33 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 	n, err := d.mapLen(c)
 	if err == nil {
-		return d.decodeStruct(v, n)
+		return d.decodeStructValueAsMap(v, n)
 	}
 
 	var err2 error
 	n, err2 = d.arrayLen(c)
-	if err2 != nil {
-		return err
+	if err2 == nil {
+		return d.decodeStructValueAsArray(v, n)
 	}
 
-	if n <= 0 {
-		v.Set(reflect.Zero(v.Type()))
-		return nil
-	}
-
-	fields := structs.Fields(v.Type(), d.structTag)
-	if n != len(fields.List) {
-		return errArrayStruct
-	}
-
-	for _, f := range fields.List {
-		if err := f.DecodeValue(d, v); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return err
 }
 
-func (d *Decoder) decodeStruct(v reflect.Value, n int) error {
+func (d *Decoder) decodeStructValueAsMap(v reflect.Value, n int) error {
 	if n == -1 {
 		v.Set(reflect.Zero(v.Type()))
 		return nil
 	}
 
-	fields := structs.Fields(v.Type(), d.structTag)
+	structFields := structs.Fields(v.Type(), d.structTag)
 	for i := 0; i < n; i++ {
 		name, err := d.decodeStringTemp()
 		if err != nil {
 			return err
 		}
 
-		if f := fields.Map[name]; f != nil {
-			if err := f.DecodeValue(d, v); err != nil {
+		if f := structFields.Map[name]; f != nil {
+			if err := decodeStructFieldValue(d, v, f); err != nil {
 				return err
 			}
 			continue
@@ -336,4 +320,37 @@ func (d *Decoder) decodeStruct(v reflect.Value, n int) error {
 	}
 
 	return nil
+}
+
+func (d *Decoder) decodeStructValueAsArray(v reflect.Value, n int) error {
+	if n <= 0 {
+		v.Set(reflect.Zero(v.Type()))
+		return nil
+	}
+
+	structFields := structs.Fields(v.Type(), d.structTag)
+	fields, err := structFields.OrderArray(d.flags&orderedArrayEncodedStructsFlag != 0)
+	if err != nil {
+		return err
+	}
+	fieldsLen := len(fields)
+
+	if n != fieldsLen && !(structFields.AsOrderedArray || d.flags&orderedArrayEncodedStructsFlag != 0) {
+		return errArrayStruct
+	}
+
+	for i := 0; i < fieldsLen && i < n; i++ {
+		if err := decodeStructFieldValue(d, v, fields[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func decodeStructFieldValue(d *Decoder, v reflect.Value, f *field) error {
+	if f == nil {
+		return d.Skip()
+	}
+	return f.DecodeValue(d, v)
 }

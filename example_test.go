@@ -144,8 +144,9 @@ func ExampleEncoder_UseArrayEncodedStructs() {
 func ExampleMarshal_asArray() {
 	type Item struct {
 		_msgpack struct{} `msgpack:",as_array"`
-		Foo      string
-		Bar      string
+
+		Foo string
+		Bar string
 	}
 
 	var buf bytes.Buffer
@@ -162,6 +163,56 @@ func ExampleMarshal_asArray() {
 	}
 	fmt.Println(v)
 	// Output: [foo bar]
+}
+
+func ExampleEncoder_UseOrderedArrayEncodedStructs() {
+	type Item struct {
+		Foo string `msgpack:"0"`
+		// Bar string `msgpack:"1"`
+		Baz string `msgpack:"2"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseOrderedArrayEncodedStructs(true)
+
+	err := enc.Encode(&Item{Foo: "foo", Baz: "baz"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v, err := dec.DecodeInterface()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(v)
+	// Output: [foo <nil> baz]
+}
+
+func ExampleMarshal_asOrderedArray() {
+	type Item struct {
+		_msgpack struct{} `msgpack:",as_ordered_array"`
+
+		Foo string `msgpack:"0"`
+		// Bar string `msgpack:"1"`
+		Baz string `msgpack:"2"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Baz: "baz"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v, err := dec.DecodeInterface()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(v)
+	// Output: [foo <nil> baz]
 }
 
 func ExampleMarshal_omitEmpty() {

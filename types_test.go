@@ -231,6 +231,29 @@ type AsArrayTest struct {
 	OmitEmptyTest
 }
 
+type AsOrderedArrayTest struct {
+	_msgpack struct{} `msgpack:",as_ordered_array"`
+
+	Foo string `msgpack:"0"`
+	Bar string `msgpack:"1"`
+	Baz string `msgpack:"2"`
+}
+
+type AsOrderedArrayCompatibilityTest struct {
+	_msgpack struct{} `msgpack:",as_ordered_array"`
+
+	Foo string `msgpack:"0"`
+	// Bar string `msgpack:"1"`
+	Baz string `msgpack:"2"`
+}
+
+type AsOrderedArrayInvalidTest struct {
+	_msgpack struct{} `msgpack:",as_ordered_array"`
+
+	Foo string
+	Bar string
+}
+
 type ExtTestField struct {
 	ExtTest ExtTest
 }
@@ -280,6 +303,8 @@ var encoderTests = []encoderTest{
 	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
 
 	{&AsArrayTest{}, "92a0a0"},
+	{&AsOrderedArrayTest{}, "93a0a0a0"},
+	{&AsOrderedArrayCompatibilityTest{}, "93a0c0a0"},
 
 	{&JSONFallbackTest{Foo: "hello"}, "82a3666f6fa568656c6c6fa3626172a0"},
 	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64"},
@@ -595,6 +620,24 @@ var (
 			in:     AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}},
 			out:    new(unexported),
 			decErr: "msgpack: number of fields in array-encoded struct has changed",
+		},
+
+		{in: nil, out: new(*AsOrderedArrayTest), wantnil: true},
+		{in: nil, out: new(AsOrderedArrayTest), wantzero: true},
+		{in: AsOrderedArrayTest{Foo: "foo", Bar: "bar", Baz: "baz"}, out: new(AsOrderedArrayTest)},
+		{
+			in:     AsOrderedArrayTest{Foo: "foo", Bar: "bar", Baz: "baz"},
+			out:    new(AsOrderedArrayCompatibilityTest),
+			wanted: AsOrderedArrayCompatibilityTest{Foo: "foo", Baz: "baz"},
+		},
+		{
+			in:     AsOrderedArrayCompatibilityTest{Foo: "foo", Baz: "baz"},
+			out:    new(AsOrderedArrayTest),
+			wanted: AsOrderedArrayTest{Foo: "foo", Baz: "baz"},
+		},
+		{
+			in:     AsOrderedArrayInvalidTest{Foo: "foo", Bar: "bar"},
+			encErr: "msgpack: msgpack_test.AsOrderedArrayInvalidTest has repeated order for field Bar",
 		},
 
 		{in: (*EventTime)(nil), out: new(*EventTime)},

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"sync"
+	"unicode"
 
 	"github.com/vmihailenco/tagparser/v2"
 )
@@ -121,10 +123,12 @@ func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 //------------------------------------------------------------------------------
 
 type fields struct {
-	Type    reflect.Type
-	Map     map[string]*field
-	List    []*field
-	AsArray bool
+	Type reflect.Type
+	Map  map[string]*field
+	List []*field
+
+	AsArray        bool
+	AsOrderedArray bool
 
 	hasOmitEmpty bool
 }
@@ -168,6 +172,31 @@ func (fs *fields) OmitEmpty(strct reflect.Value, forced bool) []*field {
 	return fields
 }
 
+func (fs *fields) OrderArray(forced bool) ([]*field, error) {
+	if !fs.AsOrderedArray && !forced {
+		return fs.List, nil
+	}
+
+	maxOrder := 0
+	fsMap := make(map[int]*field)
+	for _, f := range fs.List {
+		order := getFieldOrder(f.name)
+		if _, found := fsMap[order]; found {
+			return nil, fmt.Errorf("msgpack: %s has repeated order for field %s", fs.Type, f.name)
+		}
+		fsMap[order] = f
+		if order > maxOrder {
+			maxOrder = order
+		}
+	}
+
+	fsOrdered := make([]*field, maxOrder+1)
+	for order, f := range fsMap {
+		fsOrdered[order] = f
+	}
+	return fsOrdered, nil
+}
+
 func getFields(typ reflect.Type, fallbackTag string) *fields {
 	fs := newFields(typ)
 
@@ -175,18 +204,14 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 	for i := 0; i < typ.NumField(); i++ {
 		f := typ.Field(i)
 
-		tagStr := f.Tag.Get(defaultStructTag)
-		if tagStr == "" && fallbackTag != "" {
-			tagStr = f.Tag.Get(fallbackTag)
-		}
-
-		tag := tagparser.Parse(tagStr)
+		tag := getFieldTag(&f, fallbackTag)
 		if tag.Name == "-" {
 			continue
 		}
 
 		if f.Name == "_msgpack" {
 			fs.AsArray = tag.HasOption("as_array") || tag.HasOption("asArray")
+			fs.AsOrderedArray = tag.HasOption("as_ordered_array") || tag.HasOption("asOrderedArray")
 			if tag.HasOption("omitempty") {
 				omitEmpty = true
 			}
@@ -248,6 +273,22 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		}
 	}
 	return fs
+}
+
+func getFieldTag(f *reflect.StructField, fallbackTag string) *tagparser.Tag {
+	tagStr := f.Tag.Get(defaultStructTag)
+	if tagStr == "" && fallbackTag != "" {
+		tagStr = f.Tag.Get(fallbackTag)
+	}
+	return tagparser.Parse(tagStr)
+}
+
+func getFieldOrder(tagName string) int {
+	if len(tagName) > 0 && unicode.IsDigit(rune(tagName[0])) {
+		order, _ := strconv.Atoi(tagName)
+		return order
+	}
+	return 0
 }
 
 var (
