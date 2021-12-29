@@ -6,9 +6,8 @@
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
 > :heart:
-> [**Uptrace.dev** - All-in-one tool to optimize performance and monitor errors & logs](https://uptrace.dev/?utm_source=gh-msgpack&utm_campaign=gh-msgpack-var2)
+> [**Uptrace.dev** - All-in-one tool to optimize performance and monitor errors & logs](https://github.com/uptrace/uptrace)
 
-- Join [Discord](https://discord.gg/rWtp5Aj) to ask questions.
 - [Documentation](https://msgpack.uptrace.dev)
 - [Reference](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
 - [Examples](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#pkg-examples)
