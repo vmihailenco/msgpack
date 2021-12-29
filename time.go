@@ -103,7 +103,8 @@ func (d *Decoder) DecodeTime() (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	if extID != timeExtID {
+	// NodeJS seems to use extID 13.
+	if extID != timeExtID && extID != 13 {
 		return time.Time{}, fmt.Errorf("msgpack: invalid time ext id=%d", extID)
 	}
 
