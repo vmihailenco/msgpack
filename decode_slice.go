@@ -63,10 +63,6 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 }
 
 func makeStrings(s []string, n int) []string {
-	if n > sliceAllocLimit {
-		n = sliceAllocLimit
-	}
-
 	if s == nil {
 		return make([]string, 0, n)
 	}
@@ -95,6 +91,10 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		return nil
 	}
 
+	if v.Cap() == 0 {
+		v.Set(reflect.MakeSlice(v.Type(), 0, n))
+	}
+
 	if v.Cap() >= n {
 		v.Set(v.Slice(0, n))
 	} else if v.Len() < v.Cap() {
@@ -116,9 +116,6 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 
 func growSliceValue(v reflect.Value, n int) reflect.Value {
 	diff := n - v.Len()
-	if diff > sliceAllocLimit {
-		diff = sliceAllocLimit
-	}
 	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
 	return v
 }
@@ -163,7 +160,7 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 		return nil, nil
 	}
 
-	s := make([]interface{}, 0, min(n, sliceAllocLimit))
+	s := make([]interface{}, 0, n)
 	for i := 0; i < n; i++ {
 		v, err := d.decodeInterfaceCond()
 		if err != nil {

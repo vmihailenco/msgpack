@@ -104,7 +104,7 @@ func (d *Decoder) decodeMapStringStringPtr(ptr *map[string]string) error {
 
 	m := *ptr
 	if m == nil {
-		*ptr = make(map[string]string, min(size, maxMapSize))
+		*ptr = make(map[string]string, size)
 		m = *ptr
 	}
 
@@ -147,7 +147,7 @@ func (d *Decoder) DecodeMap() (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[string]interface{}, min(n, maxMapSize))
+	m := make(map[string]interface{}, n)
 
 	for i := 0; i < n; i++ {
 		mk, err := d.DecodeString()
@@ -174,7 +174,7 @@ func (d *Decoder) DecodeUntypedMap() (map[interface{}]interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[interface{}]interface{}, min(n, maxMapSize))
+	m := make(map[interface{}]interface{}, n)
 
 	for i := 0; i < n; i++ {
 		mk, err := d.decodeInterfaceCond()
