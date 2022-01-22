@@ -613,12 +613,7 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 		if n == 0 {
 			return make([]byte, 0), nil
 		}
-		switch {
-		case n < 64:
-			b = make([]byte, 0, 64)
-		default:
-			b = make([]byte, 0, n)
-		}
+		b = make([]byte, 0, n)
 	}
 
 	if n > cap(b) {
