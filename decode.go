@@ -68,6 +68,7 @@ type Decoder struct {
 	flags      uint32
 	structTag  string
 	mapDecoder func(*Decoder) (interface{}, error)
+	typeGen    map[reflect.Type]*ptrGen
 }
 
 // NewDecoder returns a new decoder that reads from r.

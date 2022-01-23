@@ -127,12 +127,12 @@ func ptrValueDecoder(typ reflect.Type) decoderFunc {
 	return func(d *Decoder, v reflect.Value) error {
 		if d.hasNilCode() {
 			if !v.IsNil() {
-				v.Set(reflect.Zero(v.Type()))
+				v.Set(d.newValue(typ))
 			}
 			return d.DecodeNil()
 		}
 		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
+			v.Set(d.newValue(typ))
 		}
 		return decoder(d, v.Elem())
 	}
@@ -154,7 +154,7 @@ func nilAwareDecoder(typ reflect.Type, fn decoderFunc) decoderFunc {
 				return d.decodeNilValue(v)
 			}
 			if v.IsNil() {
-				v.Set(reflect.New(v.Type().Elem()))
+				v.Set(d.newValue(typ))
 			}
 			return fn(d, v)
 		}

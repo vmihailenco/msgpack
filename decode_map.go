@@ -33,7 +33,7 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if v.IsNil() {
-		v.Set(reflect.MakeMap(typ))
+		v.Set(reflect.MakeMapWithSize(typ, n))
 	}
 	if n == 0 {
 		return nil
@@ -222,7 +222,7 @@ func (d *Decoder) DecodeTypedMap() (interface{}, error) {
 	}
 
 	mapType := reflect.MapOf(keyType, valueType)
-	mapValue := reflect.MakeMap(mapType)
+	mapValue := reflect.MakeMapWithSize(mapType, n)
 	mapValue.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 
 	n--
@@ -234,17 +234,18 @@ func (d *Decoder) DecodeTypedMap() (interface{}, error) {
 }
 
 func (d *Decoder) decodeTypedMapValue(v reflect.Value, n int) error {
-	typ := v.Type()
-	keyType := typ.Key()
-	valueType := typ.Elem()
-
+	var (
+		typ       = v.Type()
+		keyType   = typ.Key()
+		valueType = typ.Elem()
+	)
 	for i := 0; i < n; i++ {
-		mk := reflect.New(keyType).Elem()
+		mk := d.newValue(keyType).Elem()
 		if err := d.DecodeValue(mk); err != nil {
 			return err
 		}
 
-		mv := reflect.New(valueType).Elem()
+		mv := d.newValue(valueType).Elem()
 		if err := d.DecodeValue(mv); err != nil {
 			return err
 		}

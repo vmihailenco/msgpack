@@ -198,6 +198,13 @@ func nilable(kind reflect.Kind) bool {
 	return false
 }
 
+func nilableType(t reflect.Type) bool {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return nilable(t.Kind())
+}
+
 //------------------------------------------------------------------------------
 
 func marshalBinaryValueAddr(e *Encoder, v reflect.Value) error {
