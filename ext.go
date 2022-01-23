@@ -256,7 +256,7 @@ func (d *Decoder) decodeInterfaceExt(c byte) (interface{}, error) {
 
 	v := reflect.New(info.Type).Elem()
 	if nilable(v.Kind()) && v.IsNil() {
-		v.Set(d.newValue(v.Type().Elem()))
+		v.Set(d.newValue(info.Type.Elem()))
 	}
 
 	if err := info.Decoder(d, v, extLen); err != nil {
