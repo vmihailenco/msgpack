@@ -107,7 +107,7 @@ func (e *Encoder) Reset(w io.Writer) {
 
 // ResetDict is like Reset, but also resets the dict.
 func (e *Encoder) ResetDict(w io.Writer, dict map[string]int) {
-	e.resetWriter(w)
+	e.ResetWriter(w)
 	e.flags = 0
 	e.structTag = ""
 	e.dict = dict
@@ -121,7 +121,7 @@ func (e *Encoder) WithDict(dict map[string]int, fn func(*Encoder) error) error {
 	return err
 }
 
-func (e *Encoder) resetWriter(w io.Writer) {
+func (e *Encoder) ResetWriter(w io.Writer) {
 	if bw, ok := w.(writer); ok {
 		e.w = bw
 	} else {

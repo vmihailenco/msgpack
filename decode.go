@@ -97,7 +97,7 @@ func (d *Decoder) Reset(r io.Reader) {
 
 // ResetDict is like Reset, but also resets the dict.
 func (d *Decoder) ResetDict(r io.Reader, dict []string) {
-	d.resetReader(r)
+	d.ResetReader(r)
 	d.flags = 0
 	d.structTag = ""
 	d.mapDecoder = nil
@@ -112,7 +112,7 @@ func (d *Decoder) WithDict(dict []string, fn func(*Decoder) error) error {
 	return err
 }
 
-func (d *Decoder) resetReader(r io.Reader) {
+func (d *Decoder) ResetReader(r io.Reader) {
 	if br, ok := r.(bufReader); ok {
 		d.r = br
 		d.s = br
@@ -623,7 +623,7 @@ func (d *Decoder) readFull(b []byte) error {
 
 func (d *Decoder) readN(n int) ([]byte, error) {
 	var err error
-	if d.flags&disablePartialAllocFlag != 0 {
+	if d.flags&disableAllocLimitFlag != 0 {
 		d.buf, err = readN(d.r, d.buf, n)
 	} else {
 		d.buf, err = readNGrow(d.r, d.buf, n)
