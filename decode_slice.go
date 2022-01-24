@@ -49,7 +49,7 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 		return nil
 	}
 
-	ss := makeStrings(*ptr, n)
+	ss := makeStrings(*ptr, n, d.flags&disablePartialAllocFlag != 0)
 	for i := 0; i < n; i++ {
 		s, err := d.DecodeString()
 		if err != nil {
@@ -62,7 +62,11 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 	return nil
 }
 
-func makeStrings(s []string, n int) []string {
+func makeStrings(s []string, n int, noPartial bool) []string {
+	if !noPartial && n > sliceAllocLimit {
+		n = sliceAllocLimit
+	}
+
 	if s == nil {
 		return make([]string, 0, n)
 	}
@@ -91,21 +95,23 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		return nil
 	}
 
-	if v.Cap() == 0 {
-		v.Set(reflect.MakeSlice(v.Type(), 0, n))
-	}
-
 	if v.Cap() >= n {
 		v.Set(v.Slice(0, n))
 	} else if v.Len() < v.Cap() {
 		v.Set(v.Slice(0, v.Cap()))
 	}
 
-	if n > v.Len() {
-		v.Set(growSliceValue(v, n))
+	noPartial := d.flags&disablePartialAllocFlag != 1
+
+	if noPartial && n > v.Len() {
+		v.Set(growSliceValue(v, n, noPartial))
 	}
 
 	for i := 0; i < n; i++ {
+		if !noPartial && i >= v.Len() {
+			v.Set(growSliceValue(v, n, noPartial))
+		}
+
 		elem := v.Index(i)
 		if err := d.DecodeValue(elem); err != nil {
 			return err
@@ -115,8 +121,11 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func growSliceValue(v reflect.Value, n int) reflect.Value {
+func growSliceValue(v reflect.Value, n int, noPartial bool) reflect.Value {
 	diff := n - v.Len()
+	if !noPartial && diff > sliceAllocLimit {
+		diff = sliceAllocLimit
+	}
 	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
 	return v
 }

@@ -2,27 +2,61 @@ package msgpack
 
 import (
 	"reflect"
+	"sync"
 )
 
+var (
+	ptrGens    map[reflect.Type]*ptrGen
+	ptrGenCap  = 4096
+	ptrGensMux sync.RWMutex
+)
+
+func SetTypeGenSliceCap(n int) {
+	ptrGensMux.Lock()
+	defer ptrGensMux.Unlock()
+
+	if n < 128 {
+		n = 128
+	}
+	ptrGenCap = n
+}
+
+func getTypeGen(t reflect.Type) *ptrGen {
+	ptrGensMux.RLock()
+	g := ptrGens[t]
+	ptrGensMux.RUnlock()
+	if g != nil {
+		return g
+	}
+
+	ptrGensMux.Lock()
+	defer ptrGensMux.Unlock()
+	if g = ptrGens[t]; g != nil {
+		return g
+	}
+
+	g = &ptrGen{typ: t, cap: ptrGenCap, idx: -1}
+
+	if ptrGens == nil {
+		ptrGens = map[reflect.Type]*ptrGen{}
+	}
+	ptrGens[t] = g
+
+	return g
+}
+
 func (d *Decoder) newValue(t reflect.Type) reflect.Value {
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
+	if d.flags&usePreallocateValues == 0 {
+		return reflect.New(t)
 	}
 
-	gen := d.typeGen[t]
+	// log.Println("using typegen")
 
-	if gen == nil {
-		if d.typeGen == nil {
-			d.typeGen = map[reflect.Type]*ptrGen{}
-		}
-		gen = &ptrGen{typ: t, cap: 4096}
-		d.typeGen[t] = gen
-	}
-
-	return gen.next()
+	return getTypeGen(t).next()
 }
 
 type ptrGen struct {
+	sync.Mutex
 	raw reflect.Value
 	typ reflect.Type
 	idx int
@@ -30,7 +64,10 @@ type ptrGen struct {
 }
 
 func (p *ptrGen) next() (v reflect.Value) {
-	if p.idx == p.cap || !p.raw.IsValid() {
+	p.Lock()
+	defer p.Unlock()
+
+	if p.idx == p.cap || p.idx == -1 {
 		p.raw = reflect.MakeSlice(reflect.SliceOf(p.typ), p.cap, p.cap)
 		p.idx = 0
 	}

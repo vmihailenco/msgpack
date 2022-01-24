@@ -14,8 +14,16 @@ import (
 )
 
 const (
+	bytesAllocLimit = 1e6 // 1mb
+	sliceAllocLimit = 1e4
+	maxMapSize      = 1e6
+)
+
+const (
 	looseInterfaceDecodingFlag uint32 = 1 << iota
 	disallowUnknownFieldsFlag
+	usePreallocateValues
+	disablePartialAllocFlag
 )
 
 type bufReader interface {
@@ -68,7 +76,6 @@ type Decoder struct {
 	flags      uint32
 	structTag  string
 	mapDecoder func(*Decoder) (interface{}, error)
-	typeGen    map[reflect.Type]*ptrGen
 }
 
 // NewDecoder returns a new decoder that reads from r.
@@ -153,6 +160,24 @@ func (d *Decoder) UseInternedStrings(on bool) {
 		d.flags |= useInternedStringsFlag
 	} else {
 		d.flags &= ^useInternedStringsFlag
+	}
+}
+
+// UsePreallocateValues enables preallocating values in chunks
+func (d *Decoder) UsePreallocateValues(on bool) {
+	if on {
+		d.flags |= usePreallocateValues
+	} else {
+		d.flags &= ^usePreallocateValues
+	}
+}
+
+// DisablePartialAlloc enables fully allocating slices/maps when the size is known
+func (d *Decoder) DisablePartialAlloc(on bool) {
+	if on {
+		d.flags |= disablePartialAllocFlag
+	} else {
+		d.flags &= ^disablePartialAllocFlag
 	}
 }
 
@@ -598,7 +623,11 @@ func (d *Decoder) readFull(b []byte) error {
 
 func (d *Decoder) readN(n int) ([]byte, error) {
 	var err error
-	d.buf, err = readN(d.r, d.buf, n)
+	if d.flags&disablePartialAllocFlag != 0 {
+		d.buf, err = readN(d.r, d.buf, n)
+	} else {
+		d.buf, err = readNGrow(d.r, d.buf, n)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -625,6 +654,47 @@ func readN(r io.Reader, b []byte, n int) ([]byte, error) {
 
 	_, err := io.ReadFull(r, b)
 	return b, err
+}
+
+func readNGrow(r io.Reader, b []byte, n int) ([]byte, error) {
+	if b == nil {
+		if n == 0 {
+			return make([]byte, 0), nil
+		}
+		switch {
+		case n < 64:
+			b = make([]byte, 0, 64)
+		case n <= bytesAllocLimit:
+			b = make([]byte, 0, n)
+		default:
+			b = make([]byte, 0, bytesAllocLimit)
+		}
+	}
+
+	if n <= cap(b) {
+		b = b[:n]
+		_, err := io.ReadFull(r, b)
+		return b, err
+	}
+	b = b[:cap(b)]
+
+	var pos int
+	for {
+		alloc := min(n-len(b), bytesAllocLimit)
+		b = append(b, make([]byte, alloc)...)
+
+		_, err := io.ReadFull(r, b[pos:])
+		if err != nil {
+			return b, err
+		}
+
+		if len(b) == n {
+			break
+		}
+		pos = len(b)
+	}
+
+	return b, nil
 }
 
 func min(a, b int) int { //nolint:unparam

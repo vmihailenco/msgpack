@@ -33,7 +33,11 @@ func decodeMapValue(d *Decoder, v reflect.Value) error {
 	}
 
 	if v.IsNil() {
-		v.Set(reflect.MakeMapWithSize(typ, n))
+		size := n
+		if d.flags&disablePartialAllocFlag == 0 {
+			size = min(size, maxMapSize)
+		}
+		v.Set(reflect.MakeMapWithSize(typ, size))
 	}
 	if n == 0 {
 		return nil
@@ -104,6 +108,9 @@ func (d *Decoder) decodeMapStringStringPtr(ptr *map[string]string) error {
 
 	m := *ptr
 	if m == nil {
+		if d.flags&disablePartialAllocFlag == 0 {
+			size = min(size, maxMapSize)
+		}
 		*ptr = make(map[string]string, size)
 		m = *ptr
 	}
@@ -222,7 +229,13 @@ func (d *Decoder) DecodeTypedMap() (interface{}, error) {
 	}
 
 	mapType := reflect.MapOf(keyType, valueType)
-	mapValue := reflect.MakeMapWithSize(mapType, n)
+
+	size := n
+	if d.flags&disablePartialAllocFlag == 0 {
+		size = min(size, maxMapSize)
+	}
+
+	mapValue := reflect.MakeMapWithSize(mapType, size)
 	mapValue.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 
 	n--
