@@ -116,6 +116,9 @@ func (d *Decoder) ResetReader(r io.Reader) {
 	if br, ok := r.(bufReader); ok {
 		d.r = br
 		d.s = br
+	} else if r == nil {
+		d.r = nil
+		d.s = nil
 	} else {
 		br := bufio.NewReader(r)
 		d.r = br
