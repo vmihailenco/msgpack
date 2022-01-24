@@ -23,7 +23,7 @@ const (
 	looseInterfaceDecodingFlag uint32 = 1 << iota
 	disallowUnknownFieldsFlag
 	usePreallocateValues
-	disablePartialAllocFlag
+	disableAllocLimitFlag
 )
 
 type bufReader interface {
@@ -172,12 +172,12 @@ func (d *Decoder) UsePreallocateValues(on bool) {
 	}
 }
 
-// DisablePartialAlloc enables fully allocating slices/maps when the size is known
-func (d *Decoder) DisablePartialAlloc(on bool) {
+// DisableAllocLimit enables fully allocating slices/maps when the size is known
+func (d *Decoder) DisableAllocLimit(on bool) {
 	if on {
-		d.flags |= disablePartialAllocFlag
+		d.flags |= disableAllocLimitFlag
 	} else {
-		d.flags &= ^disablePartialAllocFlag
+		d.flags &= ^disableAllocLimitFlag
 	}
 }
 
