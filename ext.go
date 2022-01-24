@@ -96,7 +96,7 @@ func makeExtEncoder(
 func makeExtEncoderAddr(extEncoder encoderFunc) encoderFunc {
 	return func(e *Encoder, v reflect.Value) error {
 		if !v.CanAddr() {
-			return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
+			return fmt.Errorf("msgpack: EncodeExt(nonaddressable %T)", v.Interface())
 		}
 		return extEncoder(e, v.Addr())
 	}
@@ -157,7 +157,7 @@ func makeExtDecoder(
 func makeExtDecoderAddr(extDecoder decoderFunc) decoderFunc {
 	return func(d *Decoder, v reflect.Value) error {
 		if !v.CanAddr() {
-			return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
+			return fmt.Errorf("msgpack: DecodeExt(nonaddressable %T)", v.Interface())
 		}
 		return extDecoder(d, v.Addr())
 	}
