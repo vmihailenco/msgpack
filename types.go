@@ -399,7 +399,7 @@ func indirectNil(v reflect.Value) (reflect.Value, bool) {
 			if elemType.Kind() != reflect.Struct {
 				return v, false
 			}
-			v.Set(reflect.New(elemType))
+			v.Set(getTypeGen(elemType).next())
 		}
 		v = v.Elem()
 	}

@@ -57,8 +57,8 @@ func (d *Decoder) newValue(t reflect.Type) reflect.Value {
 
 type ptrGen struct {
 	sync.Mutex
-	raw reflect.Value
 	typ reflect.Type
+	raw reflect.Value
 	idx int
 	cap int
 }
