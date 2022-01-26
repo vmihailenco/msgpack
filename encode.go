@@ -122,6 +122,7 @@ func (e *Encoder) WithDict(dict map[string]int, fn func(*Encoder) error) error {
 }
 
 func (e *Encoder) ResetWriter(w io.Writer) {
+	e.dict = nil
 	if bw, ok := w.(writer); ok {
 		e.w = bw
 	} else if w == nil {

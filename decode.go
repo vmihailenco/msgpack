@@ -100,7 +100,6 @@ func (d *Decoder) ResetDict(r io.Reader, dict []string) {
 	d.ResetReader(r)
 	d.flags = 0
 	d.structTag = ""
-	d.mapDecoder = nil
 	d.dict = dict
 }
 
@@ -113,6 +112,9 @@ func (d *Decoder) WithDict(dict []string, fn func(*Decoder) error) error {
 }
 
 func (d *Decoder) ResetReader(r io.Reader) {
+	d.mapDecoder = nil
+	d.dict = nil
+
 	if br, ok := r.(bufReader); ok {
 		d.r = br
 		d.s = br
