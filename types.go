@@ -66,8 +66,8 @@ type structCache struct {
 }
 
 type structCacheKey struct {
-	tag string
 	typ reflect.Type
+	tag string
 }
 
 func newStructCache() *structCache {
@@ -90,11 +90,11 @@ func (m *structCache) Fields(typ reflect.Type, tag string) *fields {
 //------------------------------------------------------------------------------
 
 type field struct {
+	encoder   encoderFunc
+	decoder   decoderFunc
 	name      string
 	index     []int
 	omitEmpty bool
-	encoder   encoderFunc
-	decoder   decoderFunc
 }
 
 func (f *field) Omit(strct reflect.Value, forced bool) bool {

@@ -75,15 +75,12 @@ func Marshal(v interface{}) ([]byte, error) {
 }
 
 type Encoder struct {
-	w writer
-
-	buf     []byte
-	timeBuf []byte
-
-	dict map[string]int
-
-	flags     uint32
+	w         writer
+	dict      map[string]int
 	structTag string
+	buf       []byte
+	timeBuf   []byte
+	flags     uint32
 }
 
 // NewEncoder returns a new encoder that writes to w.

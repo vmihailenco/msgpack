@@ -66,16 +66,14 @@ func Unmarshal(data []byte, v interface{}) error {
 
 // A Decoder reads and decodes MessagePack values from an input stream.
 type Decoder struct {
-	r   io.Reader
-	s   io.ByteScanner
-	buf []byte
-
-	rec []byte // accumulates read data if not nil
-
+	r          io.Reader
+	s          io.ByteScanner
+	mapDecoder func(*Decoder) (interface{}, error)
+	structTag  string
+	buf        []byte
+	rec        []byte
 	dict       []string
 	flags      uint32
-	structTag  string
-	mapDecoder func(*Decoder) (interface{}, error)
 }
 
 // NewDecoder returns a new decoder that reads from r.
