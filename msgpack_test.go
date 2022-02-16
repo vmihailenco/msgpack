@@ -247,6 +247,33 @@ func TestEmbedding(t *testing.T) {
 	}
 }
 
+func TestEmptyTimeMarshalWithInterface(t *testing.T) {
+	a := time.Time{}
+	b, err := msgpack.Marshal(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out interface{}
+	err = msgpack.Unmarshal(b, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, _ := out.(time.Time).Zone()
+	if name != "UTC" {
+		t.Fatal("Got wrong timezone")
+	}
+
+	var out2 time.Time
+	err = msgpack.Unmarshal(b, &out2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, _ = out2.Zone()
+	if name != "UTC" {
+		t.Fatal("Got wrong timezone")
+	}
+}
+
 func (t *MsgpackTest) TestSliceNil() {
 	in := [][]*int{nil}
 	var out [][]*int
