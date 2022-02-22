@@ -4,8 +4,11 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/vmihailenco/msgpack/v5)](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
 [![Documentation](https://img.shields.io/badge/msgpack-documentation-informational)](https://msgpack.uptrace.dev/)
 
-> :heart:
-> [**Uptrace.dev** - All-in-one tool to optimize performance and monitor errors & logs](https://github.com/uptrace/uptrace)
+msgpack is brought to you by :star: [**uptrace/uptrace**](https://github.com/uptrace/uptrace).
+Uptrace is an open source and blazingly fast **distributed tracing** backend powered by
+OpenTelemetry and ClickHouse. Give it a star as well!
+
+## Resources
 
 - [Documentation](https://msgpack.uptrace.dev)
 - [Reference](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
