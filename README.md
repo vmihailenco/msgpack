@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/vmihailenco/msgpack.svg)](https://travis-ci.org/vmihailenco/msgpack)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/vmihailenco/msgpack/v5)](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
 [![Documentation](https://img.shields.io/badge/msgpack-documentation-informational)](https://msgpack.uptrace.dev/)
+[![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
 msgpack is brought to you by :star: [**uptrace/uptrace**](https://github.com/uptrace/uptrace).
 Uptrace is an open source and blazingly fast **distributed tracing** backend powered by
