@@ -12,6 +12,7 @@ OpenTelemetry and ClickHouse. Give it a star as well!
 ## Resources
 
 - [Documentation](https://msgpack.uptrace.dev)
+- [Chat](https://discord.gg/rWtp5Aj)
 - [Reference](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
 - [Examples](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#pkg-examples)
 
