@@ -6,8 +6,9 @@
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
 > msgpack is brought to you by :star: [**uptrace/uptrace**](https://github.com/uptrace/uptrace).
-> Uptrace is an open source and blazingly fast [distributed tracing tool](https://get.uptrace.dev/)
-> powered by OpenTelemetry and ClickHouse. Give it a star as well!
+> Uptrace is an open source and blazingly fast
+> [distributed tracing tool](https://get.uptrace.dev/compare/distributed-tracing-tools.html) powered
+> by OpenTelemetry and ClickHouse. Give it a star as well!
 
 ## Resources
 
@@ -15,11 +16,6 @@
 - [Chat](https://discord.gg/rWtp5Aj)
 - [Reference](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5)
 - [Examples](https://pkg.go.dev/github.com/vmihailenco/msgpack/v5#pkg-examples)
-
-Other projects you may like:
-
-- [Bun](https://bun.uptrace.dev) - fast and simple SQL client for PostgreSQL, MySQL, and SQLite.
-- [BunRouter](https://bunrouter.uptrace.dev/) - fast and flexible HTTP router for Go.
 
 ## Features
 
@@ -87,3 +83,18 @@ func ExampleMarshal() {
     // Output: bar
 }
 ```
+
+## See also
+
+- [Golang ORM](https://github.com/uptrace/bun) for PostgreSQL, MySQL, MSSQL, and SQLite
+- [Golang PostgreSQL](https://bun.uptrace.dev/postgres/)
+- [Golang HTTP router](https://github.com/uptrace/bunrouter)
+- [Golang ClickHouse ORM](https://github.com/uptrace/go-clickhouse)
+
+## Contributors
+
+Thanks to all the people who already contributed!
+
+<a href="https://github.com/vmihailenco/msgpack/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=vmihailenco/msgpack" />
+</a>
