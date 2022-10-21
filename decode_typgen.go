@@ -5,44 +5,36 @@ import (
 	"sync"
 )
 
-var (
-	ptrGens    map[reflect.Type]*ptrGen
-	ptrGenCap  = 4096
-	ptrGensMux sync.RWMutex
-)
-
-func SetTypeGenSliceCap(n int) {
-	ptrGensMux.Lock()
-	defer ptrGensMux.Unlock()
-
-	if n < 128 {
-		n = 128
-	}
-	ptrGenCap = n
+var cachedValues struct {
+	m map[reflect.Type]chan reflect.Value
+	sync.RWMutex
 }
 
-func getTypeGen(t reflect.Type) *ptrGen {
-	ptrGensMux.RLock()
-	g := ptrGens[t]
-	ptrGensMux.RUnlock()
-	if g != nil {
-		return g
+func cachedValue(t reflect.Type) reflect.Value {
+	cachedValues.RLock()
+	ch := cachedValues.m[t]
+	cachedValues.RUnlock()
+	if ch != nil {
+		return <-ch
 	}
 
-	ptrGensMux.Lock()
-	defer ptrGensMux.Unlock()
-	if g = ptrGens[t]; g != nil {
-		return g
+	cachedValues.Lock()
+	defer cachedValues.Unlock()
+	if ch = cachedValues.m[t]; ch != nil {
+		return <-ch
 	}
 
-	g = &ptrGen{typ: t, cap: ptrGenCap, idx: -1}
-
-	if ptrGens == nil {
-		ptrGens = map[reflect.Type]*ptrGen{}
+	ch = make(chan reflect.Value, 256)
+	go func() {
+		for {
+			ch <- reflect.New(t)
+		}
+	}()
+	if cachedValues.m == nil {
+		cachedValues.m = make(map[reflect.Type]chan reflect.Value, 8)
 	}
-	ptrGens[t] = g
-
-	return g
+	cachedValues.m[t] = ch
+	return <-ch
 }
 
 func (d *Decoder) newValue(t reflect.Type) reflect.Value {
@@ -50,30 +42,5 @@ func (d *Decoder) newValue(t reflect.Type) reflect.Value {
 		return reflect.New(t)
 	}
 
-	// log.Println("using typegen")
-
-	return getTypeGen(t).next()
-}
-
-type ptrGen struct {
-	sync.Mutex
-	typ reflect.Type
-	raw reflect.Value
-	idx int
-	cap int
-}
-
-func (p *ptrGen) next() (v reflect.Value) {
-	p.Lock()
-	defer p.Unlock()
-
-	if p.idx == p.cap || p.idx == -1 {
-		p.raw = reflect.MakeSlice(reflect.SliceOf(p.typ), p.cap, p.cap)
-		p.idx = 0
-	}
-
-	v = p.raw.Index(p.idx).Addr()
-	p.idx++
-
-	return
+	return cachedValue(t)
 }

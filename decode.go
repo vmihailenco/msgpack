@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	bytesAllocLimit = 1e6 // 1mb
-	sliceAllocLimit = 1e4
-	maxMapSize      = 1e6
+	bytesAllocLimit = 1 << 20 // 1mb
+	sliceAllocLimit = 1e6     // 1m elements
+	maxMapSize      = 1e6     // 1m elements
 )
 
 const (
@@ -55,7 +55,7 @@ func PutDecoder(dec *Decoder) {
 // in the value pointed to by v.
 func Unmarshal(data []byte, v interface{}) error {
 	dec := GetDecoder()
-
+	dec.UsePreallocateValues(true)
 	dec.Reset(bytes.NewReader(data))
 	err := dec.Decode(v)
 
