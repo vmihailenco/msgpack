@@ -132,6 +132,7 @@ func (e *Encoder) resetWriter(w io.Writer) {
 // SetSortMapKeys causes the Encoder to encode map keys in increasing order.
 // Supported map types are:
 //   - map[string]string
+//   - map[string]bool
 //   - map[string]interface{}
 func (e *Encoder) SetSortMapKeys(on bool) *Encoder {
 	if on {
