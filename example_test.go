@@ -141,6 +141,70 @@ func ExampleEncoder_UseArrayEncodedStructs() {
 	// Output: [foo bar]
 }
 
+func ExampleDecoder_IgnoreMismatchedArrayFields() {
+	type Item struct {
+		Foo string
+		Bar string
+	}
+	type ItemLong struct {
+		Foo string
+		Bar string
+		Baz string
+	}
+
+	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseArrayEncodedStructs(true)
+
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	dec.IgnoreMismatchedArrayFields(true)
+	var itemLong ItemLong
+	err = dec.Decode(&itemLong)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(itemLong)
+	// Output: {foo bar }
+}
+
+func ExampleDecoder_IgnoreMismatchedArrayFields2() {
+	type Item struct {
+		Foo string
+		Bar string
+	}
+	type ItemLong struct {
+		Foo string
+		Bar string
+		Baz string
+	}
+
+	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseArrayEncodedStructs(true)
+
+	err := enc.Encode(&ItemLong{Foo: "foo", Bar: "bar", Baz: "baz"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	dec.IgnoreMismatchedArrayFields(true)
+	var item Item
+	err = dec.Decode(&item)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(item)
+	// Output: {foo bar}
+}
+
 func ExampleMarshal_asArray() {
 	type Item struct {
 		_msgpack struct{} `msgpack:",as_array"`
