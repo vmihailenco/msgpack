@@ -16,6 +16,7 @@ import (
 const (
 	looseInterfaceDecodingFlag uint32 = 1 << iota
 	disallowUnknownFieldsFlag
+	decodeUnexportedFieldsFlag
 )
 
 const (
@@ -158,6 +159,15 @@ func (d *Decoder) UseInternedStrings(on bool) {
 		d.flags |= useInternedStringsFlag
 	} else {
 		d.flags &= ^useInternedStringsFlag
+	}
+}
+
+// DecodeUnexportedFields enables decode value for unexported struct fields
+func (d *Decoder) DecodeUnexportedFields(on bool) {
+	if on {
+		d.flags |= decodeUnexportedFieldsFlag
+	} else {
+		d.flags &= ^decodeUnexportedFieldsFlag
 	}
 }
 

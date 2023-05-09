@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"sync"
+	"unsafe"
 
 	"github.com/vmihailenco/tagparser/v2"
 )
@@ -74,14 +75,14 @@ func newStructCache() *structCache {
 	return new(structCache)
 }
 
-func (m *structCache) Fields(typ reflect.Type, tag string) *fields {
+func (m *structCache) Fields(typ reflect.Type, tag string, includeUnexportedFields bool) *fields {
 	key := structCacheKey{tag: tag, typ: typ}
 
 	if v, ok := m.m.Load(key); ok {
 		return v.(*fields)
 	}
 
-	fs := getFields(typ, tag)
+	fs := getFields(typ, tag, includeUnexportedFields)
 	m.m.Store(key, fs)
 
 	return fs
@@ -115,6 +116,9 @@ func (f *field) EncodeValue(e *Encoder, strct reflect.Value) error {
 
 func (f *field) DecodeValue(d *Decoder, strct reflect.Value) error {
 	v := fieldByIndexAlloc(strct, f.index)
+	if !v.CanSet() {
+		return f.decoder(d, reflect.NewAt(v.Type(), unsafe.Pointer(v.UnsafeAddr())).Elem())
+	}
 	return f.decoder(d, v)
 }
 
@@ -168,7 +172,7 @@ func (fs *fields) OmitEmpty(strct reflect.Value, forced bool) []*field {
 	return fields
 }
 
-func getFields(typ reflect.Type, fallbackTag string) *fields {
+func getFields(typ reflect.Type, fallbackTag string, includeUnexportedFields bool) *fields {
 	fs := newFields(typ)
 
 	var omitEmpty bool
@@ -193,7 +197,9 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		}
 
 		if f.PkgPath != "" && !f.Anonymous {
-			continue
+			if !includeUnexportedFields {
+				continue
+			}
 		}
 
 		field := &field{
@@ -226,9 +232,9 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		if f.Anonymous && !tag.HasOption("noinline") {
 			inline := tag.HasOption("inline")
 			if inline {
-				inlineFields(fs, f.Type, field, fallbackTag)
+				inlineFields(fs, f.Type, field, fallbackTag, includeUnexportedFields)
 			} else {
-				inline = shouldInline(fs, f.Type, field, fallbackTag)
+				inline = shouldInline(fs, f.Type, field, fallbackTag, includeUnexportedFields)
 			}
 
 			if inline {
@@ -261,8 +267,8 @@ func init() {
 	decodeStructValuePtr = reflect.ValueOf(decodeStructValue).Pointer()
 }
 
-func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
-	inlinedFields := getFields(typ, tag).List
+func inlineFields(fs *fields, typ reflect.Type, f *field, tag string, includeUnexportedFields bool) {
+	inlinedFields := getFields(typ, tag, includeUnexportedFields).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't inline shadowed fields.
@@ -273,7 +279,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
 	}
 }
 
-func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
+func shouldInline(fs *fields, typ reflect.Type, f *field, tag string, includeUnexportedFields bool) bool {
 	var encoder encoderFunc
 	var decoder decoderFunc
 
@@ -298,7 +304,7 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 		return false
 	}
 
-	inlinedFields := getFields(typ, tag).List
+	inlinedFields := getFields(typ, tag, includeUnexportedFields).List
 	for _, field := range inlinedFields {
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't auto inline if there are shadowed fields.

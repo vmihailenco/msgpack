@@ -17,6 +17,7 @@ const (
 	useCompactFloatsFlag
 	useInternedStringsFlag
 	omitEmptyFlag
+	encodeUnexportedFieldsFlag
 )
 
 type writer interface {
@@ -154,6 +155,15 @@ func (e *Encoder) SetOmitEmpty(on bool) {
 		e.flags |= omitEmptyFlag
 	} else {
 		e.flags &= ^omitEmptyFlag
+	}
+}
+
+// SetEncodeUnexportedFields causes the encoder to encode the unexported fields of struct.
+func (e *Encoder) SetEncodeUnexportedFields(on bool) {
+	if on {
+		e.flags |= encodeUnexportedFieldsFlag
+	} else {
+		e.flags &= ^encodeUnexportedFieldsFlag
 	}
 }
 

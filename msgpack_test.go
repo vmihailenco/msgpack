@@ -475,3 +475,45 @@ func TestEncodeWrappedValue(t *testing.T) {
 	require.Nil(t, msgpack.NewEncoder(&buf).Encode(v))
 	require.Nil(t, msgpack.NewEncoder(&buf).Encode(c))
 }
+
+type Foo struct {
+	A int
+	b int
+}
+
+type Bar struct {
+	foo Foo
+}
+
+func TestEncodeDecodeUnexported(t *testing.T) {
+	var foo = Foo{A: 1, b: 2}
+	buf := &bytes.Buffer{}
+	enc := msgpack.NewEncoder(buf)
+	enc.SetEncodeUnexportedFields(true)
+	require.Nil(t, enc.Encode(&foo))
+	type FooCopy Foo
+	var fooCopy FooCopy // to eliminate effect of struct cache
+	dec := msgpack.NewDecoder(buf)
+	// test dec without decoding unexported fields
+	require.Nil(t, dec.Decode(&fooCopy))
+	require.Equal(t, 0, fooCopy.b)
+
+	// test enable decode unexported fields
+	buf.Reset()
+	require.Nil(t, enc.Encode(&foo))
+	dec.DecodeUnexportedFields(true)
+	type FooCopy2 Foo
+	var fooCopy2 FooCopy2
+	require.Nil(t, dec.Decode(&fooCopy2))
+	require.Equal(t, 2, fooCopy2.b)
+	// further test for struct type field
+	var bar Bar
+	bar.foo = foo
+	buf.Reset()
+	require.Nil(t, enc.Encode(&bar))
+	type BarCopy Bar
+	var barCopy BarCopy
+	require.Nil(t, dec.Decode(&barCopy))
+	require.Equal(t, 1, barCopy.foo.A)
+	require.Equal(t, 2, barCopy.foo.b)
+}
