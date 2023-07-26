@@ -6,7 +6,7 @@
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
 > msgpack is brought to you by :star: [**uptrace/uptrace**](https://github.com/uptrace/uptrace).
-> Uptrace is an open source and blazingly fast
+> Uptrace is an [open source APM](https://uptrace.dev/get/open-source-apm.html) and blazingly fast
 > [distributed tracing tool](https://get.uptrace.dev/compare/distributed-tracing-tools.html) powered
 > by OpenTelemetry and ClickHouse. Give it a star as well!
 
