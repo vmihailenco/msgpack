@@ -8,7 +8,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
-var errArrayStruct = errors.New("msgpack: number of fields in array-encoded struct has changed")
+var ErrArrayStruct = errors.New("msgpack: number of fields in array-encoded struct has changed")
 
 var (
 	mapStringStringPtrType = reflect.TypeOf((*map[string]string)(nil))
@@ -295,7 +295,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 
 	fields := structs.Fields(v.Type(), d.structTag)
 	if n != len(fields.List) {
-		return errArrayStruct
+		return ErrArrayStruct
 	}
 
 	for _, f := range fields.List {
