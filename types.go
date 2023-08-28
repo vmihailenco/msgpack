@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/vmihailenco/tagparser/v2"
@@ -92,6 +93,7 @@ func (m *structCache) Fields(typ reflect.Type, tag string) *fields {
 type field struct {
 	name      string
 	index     []int
+	key       int
 	omitEmpty bool
 	encoder   encoderFunc
 	decoder   decoderFunc
@@ -126,6 +128,7 @@ type fields struct {
 	List    []*field
 	AsArray bool
 
+	hasKeyFields bool
 	hasOmitEmpty bool
 }
 
@@ -137,11 +140,26 @@ func newFields(typ reflect.Type) *fields {
 	}
 }
 
-func (fs *fields) Add(field *field) {
-	fs.warnIfFieldExists(field.name)
-	fs.Map[field.name] = field
-	fs.List = append(fs.List, field)
-	if field.omitEmpty {
+func (fs *fields) Add(f *field) {
+	fs.warnIfFieldExists(f.name)
+	fs.Map[f.name] = f
+
+	if f.key == -1 {
+		fs.List = append(fs.List, f)
+	} else {
+		if len(fs.List) <= f.key {
+			if cap(fs.List) > f.key {
+				fs.List = fs.List[0 : f.key+1]
+			} else {
+				fsListOld := fs.List
+				fs.List = make([]*field, f.key+1)
+				copy(fs.List, fsListOld)
+			}
+		}
+		fs.List[f.key] = f
+	}
+
+	if f.omitEmpty {
 		fs.hasOmitEmpty = true
 	}
 }
@@ -175,12 +193,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 	for i := 0; i < typ.NumField(); i++ {
 		f := typ.Field(i)
 
-		tagStr := f.Tag.Get(defaultStructTag)
-		if tagStr == "" && fallbackTag != "" {
-			tagStr = f.Tag.Get(fallbackTag)
-		}
-
-		tag := tagparser.Parse(tagStr)
+		tag := getFieldTag(&f, fallbackTag)
 		if tag.Name == "-" {
 			continue
 		}
@@ -199,6 +212,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		field := &field{
 			name:      tag.Name,
 			index:     f.Index,
+			key:       getKeyFromTag(tag),
 			omitEmpty: omitEmpty || tag.HasOption("omitempty"),
 		}
 
@@ -223,6 +237,11 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 			field.name = f.Name
 		}
 
+		if field.key != -1 {
+			fs.AsArray = true
+			fs.hasKeyFields = true
+		}
+
 		if f.Anonymous && !tag.HasOption("noinline") {
 			inline := tag.HasOption("inline")
 			if inline {
@@ -232,9 +251,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 			}
 
 			if inline {
-				if _, ok := fs.Map[field.name]; ok {
-					log.Printf("msgpack: %s already has field=%s", fs.Type, field.name)
-				}
+				fs.warnIfFieldExists(field.name)
 				fs.Map[field.name] = field
 				continue
 			}
@@ -248,6 +265,26 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		}
 	}
 	return fs
+}
+
+func getFieldTag(f *reflect.StructField, fallbackTag string) *tagparser.Tag {
+	tagStr := f.Tag.Get(defaultStructTag)
+	if tagStr == "" && fallbackTag != "" {
+		tagStr = f.Tag.Get(fallbackTag)
+	}
+	return tagparser.Parse(tagStr)
+}
+
+func getKeyFromTag(tag *tagparser.Tag) int {
+	if key, ok := tag.Options["key"]; ok {
+		keyInt, err := strconv.Atoi(key)
+		if err != nil {
+			err := fmt.Errorf("msgpack: key value should be int: %s", key)
+			panic(err)
+		}
+		return keyInt
+	}
+	return -1
 }
 
 var (

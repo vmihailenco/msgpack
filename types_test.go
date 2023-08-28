@@ -231,6 +231,18 @@ type AsArrayTest struct {
 	OmitEmptyTest
 }
 
+type AsArrayByKeysTest struct {
+	Foo string `msgpack:"key:0"`
+	Bar string `msgpack:"key:1"`
+	Baz string `msgpack:"key:2"`
+}
+
+type AsArrayByKeysCompatibilityTest struct {
+	Foo string `msgpack:"key:0"`
+	// Bar string `msgpack:"key:1"`
+	Baz string `msgpack:"key:2"`
+}
+
 type ExtTestField struct {
 	ExtTest ExtTest
 }
@@ -280,6 +292,8 @@ var encoderTests = []encoderTest{
 	{&InlinePtrTest{OmitEmptyTest: &OmitEmptyTest{Bar: "world"}}, "81a3426172a5776f726c64"},
 
 	{&AsArrayTest{}, "92a0a0"},
+	{&AsArrayByKeysTest{}, "93a0a0a0"},
+	{&AsArrayByKeysCompatibilityTest{}, "93a0c0a0"},
 
 	{&JSONFallbackTest{Foo: "hello"}, "82a3666f6fa568656c6c6fa3626172a0"},
 	{&JSONFallbackTest{Bar: "world"}, "81a3626172a5776f726c64"},
@@ -595,6 +609,20 @@ var (
 			in:     AsArrayTest{OmitEmptyTest: OmitEmptyTest{"foo", "bar"}},
 			out:    new(unexported),
 			decErr: "msgpack: number of fields in array-encoded struct has changed",
+		},
+
+		{in: nil, out: new(*AsArrayByKeysTest), wantnil: true},
+		{in: nil, out: new(AsArrayByKeysTest), wantzero: true},
+		{in: AsArrayByKeysTest{Foo: "foo", Bar: "bar", Baz: "baz"}, out: new(AsArrayByKeysTest)},
+		{
+			in:     AsArrayByKeysTest{Foo: "foo", Bar: "bar", Baz: "baz"},
+			out:    new(AsArrayByKeysCompatibilityTest),
+			wanted: AsArrayByKeysCompatibilityTest{Foo: "foo", Baz: "baz"},
+		},
+		{
+			in:     AsArrayByKeysCompatibilityTest{Foo: "foo", Baz: "baz"},
+			out:    new(AsArrayByKeysTest),
+			wanted: AsArrayByKeysTest{Foo: "foo", Baz: "baz"},
 		},
 
 		{in: (*EventTime)(nil), out: new(*EventTime)},

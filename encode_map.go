@@ -145,9 +145,14 @@ func (e *Encoder) EncodeMapLen(l int) error {
 
 func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	structFields := structs.Fields(strct.Type(), e.structTag)
-	if e.flags&arrayEncodedStructsFlag != 0 || structFields.AsArray {
-		return encodeStructValueAsArray(e, strct, structFields.List)
+
+	if e.flags&arrayEncodedStructsFlag != 0 || structFields.AsArray || structFields.hasKeyFields {
+		return encodeStructValueAsArray(e, strct, structFields)
 	}
+	return encodeStructValueAsMap(e, strct, structFields)
+}
+
+func encodeStructValueAsMap(e *Encoder, strct reflect.Value, structFields *fields) error {
 	fields := structFields.OmitEmpty(strct, e.flags&omitEmptyFlag != 0)
 
 	if err := e.EncodeMapLen(len(fields)); err != nil {
@@ -158,7 +163,7 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 		if err := e.EncodeString(f.name); err != nil {
 			return err
 		}
-		if err := f.EncodeValue(e, strct); err != nil {
+		if err := encodeStructFieldValue(e, strct, f); err != nil {
 			return err
 		}
 	}
@@ -166,14 +171,21 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	return nil
 }
 
-func encodeStructValueAsArray(e *Encoder, strct reflect.Value, fields []*field) error {
-	if err := e.EncodeArrayLen(len(fields)); err != nil {
+func encodeStructValueAsArray(e *Encoder, strct reflect.Value, structFields *fields) error {
+	if err := e.EncodeArrayLen(len(structFields.List)); err != nil {
 		return err
 	}
-	for _, f := range fields {
-		if err := f.EncodeValue(e, strct); err != nil {
+	for _, f := range structFields.List {
+		if err := encodeStructFieldValue(e, strct, f); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func encodeStructFieldValue(e *Encoder, strct reflect.Value, f *field) error {
+	if f == nil {
+		return e.EncodeNil()
+	}
+	return f.EncodeValue(e, strct)
 }

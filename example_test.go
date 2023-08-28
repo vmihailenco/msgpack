@@ -164,6 +164,29 @@ func ExampleMarshal_asArray() {
 	// Output: [foo bar]
 }
 
+func ExampleMarshal_useKeys() {
+	type Item struct {
+		Foo string `msgpack:"key:0"`
+		// Bar string `msgpack:"1"`
+		Baz string `msgpack:"key:2"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Baz: "baz"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v, err := dec.DecodeInterface()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(v)
+	// Output: [foo <nil> baz]
+}
+
 func ExampleMarshal_omitEmpty() {
 	type Item struct {
 		Foo string
