@@ -1,7 +1,6 @@
 package msgpack
 
 import (
-	"encoding/binary"
 	"fmt"
 	"reflect"
 	"time"
@@ -17,7 +16,7 @@ func init() {
 }
 
 func timeEncoder(e *Encoder, v reflect.Value) ([]byte, error) {
-	return e.encodeTime(v.Interface().(time.Time)), nil
+	return e.encodeTime(v.Interface().(time.Time))
 }
 
 func timeDecoder(d *Decoder, v reflect.Value, extLen int) error {
@@ -33,40 +32,21 @@ func timeDecoder(d *Decoder, v reflect.Value, extLen int) error {
 }
 
 func (e *Encoder) EncodeTime(tm time.Time) error {
-	b := e.encodeTime(tm)
-	if err := e.encodeExtLen(len(b)); err != nil {
+	b, err := e.encodeTime(tm)
+	if err != nil {
 		return err
 	}
-	if err := e.w.WriteByte(byte(timeExtID)); err != nil {
+	if err = e.encodeExtLen(len(b)); err != nil {
+		return err
+	}
+	if err = e.w.WriteByte(byte(timeExtID)); err != nil {
 		return err
 	}
 	return e.write(b)
 }
 
-func (e *Encoder) encodeTime(tm time.Time) []byte {
-	if e.timeBuf == nil {
-		e.timeBuf = make([]byte, 12)
-	}
-
-	secs := uint64(tm.Unix())
-	if secs>>34 == 0 {
-		data := uint64(tm.Nanosecond())<<34 | secs
-
-		if data&0xffffffff00000000 == 0 {
-			b := e.timeBuf[:4]
-			binary.BigEndian.PutUint32(b, uint32(data))
-			return b
-		}
-
-		b := e.timeBuf[:8]
-		binary.BigEndian.PutUint64(b, data)
-		return b
-	}
-
-	b := e.timeBuf[:12]
-	binary.BigEndian.PutUint32(b, uint32(tm.Nanosecond()))
-	binary.BigEndian.PutUint64(b[4:], secs)
-	return b
+func (e *Encoder) encodeTime(tm time.Time) ([]byte, error) {
+	return tm.MarshalBinary()
 }
 
 func (d *Decoder) DecodeTime() (time.Time, error) {
@@ -126,21 +106,7 @@ func (d *Decoder) decodeTime(extLen int) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	switch len(b) {
-	case 4:
-		sec := binary.BigEndian.Uint32(b)
-		return time.Unix(int64(sec), 0), nil
-	case 8:
-		sec := binary.BigEndian.Uint64(b)
-		nsec := int64(sec >> 34)
-		sec &= 0x00000003ffffffff
-		return time.Unix(int64(sec), nsec), nil
-	case 12:
-		nsec := binary.BigEndian.Uint32(b)
-		sec := binary.BigEndian.Uint64(b[4:])
-		return time.Unix(int64(sec), int64(nsec)), nil
-	default:
-		err = fmt.Errorf("msgpack: invalid ext len=%d decoding time", extLen)
-		return time.Time{}, err
-	}
+	tm := time.Time{}
+	err = tm.UnmarshalBinary(b)
+	return tm, err
 }
