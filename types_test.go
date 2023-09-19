@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/vmihailenco/msgpack/v5"
-	"github.com/vmihailenco/msgpack/v5/msgpcode"
+	"github.com/vmihailenco/msgpack/v6"
+	"github.com/vmihailenco/msgpack/v6/msgpcode"
 )
 
 //------------------------------------------------------------------------------
@@ -249,9 +249,9 @@ var encoderTests = []encoderTest{
 	{[]byte{1, 2, 3}, "c403010203"},
 	{[3]byte{1, 2, 3}, "c403010203"},
 
-	{time.Unix(0, 0), "d6ff00000000"},
-	{time.Unix(1, 1), "d7ff0000000400000001"},
-	{time.Time{}, "c70cff00000000fffffff1886e0900"},
+	{time.Unix(0, 0), "c70fff010000000e7791f7000000000000b4"},
+	{time.Unix(1, 1), "c70fff010000000e7791f7010000000100b4"},
+	{time.Time{}, "c70fff01000000000000000000000000ffff"},
 
 	{IntSet{}, "90"},
 	{IntSet{8: struct{}{}}, "9108"},

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/vmihailenco/msgpack/v5"
-	"github.com/vmihailenco/msgpack/v5/msgpcode"
+	"github.com/vmihailenco/msgpack/v6"
+	"github.com/vmihailenco/msgpack/v6/msgpcode"
 )
 
 func init() {

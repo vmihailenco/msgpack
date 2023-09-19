@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/vmihailenco/msgpack/v5"
+	"github.com/vmihailenco/msgpack/v6"
 )
 
 type NoIntern struct {

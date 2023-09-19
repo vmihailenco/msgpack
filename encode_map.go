@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/vmihailenco/msgpack/v5/msgpcode"
+	"github.com/vmihailenco/msgpack/v6/msgpcode"
 )
 
 func encodeMapValue(e *Encoder, v reflect.Value) error {
