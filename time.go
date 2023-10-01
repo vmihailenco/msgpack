@@ -26,6 +26,11 @@ func timeDecoder(d *Decoder, v reflect.Value, extLen int) error {
 		return err
 	}
 
+	if tm.IsZero() {
+		// Zero time does not have timezone information.
+		tm = tm.UTC()
+	}
+
 	ptr := v.Addr().Interface().(*time.Time)
 	*ptr = tm
 
