@@ -16,6 +16,7 @@ import (
 const (
 	looseInterfaceDecodingFlag uint32 = 1 << iota
 	disallowUnknownFieldsFlag
+	ignoreMismatchedArrayFieldsFlag
 )
 
 const (
@@ -132,6 +133,16 @@ func (d *Decoder) UseLooseInterfaceDecoding(on bool) {
 		d.flags |= looseInterfaceDecodingFlag
 	} else {
 		d.flags &= ^looseInterfaceDecodingFlag
+	}
+}
+
+// IgnoreMismatchedArrayFields causes the Decoder to ignore mismatch fields number in the
+// array and struct.
+func (d *Decoder) IgnoreMismatchedArrayFields(on bool) {
+	if on {
+		d.flags |= ignoreMismatchedArrayFieldsFlag
+	} else {
+		d.flags &= ^ignoreMismatchedArrayFieldsFlag
 	}
 }
 
