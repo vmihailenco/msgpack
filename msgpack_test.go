@@ -420,6 +420,28 @@ func TestSetOmitEmpty(t *testing.T) {
 	err = dec.Decode(&t2)
 	require.Nil(t, err)
 	require.Nil(t, t2.Exported)
+
+	type Nested struct {
+		Foo string
+		Bar string
+	}
+	type Item struct {
+		X Nested
+		Y *Nested
+	}
+	i := Item{}
+	buf.Reset()
+	err = enc.Encode(i)
+	require.Nil(t, err)
+	require.NotContains(t, buf.Bytes(), byte('X'))
+	require.NotContains(t, buf.Bytes(), byte('Y'))
+
+	i = Item{Y: &Nested{}}
+	buf.Reset()
+	err = enc.Encode(i)
+	require.Nil(t, err)
+	require.NotContains(t, buf.Bytes(), byte('X'))
+	require.Contains(t, buf.Bytes(), byte('Y'))
 }
 
 type NullInt struct {
