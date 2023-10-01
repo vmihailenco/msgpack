@@ -74,9 +74,8 @@ func Marshal(v interface{}) ([]byte, error) {
 type Encoder struct {
 	w writer
 
-	buf       []byte
-	timeBuf   []byte
-	bootstrap [9 + 12]byte
+	buf     []byte
+	timeBuf []byte
 
 	intern map[string]int
 
@@ -85,9 +84,9 @@ type Encoder struct {
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	e := new(Encoder)
-	e.buf = e.bootstrap[:9]
-	e.timeBuf = e.bootstrap[9 : 9+12]
+	e := &Encoder{
+		buf: make([]byte, 9),
+	}
 	e.Reset(w)
 	return e
 }
