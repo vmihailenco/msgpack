@@ -778,8 +778,7 @@ func TestStringsBin(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, v.(string), test.in)
 
-		var dst interface{}
-		dst = ""
+		var dst interface{} = ""
 		err = msgpack.Unmarshal(b, &dst)
 		require.EqualError(t, err, "msgpack: Decode(non-pointer string)")
 	}
@@ -846,8 +845,7 @@ func TestBin(t *testing.T) {
 			t.Fatalf("%x != %x", v, test.in)
 		}
 
-		var dst interface{}
-		dst = make([]byte, 0)
+		var dst interface{} = make([]byte, 0)
 		err = msgpack.Unmarshal(b, &dst)
 		if err.Error() != "msgpack: Decode(non-pointer []uint8)" {
 			t.Fatal(err)
@@ -910,8 +908,7 @@ func TestUint64(t *testing.T) {
 			t.Fatalf("%d != %d", out2, int64(test.in))
 		}
 
-		var out3 interface{}
-		out3 = uint64(0)
+		var out3 interface{} = uint64(0)
 		err = msgpack.Unmarshal(buf.Bytes(), &out3)
 		if err.Error() != "msgpack: Decode(non-pointer uint64)" {
 			t.Fatal(err)
@@ -998,8 +995,7 @@ func TestInt64(t *testing.T) {
 			t.Fatalf("%d != %d", out2, uint64(test.in))
 		}
 
-		var out3 interface{}
-		out3 = int64(0)
+		var out3 interface{} = int64(0)
 		err = msgpack.Unmarshal(buf.Bytes(), &out3)
 		if err.Error() != "msgpack: Decode(non-pointer int64)" {
 			t.Fatal(err)
@@ -1068,8 +1064,7 @@ func TestFloat32(t *testing.T) {
 			t.Fatalf("%f != %f", v, test.in)
 		}
 
-		var dst interface{}
-		dst = float32(0)
+		var dst interface{} = float32(0)
 		err = msgpack.Unmarshal(b, &dst)
 		if err.Error() != "msgpack: Decode(non-pointer float32)" {
 			t.Fatal(err)
@@ -1134,8 +1129,7 @@ func TestFloat64(t *testing.T) {
 			t.Fatalf("%f != %f", v, test.in)
 		}
 
-		var dst interface{}
-		dst = float64(0)
+		var dst interface{} = float64(0)
 		err = msgpack.Unmarshal(b, &dst)
 		if err.Error() != "msgpack: Decode(non-pointer float64)" {
 			t.Fatal(err)

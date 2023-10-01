@@ -254,9 +254,9 @@ func (d *Decoder) decodeInterfaceExt(c byte) (interface{}, error) {
 		return nil, fmt.Errorf("msgpack: unknown ext id=%d", extID)
 	}
 
-	v := reflect.New(info.Type).Elem()
+	v := d.newValue(info.Type).Elem()
 	if nilable(v.Kind()) && v.IsNil() {
-		v.Set(reflect.New(info.Type.Elem()))
+		v.Set(d.newValue(info.Type.Elem()))
 	}
 
 	if err := info.Decoder(d, v, extLen); err != nil {

@@ -49,7 +49,6 @@ func (t *MsgpackTest) TestTime() {
 	t.Nil(t.dec.Decode(&out))
 	t.True(out.Equal(zero))
 	t.True(out.IsZero())
-
 }
 
 func (t *MsgpackTest) TestLargeBytes() {
@@ -509,14 +508,15 @@ func ExampleMarshal_ignore_simple_zero_structs_when_tagged_with_omitempty() {
 	// msgpack_test.T{I:msgpack_test.NullInt{Valid:true, Int:42}, J:msgpack_test.NullInt{Valid:true, Int:0}, S:msgpack_test.Secretive{Visible:false, hidden:false}}
 }
 
-type Value interface{}
-type Wrapper struct {
-	Value Value `msgpack:"v,omitempty"`
-}
+type (
+	Value   interface{}
+	Wrapper struct {
+		Value Value `msgpack:"v,omitempty"`
+	}
+)
 
 func TestEncodeWrappedValue(t *testing.T) {
-	var v Value
-	v = (*time.Time)(nil)
+	v := (*time.Time)(nil)
 	c := &Wrapper{
 		Value: v,
 	}
