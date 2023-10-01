@@ -13,6 +13,8 @@ var errArrayStruct = errors.New("msgpack: number of fields in array-encoded stru
 var (
 	mapStringStringPtrType = reflect.TypeOf((*map[string]string)(nil))
 	mapStringStringType    = mapStringStringPtrType.Elem()
+	mapStringBoolPtrType   = reflect.TypeOf((*map[string]bool)(nil))
+	mapStringBoolType      = mapStringBoolPtrType.Elem()
 )
 
 var (

@@ -111,6 +111,8 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 			switch typ.Elem() {
 			case stringType:
 				return encodeMapStringStringValue
+			case boolType:
+				return encodeMapStringBoolValue
 			case interfaceType:
 				return encodeMapStringInterfaceValue
 			}
