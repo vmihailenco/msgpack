@@ -26,10 +26,14 @@ type MsgpackTest struct {
 	dec *msgpack.Decoder
 }
 
-func (t *MsgpackTest) SetUpTest() {
+func (t *MsgpackTest) SetupTest() {
 	t.buf = &bytes.Buffer{}
 	t.enc = msgpack.NewEncoder(t.buf)
 	t.dec = msgpack.NewDecoder(bufio.NewReader(t.buf))
+}
+
+func TestMsgpackTestSuite(t *testing.T) {
+	suite.Run(t, new(MsgpackTest))
 }
 
 func (t *MsgpackTest) TestDecodeNil() {
