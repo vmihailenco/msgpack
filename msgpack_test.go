@@ -528,3 +528,28 @@ func TestEncodeWrappedValue(t *testing.T) {
 	require.Nil(t, msgpack.NewEncoder(&buf).Encode(v))
 	require.Nil(t, msgpack.NewEncoder(&buf).Encode(c))
 }
+
+func TestPtrValueDecode(t *testing.T) {
+	type Foo struct {
+		Bar *int
+	}
+
+	b, err := msgpack.Marshal(Foo{})
+	require.Nil(t, err)
+
+	bar1 := 123
+	foo := Foo{Bar: &bar1}
+
+	err = msgpack.Unmarshal(b, &foo)
+	require.Nil(t, err)
+	require.Nil(t, foo.Bar)
+
+	bar2 := 456
+	b, err = msgpack.Marshal(Foo{Bar: &bar2})
+	require.Nil(t, err)
+
+	err = msgpack.Unmarshal(b, &foo)
+	require.Nil(t, err)
+	require.NotNil(t, foo.Bar)
+	require.Equal(t, *foo.Bar, bar2)
+}
