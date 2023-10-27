@@ -175,6 +175,15 @@ func (d *Decoder) UsePreallocateValues(on bool) {
 	}
 }
 
+// UseUIntStructKeys enables support for decoding uint struct tag keys to their corresponding struct field.
+func (d *Decoder) UseUIntStructKeys(on bool) {
+	if on {
+		d.flags |= useUIntStructKeysFlag
+	} else {
+		d.flags &= ^useUIntStructKeysFlag
+	}
+}
+
 // DisableAllocLimit enables fully allocating slices/maps when the size is known
 func (d *Decoder) DisableAllocLimit(on bool) {
 	if on {

@@ -17,6 +17,7 @@ const (
 	useCompactFloatsFlag
 	useInternedStringsFlag
 	omitEmptyFlag
+	useUIntStructKeysFlag
 )
 
 type writer interface {
@@ -193,6 +194,15 @@ func (e *Encoder) UseInternedStrings(on bool) {
 		e.flags |= useInternedStringsFlag
 	} else {
 		e.flags &= ^useInternedStringsFlag
+	}
+}
+
+// UseUIntStructKeys causes the Encoder to encode struct fields that have a valid uint tag key as uints.
+func (e *Encoder) UseUIntStructKeys(on bool) {
+	if on {
+		e.flags |= useUIntStructKeysFlag
+	} else {
+		e.flags &= ^useUIntStructKeysFlag
 	}
 }
 

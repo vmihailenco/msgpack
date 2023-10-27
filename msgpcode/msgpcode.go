@@ -86,3 +86,7 @@ func IsFixedExt(c byte) bool {
 func IsExt(c byte) bool {
 	return IsFixedExt(c) || c == Ext8 || c == Ext16 || c == Ext32
 }
+
+func IsUint(c byte) bool {
+	return c <= PosFixedNumHigh || c == Uint8 || c == Uint16 || c == Uint32 || c == Uint64
+}
