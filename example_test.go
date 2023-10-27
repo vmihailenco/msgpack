@@ -26,6 +26,41 @@ func ExampleMarshal() {
 	// Output: bar
 }
 
+func ExampleMarshal_intKeys() {
+	type Item struct {
+		Foo string `msgpack:"100"`
+		Bar string `msgpack:"200"`
+		Baz string `msgpack:"not_int_key"`
+	}
+
+	buf := new(bytes.Buffer)
+	enc := msgpack.NewEncoder(buf)
+	enc.UseUIntStructKeys(true)
+	err := enc.Encode(&Item{
+		Foo: "foo",
+		Bar: "bar",
+		Baz: "baz",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	var item Item
+	dec := msgpack.NewDecoder(buf)
+	dec.UseUIntStructKeys(true)
+	err = dec.Decode(&item)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(item.Foo)
+	fmt.Println(item.Bar)
+	fmt.Println(item.Baz)
+	// Output:
+	// foo
+	// bar
+	// baz
+}
+
 func ExampleMarshal_mapStringInterface() {
 	in := map[string]interface{}{"foo": 1, "hello": "world"}
 	b, err := msgpack.Marshal(in)

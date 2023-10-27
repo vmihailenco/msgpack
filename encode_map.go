@@ -4,6 +4,7 @@ import (
 	"math"
 	"reflect"
 	"sort"
+	"strconv"
 
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
@@ -201,8 +202,22 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 	}
 
 	for _, f := range fields {
-		if err := e.EncodeString(f.name); err != nil {
-			return err
+		uintKeyEncoded := false
+		if e.flags&useUIntStructKeysFlag != 0 {
+			// Try to encode the key as a uint if useUIntStructKeysFlag is set
+			uintKey, err := strconv.ParseUint(f.name, 10, 0)
+			if err == nil {
+				if err := e.EncodeUint(uintKey); err != nil {
+					return err
+				}
+				uintKeyEncoded = true
+			}
+		}
+		// If useUIntStructKeysFlag is not set or if the key was not encoded as a uint, encode it as a string
+		if !uintKeyEncoded {
+			if err := e.EncodeString(f.name); err != nil {
+				return err
+			}
 		}
 		if err := f.EncodeValue(e, strct); err != nil {
 			return err

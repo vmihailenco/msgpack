@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
@@ -332,9 +333,30 @@ func (d *Decoder) decodeStruct(v reflect.Value, n int) error {
 
 	fields := structs.Fields(v.Type(), d.structTag)
 	for i := 0; i < n; i++ {
-		name, err := d.decodeStringTemp()
-		if err != nil {
-			return err
+		var name string
+		var err error
+
+		// Try to decode the key as a uint if useUIntStructKeysFlag is set
+		if d.flags&useUIntStructKeysFlag != 0 {
+			code, err := d.PeekCode()
+			if err != nil {
+				return err
+			}
+			if msgpcode.IsUint(code) {
+				intKey, err := d.DecodeUint()
+				if err != nil {
+					return err
+				}
+				name = strconv.FormatUint(uint64(intKey), 10)
+			}
+		}
+
+		// if useUIntStructKeysFlag is not set or if the current key is not a uint, fallback to a string key
+		if name == "" {
+			name, err = d.decodeStringTemp()
+			if err != nil {
+				return err
+			}
 		}
 
 		if f := fields.Map[name]; f != nil {
