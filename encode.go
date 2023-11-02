@@ -222,6 +222,8 @@ func (e *Encoder) Encode(v interface{}) error {
 		return e.encodeInt64Cond(int64(v))
 	case time.Time:
 		return e.EncodeTime(v)
+	case RawMessage:
+		return e.write([]byte(v))
 	}
 	return e.EncodeValue(reflect.ValueOf(v))
 }
