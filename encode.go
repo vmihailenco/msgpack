@@ -255,6 +255,11 @@ func (e *Encoder) EncodeDuration(d time.Duration) error {
 	return e.EncodeInt(int64(d))
 }
 
+// EncodeRawMessage writes the RawMessage directly.
+func (e *Encoder) EncodeRawMessage(m RawMessage) error {
+	return e.write([]byte(m))
+}
+
 func (e *Encoder) writeCode(c byte) error {
 	return e.w.WriteByte(c)
 }
