@@ -29,8 +29,8 @@ func RegisterBinaryExt[T encoding.BinaryMarshaler, _ interface {
 	})
 	RegisterExtDecoder(extID, zero, func(d *Decoder, v reflect.Value, extLen int) error {
 		u := v.Addr().Interface().(encoding.BinaryUnmarshaler)
-		b := make([]byte, extLen)
-		if err := d.ReadFull(b); err != nil {
+		b, err := d.readN(extLen)
+		if err != nil {
 			return err
 		}
 		return u.UnmarshalBinary(b)
