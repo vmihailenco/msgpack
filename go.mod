@@ -3,7 +3,6 @@ module github.com/vmihailenco/msgpack/v5
 go 1.19
 
 require (
-	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.6.1
 	github.com/vmihailenco/tagparser/v2 v2.0.0
 )

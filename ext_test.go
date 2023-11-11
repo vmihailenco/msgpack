@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
@@ -14,7 +13,7 @@ import (
 
 func init() {
 	msgpack.RegisterExt(9, (*ExtTest)(nil))
-	msgpack.RegisterBinaryExt[decimal.Decimal](10)
+	msgpack.RegisterBinaryExt[ExtBinaryTest](10)
 }
 
 type ExtTest struct {
@@ -32,6 +31,19 @@ func (ext ExtTest) MarshalMsgpack() ([]byte, error) {
 
 func (ext *ExtTest) UnmarshalMsgpack(b []byte) error {
 	return msgpack.Unmarshal(b, &ext.S)
+}
+
+type ExtBinaryTest struct {
+	B []byte
+}
+
+func (ext ExtBinaryTest) MarshalBinary() ([]byte, error) {
+	return ext.B, nil
+}
+
+func (ext *ExtBinaryTest) UnmarshalBinary(b []byte) error {
+	ext.B = b
+	return nil
 }
 
 func TestEncodeDecodeExtHeader(t *testing.T) {
@@ -73,7 +85,7 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 }
 
 func TestEncodeDecodeBinaryExt(t *testing.T) {
-	v1 := decimal.NewFromFloat(1.23)
+	v1 := ExtBinaryTest{[]byte("hello world")}
 	b, err := msgpack.Marshal(v1)
 	if err != nil {
 		t.Fatal(err)
@@ -84,20 +96,20 @@ func TestEncodeDecodeBinaryExt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v2, ok := dst.(decimal.Decimal)
+	v2, ok := dst.(ExtBinaryTest)
 	if !ok {
-		t.Fatalf("got %#v, wanted decimal.Decimal", dst)
+		t.Fatalf("got %#v, wanted ExtBinaryTest", dst)
 	}
-	if !v1.Equal(v2) {
+	if !bytes.Equal(v1.B, v2.B) {
 		t.Fatalf("got %q, wanted %q", v2, v1)
 	}
 
-	v3 := new(decimal.Decimal)
+	v3 := new(ExtBinaryTest)
 	err = msgpack.Unmarshal(b, &v3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !v1.Equal(*v3) {
+	if !bytes.Equal(v1.B, v3.B) {
 		t.Fatalf("got %q, wanted %q", *v3, v1)
 	}
 }
