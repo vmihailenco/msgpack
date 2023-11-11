@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
@@ -13,6 +14,7 @@ import (
 
 func init() {
 	msgpack.RegisterExt(9, (*ExtTest)(nil))
+	msgpack.RegisterBinaryExt[decimal.Decimal](10)
 }
 
 type ExtTest struct {
@@ -68,6 +70,36 @@ func TestEncodeDecodeExtHeader(t *testing.T) {
 	err = v.UnmarshalMsgpack(data)
 	require.Nil(t, err)
 	require.Equal(t, wanted, v.S)
+}
+
+func TestEncodeDecodeBinaryExt(t *testing.T) {
+	v1 := decimal.NewFromFloat(1.23)
+	b, err := msgpack.Marshal(v1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var dst any
+	err = msgpack.Unmarshal(b, &dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v2, ok := dst.(decimal.Decimal)
+	if !ok {
+		t.Fatalf("got %#v, wanted decimal.Decimal", dst)
+	}
+	if !v1.Equal(v2) {
+		t.Fatalf("got %q, wanted %q", v2, v1)
+	}
+
+	v3 := new(decimal.Decimal)
+	err = msgpack.Unmarshal(b, &v3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !v1.Equal(*v3) {
+		t.Fatalf("got %q, wanted %q", *v3, v1)
+	}
 }
 
 func TestExt(t *testing.T) {

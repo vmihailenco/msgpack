@@ -1,6 +1,7 @@
 package msgpack
 
 import (
+	"encoding"
 	"fmt"
 	"math"
 	"reflect"
@@ -14,6 +15,27 @@ type extInfo struct {
 }
 
 var extTypes = make(map[int8]*extInfo)
+
+// RegisterBinaryExt registers a binary marshaler/unmarshaler for the given type.
+// The type must be implemented both interfaces.
+func RegisterBinaryExt[T encoding.BinaryMarshaler, _ interface {
+	encoding.BinaryUnmarshaler
+	*T
+}](extID int8) {
+	var zero T
+	RegisterExtEncoder(extID, zero, func(e *Encoder, v reflect.Value) ([]byte, error) {
+		m := v.Interface().(encoding.BinaryMarshaler)
+		return m.MarshalBinary()
+	})
+	RegisterExtDecoder(extID, zero, func(d *Decoder, v reflect.Value, extLen int) error {
+		u := v.Addr().Interface().(encoding.BinaryUnmarshaler)
+		b := make([]byte, extLen)
+		if err := d.ReadFull(b); err != nil {
+			return err
+		}
+		return u.UnmarshalBinary(b)
+	})
+}
 
 type MarshalerUnmarshaler interface {
 	Marshaler
