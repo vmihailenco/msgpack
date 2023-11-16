@@ -3,7 +3,7 @@ package msgpack_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math"
 	"testing"
 	"time"
@@ -12,7 +12,7 @@ import (
 )
 
 func BenchmarkDiscard(b *testing.B) {
-	enc := msgpack.NewEncoder(ioutil.Discard)
+	enc := msgpack.NewEncoder(io.Discard)
 
 	b.ResetTimer()
 
