@@ -175,7 +175,7 @@ func (fs *fields) OmitEmpty(e *Encoder, strct reflect.Value) []*field {
 	fields := make([]*field, 0, len(fs.List))
 
 	for _, f := range fs.List {
-		if !f.Omit(e, strct) {
+		if f != nil && !f.Omit(e, strct) {
 			fields = append(fields, f)
 		}
 	}
@@ -258,6 +258,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 		if indexStr, ok := tag.Options["index"]; ok {
 			index, err := strconv.Atoi(indexStr)
 			if err != nil {
+				fs.AsArray = true //auto set asArray
 				fs.AddByIndex(field, index)
 			} else {
 				fs.Add(field)
@@ -288,6 +289,9 @@ func init() {
 func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
 	inlinedFields := getFields(typ, tag).List
 	for _, field := range inlinedFields {
+		if field == nil {
+			continue
+		}
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't inline shadowed fields.
 			continue
@@ -324,6 +328,9 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 
 	inlinedFields := getFields(typ, tag).List
 	for _, field := range inlinedFields {
+		if field == nil {
+			continue
+		}
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't auto inline if there are shadowed fields.
 			return false
@@ -331,6 +338,9 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 	}
 
 	for _, field := range inlinedFields {
+		if field == nil {
+			continue
+		}
 		field.index = append(f.index, field.index...)
 		fs.Add(field)
 	}

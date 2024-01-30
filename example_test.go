@@ -149,8 +149,7 @@ func ExampleMarshal_asArrayAndWithIndex() {
 	}
 
 	type Item2 struct {
-		_msgpack struct{} `msgpack:",as_array"`
-		Foo      string   `msgpack:",index:1"`
+		Foo string `msgpack:",index:1"`
 	}
 
 	var buf bytes.Buffer
@@ -167,7 +166,7 @@ func ExampleMarshal_asArrayAndWithIndex() {
 		panic(err)
 	}
 	fmt.Printf("%#v", v)
-	// Output: &msgpack_test.Item2{_msgpack:struct {}{}, Foo:"foo"}
+	// Output: &msgpack_test.Item2{Foo:"foo"}
 }
 
 func ExampleMarshal_asArray() {
