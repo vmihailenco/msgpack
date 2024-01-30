@@ -311,16 +311,32 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 	}
 
 	fields := structs.Fields(v.Type(), d.structTag)
-	if n != len(fields.List) {
+	//if you use index,compatible obtaining partial fields
+	if !fields.useIndex && n != len(fields.List) {
 		return errArrayStruct
 	}
 
-	for _, f := range fields.List {
+	for i, f := range fields.List {
+		//skip of nil field
+		if f == nil {
+			if err = d.Skip(); err != nil {
+				return err
+			}
+			continue
+		}
+		if i >= n { //array is over
+			return nil
+		}
 		if err := f.DecodeValue(d, v); err != nil {
 			return err
 		}
 	}
-
+	//skip tail value
+	for i := len(fields.List); i < n; i++ {
+		if err = d.Skip(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

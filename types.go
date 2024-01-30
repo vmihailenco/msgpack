@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/vmihailenco/tagparser/v2"
@@ -127,6 +128,7 @@ type fields struct {
 	List    []*field
 	AsArray bool
 
+	useIndex     bool
 	hasOmitEmpty bool
 }
 
@@ -147,6 +149,18 @@ func (fs *fields) Add(field *field) {
 	}
 }
 
+func (fs *fields) AddByIndex(field *field, index int) {
+	fs.warnIfFieldExists(field.name)
+	fs.Map[field.name] = field
+	for len(fs.List) <= index {
+		fs.List = append(fs.List, nil)
+	}
+	fs.List[index] = field
+	if field.omitEmpty {
+		fs.hasOmitEmpty = true
+	}
+}
+
 func (fs *fields) warnIfFieldExists(name string) {
 	if _, ok := fs.Map[name]; ok {
 		log.Printf("msgpack: %s already has field=%s", fs.Type, name)
@@ -162,7 +176,7 @@ func (fs *fields) OmitEmpty(e *Encoder, strct reflect.Value) []*field {
 	fields := make([]*field, 0, len(fs.List))
 
 	for _, f := range fs.List {
-		if !f.Omit(e, strct) {
+		if f != nil && !f.Omit(e, strct) {
 			fields = append(fields, f)
 		}
 	}
@@ -242,7 +256,18 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 			}
 		}
 
-		fs.Add(field)
+		if indexStr, ok := tag.Options["index"]; ok {
+			index, err := strconv.Atoi(indexStr)
+			if err == nil {
+				fs.AsArray = true //auto set asArray
+				fs.useIndex = true
+				fs.AddByIndex(field, index)
+			} else {
+				fs.Add(field)
+			}
+		} else {
+			fs.Add(field)
+		}
 
 		if alias, ok := tag.Options["alias"]; ok {
 			fs.warnIfFieldExists(alias)
@@ -266,6 +291,9 @@ func init() {
 func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
 	inlinedFields := getFields(typ, tag).List
 	for _, field := range inlinedFields {
+		if field == nil {
+			continue
+		}
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't inline shadowed fields.
 			continue
@@ -302,6 +330,9 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 
 	inlinedFields := getFields(typ, tag).List
 	for _, field := range inlinedFields {
+		if field == nil {
+			continue
+		}
 		if _, ok := fs.Map[field.name]; ok {
 			// Don't auto inline if there are shadowed fields.
 			return false
@@ -309,6 +340,9 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 	}
 
 	for _, field := range inlinedFields {
+		if field == nil {
+			continue
+		}
 		field.index = append(f.index, field.index...)
 		fs.Add(field)
 	}

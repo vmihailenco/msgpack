@@ -217,6 +217,13 @@ func encodeStructValueAsArray(e *Encoder, strct reflect.Value, fields []*field) 
 		return err
 	}
 	for _, f := range fields {
+		//if nil field,write nil
+		if f == nil {
+			if err := e.EncodeNil(); err != nil {
+				return err
+			}
+			continue
+		}
 		if err := f.EncodeValue(e, strct); err != nil {
 			return err
 		}

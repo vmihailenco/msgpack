@@ -141,6 +141,96 @@ func ExampleEncoder_UseArrayEncodedStructs() {
 	// Output: [foo bar]
 }
 
+func ExampleMarshal_indexMore() {
+	type Item struct {
+		Foo string `msgpack:"index:1"`
+		Bar string
+		V3  string
+	}
+
+	type Item2 struct {
+		Foo2 string `msgpack:"index:1"`
+		Bar  string `msgpack:"index:2"`
+		V4   string `msgpack:"index:4"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar", V3: "v3"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v := &Item2{}
+	err = dec.Decode(v)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v", v)
+	// Output: &msgpack_test.Item2{Foo2:"foo", Bar:"bar", V4:""}
+}
+
+func ExampleMarshal_indexLess() {
+	type Item struct {
+		Foo string `msgpack:"index:1"`
+		Bar string
+		V3  string `msgpack:"index:3"`
+	}
+
+	type Item2 struct {
+		Foo2 string `msgpack:"index:1"`
+		Bar  string `msgpack:"index:2"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar", V3: "v3"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v := &Item2{}
+	err = dec.Decode(v)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v", v)
+	// Output: &msgpack_test.Item2{Foo2:"foo", Bar:"bar"}
+}
+
+func ExampleMarshal_index() {
+	type Item struct {
+		_msgpack struct{} `msgpack:",as_array"`
+		Foo      string
+		Bar      string
+		V3       string
+	}
+
+	type Item2 struct {
+		V32  string `msgpack:"index:2"`
+		Bar2 string `msgpack:"index:1"`
+		Foo2 string `msgpack:"index:0"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar", V3: "v3"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v := &Item2{}
+	err = dec.Decode(v)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v", v)
+	// Output: &msgpack_test.Item2{V32:"v3", Bar2:"bar", Foo2:"foo"}
+}
+
 func ExampleMarshal_asArray() {
 	type Item struct {
 		_msgpack struct{} `msgpack:",as_array"`
