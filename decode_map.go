@@ -319,7 +319,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 	for _, f := range fields.List {
 		//Read and discard that nil field
 		if f == nil {
-			if _, err := d.decodeInterfaceCond(); err != nil {
+			if err = d.Skip(); err != nil {
 				return err
 			}
 		}
@@ -329,7 +329,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 	}
 	//Read and discard that tail field
 	for i := len(fields.List); i < n; i++ {
-		if _, err := d.decodeInterfaceCond(); err != nil {
+		if err = d.Skip(); err != nil {
 			return err
 		}
 	}
