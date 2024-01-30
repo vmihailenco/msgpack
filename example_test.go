@@ -141,6 +141,35 @@ func ExampleEncoder_UseArrayEncodedStructs() {
 	// Output: [foo bar]
 }
 
+func ExampleMarshal_asArrayAndWithIndex() {
+	type Item struct {
+		_msgpack struct{} `msgpack:",as_array"`
+		Foo      string   `msgpack:",index:1"`
+		Bar      string   `msgpack:",index:2"`
+	}
+
+	type Item2 struct {
+		_msgpack struct{} `msgpack:",as_array"`
+		Foo      string   `msgpack:",index:1"`
+	}
+
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Foo: "foo", Bar: "bar"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	v := &Item2{}
+	err = dec.Decode(v)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v", v)
+	// Output: &msgpack_test.Item2{_msgpack:struct {}{}, Foo:"foo"}
+}
+
 func ExampleMarshal_asArray() {
 	type Item struct {
 		_msgpack struct{} `msgpack:",as_array"`

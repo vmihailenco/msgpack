@@ -311,16 +311,28 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 	}
 
 	fields := structs.Fields(v.Type(), d.structTag)
-	if n != len(fields.List) {
-		return errArrayStruct
-	}
+	//Compatible with only obtaining partial fields
+	//if n != len(fields.List) {
+	//	return errArrayStruct
+	//}
 
 	for _, f := range fields.List {
+		//Read and discard that nil field
+		if f == nil {
+			if _, err := d.decodeInterfaceCond(); err != nil {
+				return err
+			}
+		}
 		if err := f.DecodeValue(d, v); err != nil {
 			return err
 		}
 	}
-
+	//Read and discard that tail field
+	for i := len(fields.List); i < n; i++ {
+		if _, err := d.decodeInterfaceCond(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/vmihailenco/tagparser/v2"
@@ -147,6 +148,18 @@ func (fs *fields) Add(field *field) {
 	}
 }
 
+func (fs *fields) AddByIndex(field *field, index int) {
+	fs.warnIfFieldExists(field.name)
+	fs.Map[field.name] = field
+	for len(fs.List) <= index {
+		fs.List = append(fs.List, nil)
+	}
+	fs.List[index] = field
+	if field.omitEmpty {
+		fs.hasOmitEmpty = true
+	}
+}
+
 func (fs *fields) warnIfFieldExists(name string) {
 	if _, ok := fs.Map[name]; ok {
 		log.Printf("msgpack: %s already has field=%s", fs.Type, name)
@@ -242,7 +255,16 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 			}
 		}
 
-		fs.Add(field)
+		if indexStr, ok := tag.Options["index"]; ok {
+			index, err := strconv.Atoi(indexStr)
+			if err != nil {
+				fs.AddByIndex(field, index)
+			} else {
+				fs.Add(field)
+			}
+		} else {
+			fs.Add(field)
+		}
 
 		if alias, ok := tag.Options["alias"]; ok {
 			fs.warnIfFieldExists(alias)
