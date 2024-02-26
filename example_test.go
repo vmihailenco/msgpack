@@ -171,6 +171,34 @@ func ExampleMarshal_indexMore() {
 	// Output: &msgpack_test.Item2{Foo2:"foo", Bar:"bar", V4:""}
 }
 
+func ExampleMarshal_inline() {
+	type Base struct {
+		ID    int    `msgpack:"index:2"`
+		StrID string `msgpack:"index:1"`
+	}
+	type Item struct {
+		Base
+		Foo string `msgpack:"index:3"`
+		Bar string
+		V3  string `msgpack:"index:5"`
+	}
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	err := enc.Encode(&Item{Base: Base{ID: 1, StrID: "ID1"}, Foo: "foo", Bar: "bar", V3: "v3"})
+	if err != nil {
+		panic(err)
+	}
+
+	dec := msgpack.NewDecoder(&buf)
+	var v any
+	err = dec.Decode(&v)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%v", v)
+	// Output: [<nil> ID1 1 foo bar v3]
+}
+
 func ExampleMarshal_indexLess() {
 	type Item struct {
 		Foo string `msgpack:"index:1"`
