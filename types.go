@@ -293,11 +293,9 @@ func init() {
 }
 
 func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
-	inlinedFields := getFields(typ, tag).List
-	useIndex := false
-	for i, field := range inlinedFields {
+	inlinedFs := getFields(typ, tag)
+	for i, field := range inlinedFs.List {
 		if field == nil {
-			useIndex = true
 			continue
 		}
 		if _, ok := fs.Map[field.name]; ok {
@@ -305,7 +303,7 @@ func inlineFields(fs *fields, typ reflect.Type, f *field, tag string) {
 			continue
 		}
 		field.index = append(f.index, field.index...)
-		if useIndex {
+		if inlinedFs.useIndex {
 			fs.AddByIndex(field, i)
 		} else {
 			fs.Add(field)
@@ -339,11 +337,9 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 		return false
 	}
 
-	inlinedFields := getFields(typ, tag).List
-	useIndex := false
-	for _, field := range inlinedFields {
+	inlinedFs := getFields(typ, tag)
+	for _, field := range inlinedFs.List {
 		if field == nil {
-			useIndex = true
 			continue
 		}
 		if _, ok := fs.Map[field.name]; ok {
@@ -352,17 +348,16 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 		}
 	}
 
-	for i, field := range inlinedFields {
+	for i, field := range inlinedFs.List {
 		if field == nil {
 			continue
 		}
 		field.index = append(f.index, field.index...)
-		if useIndex {
+		if inlinedFs.useIndex {
 			fs.AddByIndex(field, i)
 		} else {
 			fs.Add(field)
 		}
-
 	}
 	return true
 }
