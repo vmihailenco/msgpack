@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 var (
@@ -70,10 +72,16 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 	if typ.Implements(unmarshalerType) {
 		return nilAwareDecoder(typ, unmarshalValue)
 	}
-	if typ.Implements(binaryUnmarshalerType) {
+
+	implementsBinaryUnmarshaler := typ.Implements(binaryUnmarshalerType)
+	implementsTextUnmarshaler := typ.Implements(textUnmarshalerType)
+	if implementsBinaryUnmarshaler && implementsTextUnmarshaler {
+		return nilAwareDecoder(typ, unmarshalBinaryOrTextValue)
+	}
+	if implementsBinaryUnmarshaler {
 		return nilAwareDecoder(typ, unmarshalBinaryValue)
 	}
-	if typ.Implements(textUnmarshalerType) {
+	if implementsTextUnmarshaler {
 		return nilAwareDecoder(typ, unmarshalTextValue)
 	}
 
@@ -86,10 +94,15 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 		if ptr.Implements(unmarshalerType) {
 			return addrDecoder(nilAwareDecoder(typ, unmarshalValue))
 		}
-		if ptr.Implements(binaryUnmarshalerType) {
+		implementsBinaryUnmarshaler := ptr.Implements(binaryUnmarshalerType)
+		implementsTextUnmarshaler := ptr.Implements(textUnmarshalerType)
+		if implementsBinaryUnmarshaler && implementsTextUnmarshaler {
+			return addrDecoder(nilAwareDecoder(typ, unmarshalBinaryOrTextValue))
+		}
+		if implementsBinaryUnmarshaler {
 			return addrDecoder(nilAwareDecoder(typ, unmarshalBinaryValue))
 		}
-		if ptr.Implements(textUnmarshalerType) {
+		if implementsTextUnmarshaler {
 			return addrDecoder(nilAwareDecoder(typ, unmarshalTextValue))
 		}
 	}
@@ -248,4 +261,22 @@ func unmarshalTextValue(d *Decoder, v reflect.Value) error {
 
 	unmarshaler := v.Interface().(encoding.TextUnmarshaler)
 	return unmarshaler.UnmarshalText(data)
+}
+
+func unmarshalBinaryOrTextValue(d *Decoder, v reflect.Value) error {
+	useText := false
+	if d.flags&preferTextUnmarshalerForString != 0 {
+		code, err := d.PeekCode()
+		if err != nil {
+			return err
+		}
+		if msgpcode.IsString(code) {
+			useText = true
+		}
+	}
+	if useText {
+		return unmarshalTextValue(d, v)
+	} else {
+		return unmarshalBinaryValue(d, v)
+	}
 }
