@@ -24,6 +24,7 @@ const (
 	disallowUnknownFieldsFlag
 	usePreallocateValues
 	disableAllocLimitFlag
+	preferTextUnmarshalerForString
 )
 
 type bufReader interface {
@@ -181,6 +182,20 @@ func (d *Decoder) DisableAllocLimit(on bool) {
 		d.flags |= disableAllocLimitFlag
 	} else {
 		d.flags &= ^disableAllocLimitFlag
+	}
+}
+
+// PreferTextUnmarshalerForString makes the decoder prefer [encoding.TextUnmarshaler]
+// over [encoding.BinaryUnmarshaler] when both are implemented, and source
+// MessagePack data is a String (as opposed to Binary).
+//
+// If this option is not enabled, [encoding.BinaryUnmarshaler] will be preferred
+// instead, regardless of MessagePack data type.
+func (d *Decoder) PreferTextUnmarshalerForString(on bool) {
+	if on {
+		d.flags |= preferTextUnmarshalerForString
+	} else {
+		d.flags &= ^preferTextUnmarshalerForString
 	}
 }
 

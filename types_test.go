@@ -2,6 +2,8 @@ package msgpack_test
 
 import (
 	"bytes"
+	"encoding"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -427,6 +429,8 @@ type typeTest struct {
 	wantnil  bool
 	wantzero bool
 	wanted   interface{}
+
+	preferTextUnmarshalerForString bool
 }
 
 func (t typeTest) String() string {
@@ -441,6 +445,36 @@ func (t *typeTest) requireErr(err error, s string) {
 		t.Fatalf("got %q error, wanted %q", err, s)
 	}
 }
+
+type binaryTextType uint32
+
+// UnmarshalText implements encoding.TextUnmarshaler
+func (v *binaryTextType) UnmarshalText(text []byte) error {
+	var b [4]byte
+	n, err := hex.Decode(b[:], text)
+	if err != nil {
+		return err
+	}
+	if n != 4 {
+		return fmt.Errorf("invalid length %d", n)
+	}
+	*v = binaryTextType(binary.BigEndian.Uint32(b[:]))
+	return nil
+}
+
+// UnmarshalBinary implements encoding.BinaryUnmarshaler
+func (v *binaryTextType) UnmarshalBinary(data []byte) error {
+	if n := len(data); n != 4 {
+		return fmt.Errorf("invalid length %d", n)
+	}
+	*v = binaryTextType(binary.BigEndian.Uint32(data))
+	return nil
+}
+
+var (
+	_ encoding.TextUnmarshaler   = new(binaryTextType)
+	_ encoding.BinaryUnmarshaler = new(binaryTextType)
+)
 
 var (
 	intSlice   = make([]int, 0, 3)
@@ -622,6 +656,36 @@ var (
 		},
 
 		{in: big.NewInt(123), out: new(big.Int)},
+
+		{
+			in:     "deadbeef",
+			out:    new(binaryTextType),
+			wanted: binaryTextType(0xdeadbeef),
+			decErr: "invalid length 8",
+
+			preferTextUnmarshalerForString: false,
+		},
+		{
+			in:     "deadbeef",
+			out:    new(binaryTextType),
+			wanted: binaryTextType(0xdeadbeef),
+
+			preferTextUnmarshalerForString: true,
+		},
+		{
+			in:     []byte{0xde, 0xad, 0xbe, 0xef},
+			out:    new(binaryTextType),
+			wanted: binaryTextType(0xdeadbeef),
+
+			preferTextUnmarshalerForString: false,
+		},
+		{
+			in:     []byte{0xde, 0xad, 0xbe, 0xef},
+			out:    new(binaryTextType),
+			wanted: binaryTextType(0xdeadbeef),
+
+			preferTextUnmarshalerForString: true,
+		},
 	}
 )
 
@@ -655,6 +719,9 @@ func TestTypes(t *testing.T) {
 		}
 
 		dec := msgpack.NewDecoder(&buf)
+		if test.preferTextUnmarshalerForString {
+			dec.PreferTextUnmarshalerForString(true)
+		}
 		err = dec.Decode(test.out)
 		if test.decErr != "" {
 			test.requireErr(err, test.decErr)
