@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/vmihailenco/msgpack/v5/msgpcode"
+	"github.com/KyberNetwork/msgpack/v5/msgpcode"
 )
 
 var timeExtID int8 = -1

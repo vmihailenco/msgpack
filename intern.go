@@ -5,7 +5,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/vmihailenco/msgpack/v5/msgpcode"
+	"github.com/KyberNetwork/msgpack/v5/msgpcode"
 )
 
 const (
