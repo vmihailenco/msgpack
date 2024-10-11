@@ -302,7 +302,7 @@ func decodeStructValue(d *Decoder, v reflect.Value) error {
 	var err2 error
 	n, err2 = d.arrayLen(c)
 	if err2 != nil {
-		return err
+		return err2
 	}
 
 	if n <= 0 {
