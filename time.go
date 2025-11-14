@@ -174,6 +174,9 @@ func unmarshalTime(data []byte, d *time.Time) error {
 		*d = t
 	case *time.Time:
 		*d = *val
+	case uint64:
+	case uint32:
+		*d = time.Unix(int64(val), 0)
 	default:
 		return errors.New("unmarshalTime: unimplemented type", errors.Fields{
 			"type":      reflect.TypeOf(v).String(),
