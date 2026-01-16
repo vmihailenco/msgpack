@@ -101,7 +101,8 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		v.Set(v.Slice(0, v.Cap()))
 	}
 
-	noLimit := d.flags&disableAllocLimitFlag != 1
+	noLimit := d.flags&disableAllocLimitFlag != disableAllocLimitFlag
+	fmt.Println("** noLimit is", noLimit)
 
 	if noLimit && n > v.Len() {
 		v.Set(growSliceValue(v, n, noLimit))
@@ -126,6 +127,8 @@ func growSliceValue(v reflect.Value, n int, noLimit bool) reflect.Value {
 	if !noLimit && diff > sliceAllocLimit {
 		diff = sliceAllocLimit
 	}
+
+	fmt.Println("** growing slice by diff", diff)
 	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
 	return v
 }
