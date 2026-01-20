@@ -101,15 +101,15 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		v.Set(v.Slice(0, v.Cap()))
 	}
 
-	noLimit := d.flags&disableAllocLimitFlag != 1
+	unlimitedAlloc := d.flags&disableAllocLimitFlag != 0
 
-	if noLimit && n > v.Len() {
-		v.Set(growSliceValue(v, n, noLimit))
+	if unlimitedAlloc && n > v.Len() {
+		v.Set(growSliceValue(v, n, unlimitedAlloc))
 	}
 
 	for i := 0; i < n; i++ {
-		if !noLimit && i >= v.Len() {
-			v.Set(growSliceValue(v, n, noLimit))
+		if !unlimitedAlloc && i >= v.Len() {
+			v.Set(growSliceValue(v, n, unlimitedAlloc))
 		}
 
 		elem := v.Index(i)
@@ -121,9 +121,9 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func growSliceValue(v reflect.Value, n int, noLimit bool) reflect.Value {
+func growSliceValue(v reflect.Value, n int, unlimitedAlloc bool) reflect.Value {
 	diff := n - v.Len()
-	if !noLimit && diff > sliceAllocLimit {
+	if !unlimitedAlloc && diff > sliceAllocLimit {
 		diff = sliceAllocLimit
 	}
 	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
@@ -170,12 +170,19 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 		return nil, nil
 	}
 
-	s := make([]interface{}, 0, n)
+	cap := n
+	unlimitedAlloc := d.flags&disableAllocLimitFlag != 0
+	if !unlimitedAlloc {
+		cap = min(cap, sliceAllocLimit)
+	}
+
+	s := make([]interface{}, 0, cap)
 	for i := 0; i < n; i++ {
 		v, err := d.decodeInterfaceCond()
 		if err != nil {
 			return nil, err
 		}
+
 		s = append(s, v)
 	}
 
