@@ -33,6 +33,12 @@ func (o *Object) UnmarshalMsgpack(b []byte) error {
 
 //------------------------------------------------------------------------------
 
+const (
+	ignoreStructLength uint32 = 1 << iota
+)
+
+//------------------------------------------------------------------------------
+
 type CustomTime time.Time
 
 func (t CustomTime) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -424,6 +430,7 @@ type typeTest struct {
 	out      interface{}
 	encErr   string
 	decErr   string
+	decFlags uint32
 	wantnil  bool
 	wantzero bool
 	wanted   interface{}
@@ -596,6 +603,18 @@ var (
 			out:    new(unexported),
 			decErr: "msgpack: number of fields in array-encoded struct has changed",
 		},
+		{
+			in:       OmitEmptyTest{"foo", "bar"},
+			out:      new(unexported),
+			wanted:   unexported{Foo: "foo"},
+			decFlags: ignoreStructLength,
+		},
+		{
+			in:       unexported{Foo: "foo"},
+			out:      new(OmitEmptyTest),
+			wanted:   OmitEmptyTest{"foo", ""},
+			decFlags: ignoreStructLength,
+		},
 
 		{in: (*EventTime)(nil), out: new(*EventTime)},
 		{in: &EventTime{time.Unix(0, 0)}, out: new(*EventTime)},
@@ -655,6 +674,9 @@ func TestTypes(t *testing.T) {
 		}
 
 		dec := msgpack.NewDecoder(&buf)
+		if test.decFlags&ignoreStructLength != 0 {
+			dec.IgnoreStructLength(true)
+		}
 		err = dec.Decode(test.out)
 		if test.decErr != "" {
 			test.requireErr(err, test.decErr)
@@ -702,6 +724,9 @@ func TestTypes(t *testing.T) {
 
 		var dst interface{}
 		dec := msgpack.NewDecoder(bytes.NewReader(b))
+		if test.decFlags&ignoreStructLength != 0 {
+			dec.IgnoreStructLength(true)
+		}
 		dec.SetMapDecoder(func(dec *msgpack.Decoder) (interface{}, error) {
 			return dec.DecodeUntypedMap()
 		})
