@@ -338,9 +338,12 @@ func (e *Encoder) isEmptyValue(v reflect.Value) bool {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return v.Len() == 0
 	case reflect.Struct:
-		structFields := structs.Fields(v.Type(), e.structTag)
-		fields := structFields.OmitEmpty(e, v)
-		return len(fields) == 0
+		// Use reflect.Value.IsZero so that structs with non-zero unexported
+		// fields are correctly treated as non-empty. The previous approach
+		// only inspected exported fields and would incorrectly omit a struct
+		// whose exported fields were all zero but whose unexported fields
+		// were not (see https://github.com/vmihailenco/msgpack/issues/378).
+		return v.IsZero()
 	case reflect.Bool:
 		return !v.Bool()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

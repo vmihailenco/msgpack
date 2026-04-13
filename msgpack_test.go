@@ -553,3 +553,33 @@ func TestPtrValueDecode(t *testing.T) {
 	require.NotNil(t, foo.Bar)
 	require.Equal(t, *foo.Bar, bar2)
 }
+
+// TestOmitEmptyStructWithNonZeroUnexportedField is a regression test for
+// https://github.com/vmihailenco/msgpack/issues/378.
+// A struct field tagged omitempty must not be omitted when the struct value
+// contains a non-zero unexported field, even if all exported fields are zero.
+func TestOmitEmptyStructWithNonZeroUnexportedField(t *testing.T) {
+	type inner struct {
+		n   int // unexported, may be non-zero
+		Str string
+	}
+
+	type outer struct {
+		Field inner `msgpack:",omitempty"`
+	}
+
+	// Sanity check: when both n and Str are zero the struct should be omitted.
+	raw, err := msgpack.Marshal(outer{Field: inner{n: 0, Str: ""}})
+	require.Nil(t, err)
+	var o1 outer
+	require.Nil(t, msgpack.Unmarshal(raw, &o1))
+	require.Equal(t, "", o1.Field.Str, "zero struct: exported field should remain empty")
+
+	// When n is non-zero the struct should NOT be omitted, and the exported
+	// field Str should survive the round-trip.
+	raw, err = msgpack.Marshal(outer{Field: inner{n: 1, Str: "str"}})
+	require.Nil(t, err)
+	var o2 outer
+	require.Nil(t, msgpack.Unmarshal(raw, &o2))
+	require.Equal(t, "str", o2.Field.Str, "non-zero struct: exported field must not be lost")
+}
