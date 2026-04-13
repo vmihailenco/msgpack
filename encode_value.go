@@ -134,7 +134,9 @@ func ptrEncoderFunc(typ reflect.Type) encoderFunc {
 
 func encodeCustomValuePtr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+		vp := reflect.New(v.Type())
+		vp.Elem().Set(v)
+		v = vp.Elem()
 	}
 	encoder := v.Addr().Interface().(CustomEncoder)
 	return encoder.EncodeMsgpack(e)
@@ -151,7 +153,9 @@ func encodeCustomValue(e *Encoder, v reflect.Value) error {
 
 func marshalValuePtr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+		vp := reflect.New(v.Type())
+		vp.Elem().Set(v)
+		v = vp.Elem()
 	}
 	return marshalValue(e, v.Addr())
 }
@@ -211,7 +215,9 @@ func nilableType(t reflect.Type) bool {
 
 func marshalBinaryValueAddr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+		vp := reflect.New(v.Type())
+		vp.Elem().Set(v)
+		v = vp.Elem()
 	}
 	return marshalBinaryValue(e, v.Addr())
 }
@@ -234,7 +240,9 @@ func marshalBinaryValue(e *Encoder, v reflect.Value) error {
 
 func marshalTextValueAddr(e *Encoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Encode(non-addressable %T)", v.Interface())
+		vp := reflect.New(v.Type())
+		vp.Elem().Set(v)
+		v = vp.Elem()
 	}
 	return marshalTextValue(e, v.Addr())
 }
