@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/vmihailenco/msgpack/v5/msgpcode"
 )
 
 var (
@@ -71,6 +73,10 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 		return nilAwareDecoder(typ, unmarshalValue)
 	}
 	if typ.Implements(binaryUnmarshalerType) {
+		if typ.Implements(textUnmarshalerType) {
+			// Type implements both: pick the decoder based on the wire format.
+			return nilAwareDecoder(typ, unmarshalBinaryOrTextValue)
+		}
 		return nilAwareDecoder(typ, unmarshalBinaryValue)
 	}
 	if typ.Implements(textUnmarshalerType) {
@@ -87,6 +93,9 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 			return addrDecoder(nilAwareDecoder(typ, unmarshalValue))
 		}
 		if ptr.Implements(binaryUnmarshalerType) {
+			if ptr.Implements(textUnmarshalerType) {
+				return addrDecoder(nilAwareDecoder(typ, unmarshalBinaryOrTextValue))
+			}
 			return addrDecoder(nilAwareDecoder(typ, unmarshalBinaryValue))
 		}
 		if ptr.Implements(textUnmarshalerType) {
@@ -238,6 +247,21 @@ func unmarshalBinaryValue(d *Decoder, v reflect.Value) error {
 
 	unmarshaler := v.Interface().(encoding.BinaryUnmarshaler)
 	return unmarshaler.UnmarshalBinary(data)
+}
+
+// unmarshalBinaryOrTextValue is used for types that implement both
+// encoding.BinaryUnmarshaler and encoding.TextUnmarshaler.
+// It prefers TextUnmarshaler when the wire format is a MessagePack str, and
+// BinaryUnmarshaler for bin and all other formats.
+func unmarshalBinaryOrTextValue(d *Decoder, v reflect.Value) error {
+	code, err := d.PeekCode()
+	if err != nil {
+		return err
+	}
+	if msgpcode.IsString(code) {
+		return unmarshalTextValue(d, v)
+	}
+	return unmarshalBinaryValue(d, v)
 }
 
 func unmarshalTextValue(d *Decoder, v reflect.Value) error {
