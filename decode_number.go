@@ -213,7 +213,7 @@ func (d *Decoder) float64(c byte) (float64, error) {
 
 	n, err := d.int(c)
 	if err != nil {
-		return 0, fmt.Errorf("msgpack: invalid code=%x decoding float32", c)
+		return 0, fmt.Errorf("msgpack: invalid code=%x decoding float64", c)
 	}
 	return float64(n), nil
 }

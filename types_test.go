@@ -1144,3 +1144,66 @@ func mustParseTime(format, s string) time.Time {
 	}
 	return tm
 }
+
+// dualMarshaler implements both BinaryMarshaler/Unmarshaler and
+// TextMarshaler/Unmarshaler (like uuid.UUID).
+type dualMarshaler struct {
+	data string
+}
+
+func (d dualMarshaler) MarshalBinary() ([]byte, error) {
+	return []byte("bin:" + d.data), nil
+}
+
+func (d *dualMarshaler) UnmarshalBinary(b []byte) error {
+	d.data = "bin:" + string(b)
+	return nil
+}
+
+func (d dualMarshaler) MarshalText() ([]byte, error) {
+	return []byte(d.data), nil
+}
+
+func (d *dualMarshaler) UnmarshalText(b []byte) error {
+	d.data = string(b)
+	return nil
+}
+
+// TestDualMarshalerPreference is a regression test for #370.
+// When a type implements both BinaryUnmarshaler and TextUnmarshaler, decoding
+// a msgpack str should use TextUnmarshaler, and decoding a msgpack bin should
+// use BinaryUnmarshaler.
+func TestDualMarshalerPreference(t *testing.T) {
+	// Simulate a str payload (e.g. produced by another language or library)
+	// by encoding a plain Go string.
+	strMsg, err := msgpack.Marshal("hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Decode str → should use UnmarshalText.
+	var gotText dualMarshaler
+	if err := msgpack.Unmarshal(strMsg, &gotText); err != nil {
+		t.Fatal(err)
+	}
+	if gotText.data != "hello" {
+		t.Errorf("UnmarshalText: got %q, want %q", gotText.data, "hello")
+	}
+
+	// Simulate a bin payload by encoding raw []byte.
+	binPayload := []byte("raw-bytes")
+	binMsg, err := msgpack.Marshal(binPayload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Decode bin → should use UnmarshalBinary.
+	var gotBin dualMarshaler
+	if err := msgpack.Unmarshal(binMsg, &gotBin); err != nil {
+		t.Fatal(err)
+	}
+	// UnmarshalBinary stores "bin:<input>"
+	if gotBin.data != "bin:raw-bytes" {
+		t.Errorf("UnmarshalBinary: got %q, want %q", gotBin.data, "bin:raw-bytes")
+	}
+}
