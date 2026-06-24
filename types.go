@@ -95,11 +95,19 @@ type field struct {
 	name      string
 	index     []int
 	omitEmpty bool
+	omitZero  bool // honor the encoding/json 1.24 `omitzero` tag option.
 }
 
 func (f *field) Omit(e *Encoder, strct reflect.Value) bool {
 	v, ok := fieldByIndex(strct, f.index)
 	if !ok {
+		return true
+	}
+	// `omitzero` omits the field when it holds the zero value for its
+	// type, matching encoding/json (Go 1.24+). It is independent of
+	// `omitempty`: a custom IsZero takes precedence, and unlike omitempty it
+	// does not treat a non-nil empty slice/map as omittable.
+	if f.omitZero && isZeroValue(v) {
 		return true
 	}
 	forced := e.flags&omitEmptyFlag != 0
@@ -128,6 +136,7 @@ type fields struct {
 	AsArray bool
 
 	hasOmitEmpty bool
+	hasOmitZero  bool // any field carries the `omitzero` tag option.
 }
 
 func newFields(typ reflect.Type) *fields {
@@ -145,6 +154,9 @@ func (fs *fields) Add(field *field) {
 	if field.omitEmpty {
 		fs.hasOmitEmpty = true
 	}
+	if field.omitZero {
+		fs.hasOmitZero = true
+	}
 }
 
 func (fs *fields) warnIfFieldExists(name string) {
@@ -155,7 +167,7 @@ func (fs *fields) warnIfFieldExists(name string) {
 
 func (fs *fields) OmitEmpty(e *Encoder, strct reflect.Value) []*field {
 	forced := e.flags&omitEmptyFlag != 0
-	if !fs.hasOmitEmpty && !forced {
+	if !fs.hasOmitEmpty && !fs.hasOmitZero && !forced {
 		return fs.List
 	}
 
@@ -202,6 +214,7 @@ func getFields(typ reflect.Type, fallbackTag string) *fields {
 			name:      tag.Name,
 			index:     f.Index,
 			omitEmpty: omitEmpty || tag.HasOption("omitempty"),
+			omitZero:  tag.HasOption("omitzero"),
 		}
 
 		if tag.HasOption("intern") {
@@ -317,6 +330,29 @@ func shouldInline(fs *fields, typ reflect.Type, f *field, tag string) bool {
 
 type isZeroer interface {
 	IsZero() bool
+}
+
+// isZeroValue reports whether v is the zero value for its type, using the same
+// rule as encoding/json's `omitzero` (Go 1.24+): a type's own IsZero method
+// takes precedence; otherwise the value is compared against the zero value via
+// reflection. This is intentionally distinct from isEmptyValue (omitempty),
+// which also omits non-nil empty slices, maps, and strings.
+func isZeroValue(v reflect.Value) bool {
+	// A nil pointer or interface is the zero value; guard before invoking
+	// IsZero so a typed-nil (e.g. (*time.Time)(nil)) whose type carries an
+	// IsZero method does not get dereferenced. encoding/json guards this too.
+	if k := v.Kind(); (k == reflect.Pointer || k == reflect.Interface) && v.IsNil() {
+		return true
+	}
+	if z, ok := v.Interface().(isZeroer); ok {
+		return z.IsZero()
+	}
+	if v.CanAddr() {
+		if z, ok := v.Addr().Interface().(isZeroer); ok {
+			return z.IsZero()
+		}
+	}
+	return v.IsZero()
 }
 
 func (e *Encoder) isEmptyValue(v reflect.Value) bool {
