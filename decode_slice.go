@@ -101,7 +101,7 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		v.Set(v.Slice(0, v.Cap()))
 	}
 
-	noLimit := d.flags&disableAllocLimitFlag != 1
+	noLimit := d.flags&disableAllocLimitFlag != 0
 
 	if noLimit && n > v.Len() {
 		v.Set(growSliceValue(v, n, noLimit))
@@ -170,7 +170,13 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 		return nil, nil
 	}
 
-	s := make([]interface{}, 0, n)
+	// Never pre-allocate based on the untrusted, declared element count. Cap
+	// the initial capacity; append still grows to fit the data actually present.
+	capHint := n
+	if d.flags&disableAllocLimitFlag == 0 && capHint > sliceAllocLimit {
+		capHint = sliceAllocLimit
+	}
+	s := make([]interface{}, 0, capHint)
 	for i := 0; i < n; i++ {
 		v, err := d.decodeInterfaceCond()
 		if err != nil {

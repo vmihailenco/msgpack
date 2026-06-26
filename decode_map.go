@@ -157,7 +157,11 @@ func (d *Decoder) DecodeMap() (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[string]interface{}, n)
+	mapLen := n
+	if d.flags&disableAllocLimitFlag == 0 {
+		mapLen = min(mapLen, maxMapSize)
+	}
+	m := make(map[string]interface{}, mapLen)
 
 	for i := 0; i < n; i++ {
 		mk, err := d.DecodeString()
@@ -184,7 +188,11 @@ func (d *Decoder) DecodeUntypedMap() (map[interface{}]interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[interface{}]interface{}, n)
+	mapLen := n
+	if d.flags&disableAllocLimitFlag == 0 {
+		mapLen = min(mapLen, maxMapSize)
+	}
+	m := make(map[interface{}]interface{}, mapLen)
 
 	for i := 0; i < n; i++ {
 		mk, err := d.decodeInterfaceCond()
