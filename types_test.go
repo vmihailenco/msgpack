@@ -1144,3 +1144,53 @@ func mustParseTime(format, s string) time.Time {
 	}
 	return tm
 }
+
+type roleByte uint8
+
+func (r roleByte) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeString("BACKEND")
+}
+
+func (r *roleByte) DecodeMsgpack(dec *msgpack.Decoder) error {
+	s, err := dec.DecodeString()
+	if err != nil {
+		return err
+	}
+	if s == "BACKEND" {
+		*r = 1
+	}
+	return nil
+}
+
+func TestByteKindSliceHonorsElementCustomCodec(t *testing.T) {
+	// Scalar uses custom codec.
+	b, err := msgpack.Marshal(roleByte(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(b) < 2 || b[0]&0xe0 != 0xa0 {
+		t.Fatalf("scalar Role not encoded as string: % x", b)
+	}
+
+	// Slice must encode as array of custom values, not bin blob.
+	b, err = msgpack.Marshal([]roleByte{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(b) > 0 && b[0] == 0xc4 { // bin8
+		t.Fatalf("[]roleByte encoded as bin blob: % x", b)
+	}
+
+	// Decode array of strings into []roleByte.
+	src, err := msgpack.Marshal([]string{"BACKEND", "BACKEND"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []roleByte
+	if err := msgpack.Unmarshal(src, &out); err != nil {
+		t.Fatalf("decode []roleByte: %v", err)
+	}
+	if len(out) != 2 || out[0] != 1 || out[1] != 1 {
+		t.Fatalf("out=%v", out)
+	}
+}

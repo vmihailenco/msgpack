@@ -96,14 +96,16 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 		return ptrEncoderFunc(typ)
 	case reflect.Slice:
 		elem := typ.Elem()
-		if elem.Kind() == reflect.Uint8 {
+		// Prefer element custom codecs over the []byte binary shortcut (#391).
+		if elem.Kind() == reflect.Uint8 && !hasCustomEncodeCodec(elem) {
 			return encodeByteSliceValue
 		}
 		if elem == stringType {
 			return encodeStringSliceValue
 		}
 	case reflect.Array:
-		if typ.Elem().Kind() == reflect.Uint8 {
+		elem := typ.Elem()
+		if elem.Kind() == reflect.Uint8 && !hasCustomEncodeCodec(elem) {
 			return encodeByteArrayValue
 		}
 	case reflect.Map:
@@ -251,4 +253,20 @@ func marshalTextValue(e *Encoder, v reflect.Value) error {
 	}
 
 	return e.EncodeBytes(data)
+}
+
+
+func hasCustomEncodeCodec(typ reflect.Type) bool {
+	if typ.Implements(customEncoderType) || typ.Implements(marshalerType) ||
+		typ.Implements(binaryMarshalerType) || typ.Implements(textMarshalerType) {
+		return true
+	}
+	if typ.Kind() != reflect.Ptr {
+		ptr := reflect.PtrTo(typ)
+		if ptr.Implements(customEncoderType) || ptr.Implements(marshalerType) ||
+			ptr.Implements(binaryMarshalerType) || ptr.Implements(textMarshalerType) {
+			return true
+		}
+	}
+	return false
 }
