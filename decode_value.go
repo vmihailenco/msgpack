@@ -99,14 +99,16 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 		return ptrValueDecoder(typ)
 	case reflect.Slice:
 		elem := typ.Elem()
-		if elem.Kind() == reflect.Uint8 {
+		// Prefer element custom codecs over the []byte binary shortcut (#391).
+		if elem.Kind() == reflect.Uint8 && !hasCustomDecodeCodec(elem) {
 			return decodeBytesValue
 		}
 		if elem == stringType {
 			return decodeStringSliceValue
 		}
 	case reflect.Array:
-		if typ.Elem().Kind() == reflect.Uint8 {
+		elem := typ.Elem()
+		if elem.Kind() == reflect.Uint8 && !hasCustomDecodeCodec(elem) {
 			return decodeByteArrayValue
 		}
 	case reflect.Map:
@@ -248,4 +250,20 @@ func unmarshalTextValue(d *Decoder, v reflect.Value) error {
 
 	unmarshaler := v.Interface().(encoding.TextUnmarshaler)
 	return unmarshaler.UnmarshalText(data)
+}
+
+
+func hasCustomDecodeCodec(typ reflect.Type) bool {
+	if typ.Implements(customDecoderType) || typ.Implements(unmarshalerType) ||
+		typ.Implements(binaryUnmarshalerType) || typ.Implements(textUnmarshalerType) {
+		return true
+	}
+	if typ.Kind() != reflect.Ptr {
+		ptr := reflect.PtrTo(typ)
+		if ptr.Implements(customDecoderType) || ptr.Implements(unmarshalerType) ||
+			ptr.Implements(binaryUnmarshalerType) || ptr.Implements(textUnmarshalerType) {
+			return true
+		}
+	}
+	return false
 }
