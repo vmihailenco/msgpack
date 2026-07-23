@@ -192,6 +192,9 @@ func (d *Decoder) Buffered() io.Reader {
 
 //nolint:gocyclo
 func (d *Decoder) Decode(v interface{}) error {
+	if d == nil || d.r == nil || d.s == nil {
+		return errors.New("msgpack: Decoder reader is nil")
+	}
 	var err error
 	switch v := v.(type) {
 	case *string:
