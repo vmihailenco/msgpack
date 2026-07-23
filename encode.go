@@ -2,6 +2,7 @@ package msgpack
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"reflect"
 	"sync"
@@ -197,6 +198,9 @@ func (e *Encoder) UseInternedStrings(on bool) {
 }
 
 func (e *Encoder) Encode(v interface{}) error {
+	if e == nil || e.w == nil {
+		return errors.New("msgpack: Encoder writer is nil")
+	}
 	switch v := v.(type) {
 	case nil:
 		return e.EncodeNil()
@@ -227,6 +231,9 @@ func (e *Encoder) Encode(v interface{}) error {
 }
 
 func (e *Encoder) EncodeMulti(v ...interface{}) error {
+	if e == nil || e.w == nil {
+		return errors.New("msgpack: Encoder writer is nil")
+	}
 	for _, vv := range v {
 		if err := e.Encode(vv); err != nil {
 			return err
