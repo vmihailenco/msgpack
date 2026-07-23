@@ -32,6 +32,39 @@ var (
 	textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 )
 
+// hasCustomEncodeCodec reports whether t (or *t) implements a custom encode path.
+// Used to avoid treating slices of named uint8 types as raw []byte.
+func hasCustomEncodeCodec(t reflect.Type) bool {
+	if t.Implements(customEncoderType) || t.Implements(marshalerType) ||
+		t.Implements(binaryMarshalerType) || t.Implements(textMarshalerType) {
+		return true
+	}
+	if t.Kind() != reflect.Ptr {
+		ptr := reflect.PtrTo(t)
+		if ptr.Implements(customEncoderType) || ptr.Implements(marshalerType) ||
+			ptr.Implements(binaryMarshalerType) || ptr.Implements(textMarshalerType) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasCustomDecodeCodec reports whether t (or *t) implements a custom decode path.
+func hasCustomDecodeCodec(t reflect.Type) bool {
+	if t.Implements(customDecoderType) || t.Implements(unmarshalerType) ||
+		t.Implements(binaryUnmarshalerType) || t.Implements(textUnmarshalerType) {
+		return true
+	}
+	if t.Kind() != reflect.Ptr {
+		ptr := reflect.PtrTo(t)
+		if ptr.Implements(customDecoderType) || ptr.Implements(unmarshalerType) ||
+			ptr.Implements(binaryUnmarshalerType) || ptr.Implements(textUnmarshalerType) {
+			return true
+		}
+	}
+	return false
+}
+
 type (
 	encoderFunc func(*Encoder, reflect.Value) error
 	decoderFunc func(*Decoder, reflect.Value) error

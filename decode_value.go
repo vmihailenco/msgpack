@@ -99,14 +99,15 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 		return ptrValueDecoder(typ)
 	case reflect.Slice:
 		elem := typ.Elem()
-		if elem.Kind() == reflect.Uint8 {
+		// Named uint8 types with a custom codec must not take the []byte shortcut.
+		if elem.Kind() == reflect.Uint8 && !hasCustomDecodeCodec(elem) {
 			return decodeBytesValue
 		}
 		if elem == stringType {
 			return decodeStringSliceValue
 		}
 	case reflect.Array:
-		if typ.Elem().Kind() == reflect.Uint8 {
+		if typ.Elem().Kind() == reflect.Uint8 && !hasCustomDecodeCodec(typ.Elem()) {
 			return decodeByteArrayValue
 		}
 	case reflect.Map:

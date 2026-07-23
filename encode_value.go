@@ -96,14 +96,15 @@ func _getEncoder(typ reflect.Type) encoderFunc {
 		return ptrEncoderFunc(typ)
 	case reflect.Slice:
 		elem := typ.Elem()
-		if elem.Kind() == reflect.Uint8 {
+		// Named uint8 types with a custom codec must not take the []byte shortcut.
+		if elem.Kind() == reflect.Uint8 && !hasCustomEncodeCodec(elem) {
 			return encodeByteSliceValue
 		}
 		if elem == stringType {
 			return encodeStringSliceValue
 		}
 	case reflect.Array:
-		if typ.Elem().Kind() == reflect.Uint8 {
+		if typ.Elem().Kind() == reflect.Uint8 && !hasCustomEncodeCodec(typ.Elem()) {
 			return encodeByteArrayValue
 		}
 	case reflect.Map:
