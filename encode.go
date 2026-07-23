@@ -168,7 +168,7 @@ func (e *Encoder) UseArrayEncodedStructs(on bool) {
 }
 
 // UseCompactEncoding causes the Encoder to chose the most compact encoding.
-// For example, it allows to encode small Go int64 as msgpack int8 saving 7 bytes.
+// For example, it allows encoding a small Go int64 as msgpack int8 saving 7 bytes.
 func (e *Encoder) UseCompactInts(on bool) {
 	if on {
 		e.flags |= useCompactIntsFlag
