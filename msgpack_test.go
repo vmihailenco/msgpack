@@ -553,3 +553,88 @@ func TestPtrValueDecode(t *testing.T) {
 	require.NotNil(t, foo.Bar)
 	require.Equal(t, *foo.Bar, bar2)
 }
+
+// TestOmitEmptyStructWithNonZeroUnexportedField is a regression test for
+// https://github.com/vmihailenco/msgpack/issues/378.
+// A struct field tagged omitempty must not be omitted when the struct value
+// contains a non-zero unexported field, even if all exported fields are zero.
+func TestOmitEmptyStructWithNonZeroUnexportedField(t *testing.T) {
+	type inner struct {
+		n   int // unexported, may be non-zero
+		Str string
+	}
+
+	type outer struct {
+		Field inner `msgpack:",omitempty"`
+	}
+
+	// Zero struct (exported and unexported) should still be omitted.
+	raw, err := msgpack.Marshal(outer{Field: inner{}})
+	require.Nil(t, err)
+	var o1 outer
+	require.Nil(t, msgpack.Unmarshal(raw, &o1))
+	require.Equal(t, "", o1.Field.Str)
+
+	// Non-zero unexported field must prevent omitempty from dropping the
+	// struct so exported fields survive the round-trip.
+	raw, err = msgpack.Marshal(outer{Field: inner{n: 1, Str: "str"}})
+	require.Nil(t, err)
+	var o2 outer
+	require.Nil(t, msgpack.Unmarshal(raw, &o2))
+	require.Equal(t, "str", o2.Field.Str)
+
+	// Struct with only unexported state: non-zero must not be omitted.
+	type onlyUnexported struct {
+		content string
+	}
+	type holder struct {
+		V onlyUnexported `msgpack:"v,omitempty"`
+	}
+
+	raw, err = msgpack.Marshal(holder{V: onlyUnexported{content: "str"}})
+	require.Nil(t, err)
+	// If omitempty incorrectly dropped V, the map would be empty (0x80).
+	require.NotEqual(t, []byte{0x80}, raw)
+
+	rawZero, err := msgpack.Marshal(holder{V: onlyUnexported{}})
+	require.Nil(t, err)
+	require.Equal(t, []byte{0x80}, rawZero)
+}
+
+// omitEmptyCustomVal matches the #378 playground repro: custom (de)coding of
+// unexported state behind omitempty.
+type omitEmptyCustomVal struct {
+	content string
+}
+
+func (v omitEmptyCustomVal) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeString(v.content)
+}
+
+func (v *omitEmptyCustomVal) DecodeMsgpack(dec *msgpack.Decoder) error {
+	c, err := dec.DecodeString()
+	if err != nil {
+		return err
+	}
+	v.content = c
+	return nil
+}
+
+func TestOmitEmptyCustomEncoderUnexportedOnly(t *testing.T) {
+	type foo struct {
+		Val omitEmptyCustomVal `msgpack:"val,omitempty"`
+	}
+
+	in := foo{Val: omitEmptyCustomVal{content: "str"}}
+	raw, err := msgpack.Marshal(in)
+	require.Nil(t, err)
+
+	var out foo
+	require.Nil(t, msgpack.Unmarshal(raw, &out))
+	require.Equal(t, "str", out.Val.content)
+
+	// Zero value is still omitted.
+	rawZero, err := msgpack.Marshal(foo{})
+	require.Nil(t, err)
+	require.Equal(t, []byte{0x80}, rawZero)
+}
