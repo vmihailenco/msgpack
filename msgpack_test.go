@@ -75,6 +75,25 @@ func (t *MsgpackTest) TestLargeString() {
 	t.Equal(dst, src)
 }
 
+func TestAllocLimitFlagIsHonored(t *testing.T) {
+	// disableAllocLimitFlag is 1<<3 (8). The old check `flags&flag != 1`
+	// was true for both 0 and 8, so the 1_000_000-element cap never applied.
+	encBuf := new(bytes.Buffer)
+	enc := msgpack.NewEncoder(encBuf)
+	require.NoError(t, enc.Encode([]interface{}{1, 2, 3}))
+
+	dec := msgpack.NewDecoder(bytes.NewReader(encBuf.Bytes()))
+	got, err := dec.DecodeSlice()
+	require.NoError(t, err)
+	require.Equal(t, []interface{}{int8(1), int8(2), int8(3)}, got)
+
+	dec = msgpack.NewDecoder(bytes.NewReader(encBuf.Bytes()))
+	dec.DisableAllocLimit(true)
+	got, err = dec.DecodeSlice()
+	require.NoError(t, err)
+	require.Equal(t, []interface{}{int8(1), int8(2), int8(3)}, got)
+}
+
 func (t *MsgpackTest) TestSliceOfStructs() {
 	in := []*nameStruct{{"hello"}}
 	var out []*nameStruct
