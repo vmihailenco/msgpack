@@ -36,6 +36,24 @@ func TestMsgpackTestSuite(t *testing.T) {
 	suite.Run(t, new(MsgpackTest))
 }
 
+func TestDecodeNilIntoPopulatedInterface(t *testing.T) {
+	type payload struct {
+		Value interface{}
+	}
+	encoded, err := msgpack.Marshal(payload{})
+	require.NoError(t, err)
+
+	for _, previous := range []interface{}{&nameStruct{Name: "old"}, "old", map[string]int{"old": 1}} {
+		dst := payload{Value: previous}
+		require.NoError(t, msgpack.Unmarshal(encoded, &dst))
+		require.Nil(t, dst.Value)
+	}
+
+	var topLevel interface{} = &nameStruct{Name: "old"}
+	require.NoError(t, msgpack.Unmarshal([]byte{0xc0}, &topLevel))
+	require.Nil(t, topLevel)
+}
+
 func (t *MsgpackTest) TestDecodeNil() {
 	t.NotNil(t.dec.Decode(nil))
 }

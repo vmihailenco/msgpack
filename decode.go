@@ -301,6 +301,9 @@ func (d *Decoder) Decode(v interface{}) error {
 	vv = vv.Elem()
 	if vv.Kind() == reflect.Interface {
 		if !vv.IsNil() {
+			if d.hasNilCode() {
+				return d.decodeNilValue(vv)
+			}
 			vv = vv.Elem()
 			if vv.Kind() != reflect.Ptr {
 				return fmt.Errorf("msgpack: Decode(non-pointer %s)", vv.Type().String())
