@@ -179,6 +179,9 @@ func decodeBoolValue(d *Decoder, v reflect.Value) error {
 }
 
 func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
+	if d.hasNilCode() {
+		return d.decodeNilValue(v)
+	}
 	if v.IsNil() {
 		return d.interfaceValue(v)
 	}
