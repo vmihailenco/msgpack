@@ -28,7 +28,9 @@ func encodeByteArrayValue(e *Encoder, v reflect.Value) error {
 	}
 
 	e.buf = grow(e.buf, v.Len())
-	reflect.Copy(reflect.ValueOf(e.buf), v)
+	for i := 0; i < v.Len(); i++ {
+		e.buf[i] = byte(v.Index(i).Uint())
+	}
 	return e.write(e.buf)
 }
 

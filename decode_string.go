@@ -187,6 +187,15 @@ func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
 		return fmt.Errorf("%s len is %d, but msgpack has %d elements", v.Type(), v.Len(), n)
 	}
 
-	b := v.Slice(0, n).Bytes()
-	return d.readFull(b)
+	if v.Type().Elem() == reflect.TypeOf(byte(0)) {
+		return d.readFull(v.Slice(0, n).Bytes())
+	}
+	b := make([]byte, n)
+	if err := d.readFull(b); err != nil {
+		return err
+	}
+	for i, value := range b {
+		v.Index(i).SetUint(uint64(value))
+	}
+	return nil
 }

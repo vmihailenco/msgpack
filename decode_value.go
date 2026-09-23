@@ -99,14 +99,14 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 		return ptrValueDecoder(typ)
 	case reflect.Slice:
 		elem := typ.Elem()
-		if elem.Kind() == reflect.Uint8 {
+		if elem.Kind() == reflect.Uint8 && !hasByteElementDecoder(elem) {
 			return decodeBytesValue
 		}
 		if elem == stringType {
 			return decodeStringSliceValue
 		}
 	case reflect.Array:
-		if typ.Elem().Kind() == reflect.Uint8 {
+		if typ.Elem().Kind() == reflect.Uint8 && !hasByteElementDecoder(typ.Elem()) {
 			return decodeByteArrayValue
 		}
 	case reflect.Map:
@@ -121,6 +121,16 @@ func _getDecoder(typ reflect.Type) decoderFunc {
 	}
 
 	return valueDecoders[kind]
+}
+
+func hasByteElementDecoder(typ reflect.Type) bool {
+	ptr := reflect.PtrTo(typ)
+	for _, codec := range []reflect.Type{customDecoderType, unmarshalerType, binaryUnmarshalerType, textUnmarshalerType} {
+		if typ.Implements(codec) || ptr.Implements(codec) {
+			return true
+		}
+	}
+	return false
 }
 
 func ptrValueDecoder(typ reflect.Type) decoderFunc {
