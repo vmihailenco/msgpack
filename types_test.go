@@ -460,6 +460,7 @@ var (
 		{in: nil, out: new(*int), wantnil: true},
 
 		{in: float32(3.14), out: new(float32)},
+		{in: float64(3.14), out: new(float32), wanted: float32(3.14)},
 		{in: int8(-1), out: new(float32), wanted: float32(-1)},
 		{in: int32(1), out: new(float32), wanted: float32(1)},
 		{in: int32(999999999), out: new(float32), wanted: float32(999999999)},
@@ -1118,6 +1119,24 @@ func TestFloat64(t *testing.T) {
 		}
 		if out != test.in {
 			t.Fatalf("%f != %f", out, test.in)
+		}
+
+		var out2 float32
+		err = msgpack.Unmarshal(b, &out2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if out2 != float32(test.in) {
+			t.Fatalf("%f != %f", out2, float32(test.in))
+		}
+
+		dec2 := msgpack.NewDecoder(bytes.NewReader(b))
+		f32, err := dec2.DecodeFloat32()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if f32 != float32(test.in) {
+			t.Fatalf("%f != %f", f32, float32(test.in))
 		}
 
 		dec := msgpack.NewDecoder(bytes.NewReader(b))

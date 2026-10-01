@@ -162,6 +162,7 @@ func (d *Decoder) int(c byte) (int64, error) {
 	return 0, fmt.Errorf("msgpack: invalid code=%x decoding int64", c)
 }
 
+// DecodeFloat32 decodes msgpack float32/64 into Go float32.
 func (d *Decoder) DecodeFloat32() (float32, error) {
 	c, err := d.readCode()
 	if err != nil {
@@ -171,12 +172,19 @@ func (d *Decoder) DecodeFloat32() (float32, error) {
 }
 
 func (d *Decoder) float32(c byte) (float32, error) {
-	if c == msgpcode.Float {
+	switch c {
+	case msgpcode.Float:
 		n, err := d.uint32()
 		if err != nil {
 			return 0, err
 		}
 		return math.Float32frombits(n), nil
+	case msgpcode.Double:
+		n, err := d.uint64()
+		if err != nil {
+			return 0, err
+		}
+		return float32(math.Float64frombits(n)), nil
 	}
 
 	n, err := d.int(c)
