@@ -178,6 +178,14 @@ func (d *Decoder) float32(c byte) (float32, error) {
 		}
 		return math.Float32frombits(n), nil
 	}
+	// A uint64 above MaxInt64 fits in a float. int64(n) would flip the sign.
+	if c == msgpcode.Uint64 {
+		n, err := d.uint64()
+		if err != nil {
+			return 0, err
+		}
+		return float32(n), nil
+	}
 
 	n, err := d.int(c)
 	if err != nil {
@@ -209,6 +217,13 @@ func (d *Decoder) float64(c byte) (float64, error) {
 			return 0, err
 		}
 		return math.Float64frombits(n), nil
+	case msgpcode.Uint64:
+		// A uint64 above MaxInt64 fits in a float. int64(n) would flip the sign.
+		n, err := d.uint64()
+		if err != nil {
+			return 0, err
+		}
+		return float64(n), nil
 	}
 
 	n, err := d.int(c)
