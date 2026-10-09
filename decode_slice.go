@@ -9,6 +9,25 @@ import (
 
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
 
+type lenReader interface {
+	Len() int
+}
+
+func (d *Decoder) remainingLen() (int, bool) {
+	if lr, ok := d.r.(lenReader); ok {
+		return lr.Len(), true
+	}
+	return -1, false
+}
+
+func (d *Decoder) sliceAllocLimit(n int) int {
+	limit := int(sliceAllocLimit)
+	if rem, ok := d.remainingLen(); ok && rem >= 0 && rem < limit {
+		limit = rem
+	}
+	return limit
+}
+
 // DecodeArrayLen decodes array length. Length is -1 when array is nil.
 func (d *Decoder) DecodeArrayLen() (int, error) {
 	c, err := d.readCode()
@@ -30,7 +49,13 @@ func (d *Decoder) arrayLen(c byte) (int, error) {
 		return int(n), err
 	case msgpcode.Array32:
 		n, err := d.uint32()
-		return int(n), err
+		if err != nil {
+			return 0, err
+		}
+		if int(n) < 0 {
+			return 0, fmt.Errorf("msgpack: array length %d exceeds max int", n)
+		}
+		return int(n), nil
 	}
 	return 0, fmt.Errorf("msgpack: invalid code=%x decoding array length", c)
 }
@@ -49,7 +74,7 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 		return nil
 	}
 
-	ss := makeStrings(*ptr, n, d.flags&disableAllocLimitFlag != 0)
+	ss := d.makeStrings(*ptr, n, d.flags&disableAllocLimitFlag != 0)
 	for i := 0; i < n; i++ {
 		s, err := d.DecodeString()
 		if err != nil {
@@ -62,9 +87,12 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 	return nil
 }
 
-func makeStrings(s []string, n int, noLimit bool) []string {
-	if !noLimit && n > sliceAllocLimit {
-		n = sliceAllocLimit
+func (d *Decoder) makeStrings(s []string, n int, noLimit bool) []string {
+	if !noLimit {
+		limit := d.sliceAllocLimit(n)
+		if n > limit {
+			n = limit
+		}
 	}
 
 	if s == nil {
@@ -101,15 +129,15 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 		v.Set(v.Slice(0, v.Cap()))
 	}
 
-	noLimit := d.flags&disableAllocLimitFlag != 1
+	noLimit := d.flags&disableAllocLimitFlag != 0
 
 	if noLimit && n > v.Len() {
-		v.Set(growSliceValue(v, n, noLimit))
+		v.Set(d.growSliceValue(v, n, noLimit))
 	}
 
 	for i := 0; i < n; i++ {
 		if !noLimit && i >= v.Len() {
-			v.Set(growSliceValue(v, n, noLimit))
+			v.Set(d.growSliceValue(v, n, noLimit))
 		}
 
 		elem := v.Index(i)
@@ -121,10 +149,16 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func growSliceValue(v reflect.Value, n int, noLimit bool) reflect.Value {
+func (d *Decoder) growSliceValue(v reflect.Value, n int, noLimit bool) reflect.Value {
 	diff := n - v.Len()
-	if !noLimit && diff > sliceAllocLimit {
-		diff = sliceAllocLimit
+	if !noLimit {
+		limit := d.sliceAllocLimit(n)
+		if limit < 1 {
+			limit = 1
+		}
+		if diff > limit {
+			diff = limit
+		}
 	}
 	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
 	return v
@@ -170,7 +204,15 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 		return nil, nil
 	}
 
-	s := make([]interface{}, 0, n)
+	size := n
+	if d.flags&disableAllocLimitFlag == 0 {
+		limit := d.sliceAllocLimit(n)
+		if size > limit {
+			size = limit
+		}
+	}
+
+	s := make([]interface{}, 0, size)
 	for i := 0; i < n; i++ {
 		v, err := d.decodeInterfaceCond()
 		if err != nil {

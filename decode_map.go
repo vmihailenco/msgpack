@@ -88,7 +88,13 @@ func (d *Decoder) mapLen(c byte) (int, error) {
 	}
 	if c == msgpcode.Map32 {
 		size, err := d.uint32()
-		return int(size), err
+		if err != nil {
+			return 0, err
+		}
+		if int(size) < 0 {
+			return 0, fmt.Errorf("msgpack: map length %d exceeds max int", size)
+		}
+		return int(size), nil
 	}
 	return 0, unexpectedCodeError{code: c, hint: "map length"}
 }
@@ -157,7 +163,12 @@ func (d *Decoder) DecodeMap() (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[string]interface{}, n)
+	size := n
+	if d.flags&disableAllocLimitFlag == 0 {
+		size = min(size, maxMapSize)
+	}
+
+	m := make(map[string]interface{}, size)
 
 	for i := 0; i < n; i++ {
 		mk, err := d.DecodeString()
@@ -184,7 +195,12 @@ func (d *Decoder) DecodeUntypedMap() (map[interface{}]interface{}, error) {
 		return nil, nil
 	}
 
-	m := make(map[interface{}]interface{}, n)
+	size := n
+	if d.flags&disableAllocLimitFlag == 0 {
+		size = min(size, maxMapSize)
+	}
+
+	m := make(map[interface{}]interface{}, size)
 
 	for i := 0; i < n; i++ {
 		mk, err := d.decodeInterfaceCond()
